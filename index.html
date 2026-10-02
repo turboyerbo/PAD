@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#FBF7DC">
+<meta name="theme-color" content="#153243">
 <meta name="description" content="Patry Analysis &amp; Design (PAD), Ninth Line. Digital companion to the printed unit set.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PAD">
@@ -15,16 +15,16 @@
 <title>Patry Analysis &amp; Design (PAD)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Archivo+Narrow:wght@400;500;600&display=swap">
 <style>
 /* Layout: one horizontal drawing sheet; units run left to right on a shared corridor, arrow button docked to the last unit. */
 :root{
-  --paper:#FBF7DC; --sheet:#FFFDF3; --ink:#26261F; --ink-2:#6E6B5B; --rule:#DCD4AE;
+  --paper:#F2F5F7; --sheet:#FFFFFF; --ink:#153243; --ink-2:#4B4F58; --rule:#CECECE; --navy:#153243; --blue:#0274BE;
   --wall:#C6C5BD; --wall-edge:#3D3C36; --fx:#78766B; --fx-fill:#FFFEF8;
   --furn:#2BA6DC; --furn-fill:#EAF7FC; --rug:#DDF1F9; --plant:#6CB23D; --plant-fill:#DCEFC8;
-  --grain:#E6E0C6; --tile:#DEDACB; --dots:#CFC8AA;
-  --person:#137FBF; --person-fill:#8FD4F2; --accent:#137FBF;
-  --display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --grain:#E3E6E8; --tile:#DADEE0; --dots:#C7CBCD;
+  --person:#0274BE; --person-fill:#8FC8EA; --accent:#0274BE;
+  --display:'Poppins','Helvetica Neue',Arial,sans-serif;
   --narrow:'Archivo Narrow','Arial Narrow','Helvetica Neue',sans-serif;
   color-scheme:light;
 }
@@ -56,6 +56,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding:12px 16px 10px;border-bottom:1px solid var(--rule)}
+.bar{background:var(--navy);color:#fff;border-bottom:3px solid var(--blue)}
+.bar .logo{height:52px;width:auto;flex:none}
+.bar .id p,.bar .stats,.bar .abbr{color:#C9D3DA}
+.bar .stats b{color:#fff}
+.bar .tb{border-color:#fff;color:#fff}
+.bar .tb[aria-pressed="true"]{background:#fff;color:var(--navy)}
+.bar .badge{border-color:#C9D3DA;color:#C9D3DA}
 .id h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .id p{margin:2px 0 0;font-size:12px;color:var(--ink-2)}
 .stats{font-family:var(--narrow);font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 14px;font-variant-numeric:tabular-nums;flex:1;min-width:0}
@@ -66,7 +73,15 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 .tb:disabled{opacity:.35;cursor:default}
 .tb.sq{width:32px;padding:6px 0;text-align:center}
 
-main{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+main{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none}
+main::-webkit-scrollbar{display:none}
+.stage{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}
+.nav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:76px;border:none;background:#D81E1E;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px 4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1.15;text-align:center;box-shadow:0 4px 16px rgba(120,0,0,.35)}
+.nav svg{width:46px;height:46px}
+.nav:hover{background:#B31212}
+.nav[hidden]{display:none}
+.nav.l{left:0;border-radius:0 8px 8px 0}.nav.r{right:0;border-radius:8px 0 0 8px}
+@media (max-width:520px){.nav{width:56px;font-size:10px}.nav svg{width:36px;height:36px}}
 #track{display:flex;align-items:flex-start;width:max-content;padding-right:48px}
 #strip{display:block;flex:none}
 #strip *{vector-effect:non-scaling-stroke}
@@ -179,6 +194,7 @@ textarea{width:100%;box-sizing:border-box;border:1px solid var(--ink);background
 </head>
 <body>
 <header class="bar">
+  <img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52">
   <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p>Ninth Line · Digital companion to the printed set <span class="badge" id="badge">Placeholder baseline</span></p></div>
   <div class="stats" id="stats"></div>
   <div class="tools">
@@ -190,6 +206,9 @@ textarea{width:100%;box-sizing:border-box;border:1px solid var(--ink);background
   </div>
 </header>
 
+<div class="stage">
+<button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
+<button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button>
 <main id="scroller">
   <div id="track">
     <svg id="strip" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -198,10 +217,11 @@ textarea{width:100%;box-sizing:border-box;border:1px solid var(--ink);background
     </button>
   </div>
 </main>
+</div>
 
 <footer>
   <svg id="scalebar" height="26" width="200" aria-label="Scale bar"></svg>
-  <span class="hint" id="hint">Scroll sideways to browse units. Tap a unit for its details, or press the arrow to add one.</span>
+  <span class="hint" id="hint">Press the red arrows to scroll left or right. Tap a unit for its details, or press the arrow to add one.</span>
   <span class="legend"><i class="sw sw-b"></i>Baseline <i class="sw sw-a"></i>Added</span>
 </footer>
 
@@ -652,6 +672,10 @@ const tagOf=u=>'PAD-'+String(u.idx).padStart(2,'0');
 /* ---------- formatting ---------- */
 function ftin(mm){const half=Math.round(mm/25.4*2)/2;const ft=Math.floor(half/12);const i=half-ft*12;const w=Math.floor(i);return `${ft}' - ${w}${i-w>0?' 1/2':''}"`;}
 const area=u=>u.plan.W*u.plan.D;
+// Gross: to centreline of perimeter walls. Exterior wall is 0.30 m (centre 0.15 in), corridor wall 0.20 m (centre 0.10 in); party walls are shared, so width is unchanged.
+const gross=u=>u.plan.W*(u.plan.D-0.25);
+const netA=u=>u.plan.rooms.reduce((s,q)=>s+q.a,0);
+const eff=u=>netA(u)/gross(u)*100;
 let DM=8.4;
 
 /* ---------- render ---------- */
@@ -684,7 +708,7 @@ function render(){
   const {list,runs,total}=layout();
   DM=Math.max(...units.map(u=>u.plan.D));list.forEach(u=>u.oy=DM-u.plan.D);
   computeScale();
-  const W=PADL+total*S+12, Hc=TOP+(DM+CORR+0.2)*S, H=Hc+66;
+  const W=PADL+total*S+12, Hc=TOP+(DM+CORR+0.2)*S, H=Hc+80;
   svg.setAttribute('width',Math.ceil(W));svg.setAttribute('height',Math.ceil(H));svg.setAttribute('viewBox',`0 0 ${Math.ceil(W)} ${Math.ceil(H)}`);
   let o=`<defs>
 <pattern id="wood" width="2.4" height="0.4" patternUnits="userSpaceOnUse"><path class="grain" stroke-width="0.012" d="M0 0.2H2.4M0 0.4H2.4M0.3 0V0.2M1.5 0.2V0.4"/></pattern>
@@ -709,14 +733,15 @@ function render(){
     t+=`<path class="ext" d="M${f(X)} ${TOP-42}V${f(uy-3)}M${f(X+Wp)} ${TOP-42}V${f(uy-3)}"/>`;
     t+=`<path class="dim" d="M${f(X)} ${d1}H${f(X+Wp)}M${f(X)} ${d2}H${f(X+Wp)}M${f(X-4)} ${d1+4}l8 -8M${f(X+Wp-4)} ${d1+4}l8 -8M${f(X-4)} ${d2+4}l8 -8M${f(X+Wp-4)} ${d2+4}l8 -8"/>`;
     t+=`<text class="dt" x="${f(X+Wp/2)}" y="${d1-5}" font-size="${fs}">${mm}</text><text class="dt" x="${f(X+Wp/2)}" y="${d2-5}" font-size="${fs}">${ftin(mm)}</text>`;
-    const ly=Hc+16,a=area(u),cxp=f(X+Wp/2);
+    const ly=Hc+16,a=gross(u),cxp=f(X+Wp/2);
     const tag=u.minimal?'MIN. STUDIO':TYPE(u.n);
     t+=`<path class="${u.src==='base'?'mark-b':'mark-a'}" d="M${f(X+3)} ${f(Hc+2)}H${f(X+Wp-3)}"/>`;
     const narrow=Wp<118;
     t+=`<text class="lb1" x="${cxp}" y="${ly+2}" font-size="${fs}">${tagOf(u)}</text>`;
     t+=`<text class="lb2" x="${cxp}" y="${ly+15}" font-size="${fs}">${u.minimal?'MIN. STUDIO':tag}${!narrow&&Math.abs(u.plan.D-8.4)>0.005?' · L '+u.plan.D.toFixed(2)+' m':''}</text>`;
-    t+=`<text class="lb2" x="${cxp}" y="${ly+28}" font-size="${fs}">${a.toFixed(1)} m²</text>`;
-    t+=`<text class="lb3" x="${cxp}" y="${ly+41}" font-size="${fs}">${escapeHtml(priText(u))}</text>`;
+    t+=`<text class="lb2" x="${cxp}" y="${ly+28}" font-size="${fs}">${netA(u).toFixed(1)} net · ${a.toFixed(1)} gross m²</text>`;
+    t+=`<text class="lb2" x="${cxp}" y="${ly+41}" font-size="${fs}">${eff(u).toFixed(0)}% efficient</text>`;
+    t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${escapeHtml(priText(u))}</text>`;
     t+=roomLabels(u,X,uy);
     const cfs=Math.max(7,Math.min(10.5,S*0.21));
     t+=`<text class="cl" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S-1)}" font-size="${f(cfs)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S+cfs)}" font-size="${f(cfs)}">${(u.plan.W*CORR).toFixed(1)} m²</text>`;
@@ -755,21 +780,21 @@ function showInfo(u){
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit';
   $('iTitle').textContent=tagOf(u)+' · '+(u.minimal?'Minimum studio':u.n===0?'Studio':u.n+' bedroom');
-  const rows=[['Gross area',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])]];
+  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Gross area (to wall centrelines)',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])]];
   if(m.storeRooms)rows.push(['Storage rooms',m.storeRooms]);
   rows.push(['Occupants shown',u.people.length]);
   $('iList').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
   const rm=u.plan.rooms.slice().sort((p,q)=>q.a-p.a);const net=rm.reduce((s,q)=>s+q.a,0);
-  $('iRooms').innerHTML=rm.map(q=>`<dt>${escapeHtml(q.n)}</dt><dd>${q.a.toFixed(1)} m²</dd>`).join('')+`<dt class="tot">Net room area</dt><dd class="tot">${net.toFixed(1)} m²</dd><dt>Corridor frontage</dt><dd>${(u.plan.W*CORR).toFixed(1)} m²</dd>`;
+  $('iRooms').innerHTML=rm.map(q=>`<dt>${escapeHtml(q.n)}</dt><dd>${q.a.toFixed(1)} m²</dd>`).join('')+`<dt class="tot">Total net area</dt><dd class="tot">${net.toFixed(1)} m²</dd><dt class="tot">Total gross area</dt><dd class="tot">${gross(u).toFixed(1)} m²</dd><dt class="tot">Efficiency</dt><dd class="tot">${eff(u).toFixed(1)}%</dd><dt>Corridor frontage</dt><dd>${(u.plan.W*CORR).toFixed(1)} m²</dd>`;
   $('iNote').textContent=u.pri==='other'&&u.other?`Brief: "${u.other}"`:(u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Placeholder layout. It will be replaced by the matching unit from the printed PAD set.':'Matches the printed PAD set.'):'Generated on screen from the options chosen. Not part of the printed set.');
   info.hidden=false;
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function stats(){
-  const c=[0,0,0,0,0];let a=0;units.forEach(u=>{c[u.n]++;a+=area(u);});
+  const c=[0,0,0,0,0];let a=0;let nt=0;units.forEach(u=>{c[u.n]++;a+=gross(u);nt+=netA(u);});
   const lab=['Studio','1B','2B','3B','4B'];
   const ad=added().length;
-  $('stats').innerHTML=`<span><b>${units.length}</b> unit${units.length>1?'s':''}${ad?` (${ad} added)`:''}</span><span><b>${a.toFixed(1)}</b> m² gross</span><span>${c.map((v,i)=>v?`${lab[i]} <b>${v}</b>`:'').filter(Boolean).join(' · ')}</span>`;
+  $('stats').innerHTML=`<span><b>${units.length}</b> unit${units.length>1?'s':''}${ad?` (${ad} added)`:''}</span><span><b>${a.toFixed(1)}</b> m² gross</span><span><b>${nt.toFixed(1)}</b> m² net</span><span><b>${(nt/a*100).toFixed(0)}%</b> efficient</span><span>${c.map((v,i)=>v?`${lab[i]} <b>${v}</b>`:'').filter(Boolean).join(' · ')}</span>`;
 }
 function scalebar(){
   const sb=$('scalebar');const w=5*S+40;sb.setAttribute('width',Math.ceil(w));
@@ -868,6 +893,12 @@ $('iClose').onclick=()=>{showInfo(null);render();};
 $('grp').onclick=()=>{grouped=!grouped;render();save();};
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};
 $('zout').onclick=()=>{zoom=Math.max(0.4,zoom/1.2);render();save();};
+const navL=$('navL'),navR=$('navR');
+function navUpdate(){const m=scroller.scrollWidth-scroller.clientWidth;navL.hidden=scroller.scrollLeft<4;navR.hidden=m<=4||scroller.scrollLeft>=m-4;}
+const navGo=d=>scroller.scrollBy({left:d*scroller.clientWidth*0.8,behavior:reduce?'auto':'smooth'});
+navL.onclick=()=>navGo(-1);navR.onclick=()=>navGo(1);
+scroller.addEventListener('scroll',navUpdate,{passive:true});
+new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
 load();
