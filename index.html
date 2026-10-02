@@ -115,7 +115,24 @@ footer svg{display:block}
 .wF{fill:var(--wall)}
 .win rect{fill:var(--sheet);stroke:var(--wall-edge);stroke-width:.8}
 .win path{stroke:var(--ink-2);stroke-width:.7;fill:none}
-.lf>*{fill:var(--furn-fill);stroke:var(--furn);stroke-width:.9}
+.lf>*{fill:var(--mt-fab);stroke:var(--mt-fab-l);stroke-width:.9}
+/* furniture materials: warm grey upholstery, linen bedding, oak and walnut timber, charcoal TV */
+:root{--mt-fab:#D3CFC8;--mt-fab-d:#BCB6AD;--mt-fab-l:#6E6860;--mt-lin:#ECE7DE;--mt-lin-w:#F9F7F2;--mt-lin-l:#857B6F;--mt-oak:#CDA77E;--mt-oak-l:#7C5A3A;--mt-wal:#9B7250;--mt-wal-l:#5A3E28;--mt-rug:#DCD2C3;--mt-rug-l:#A69580;--mt-tv:#4B4845;--mt-tv-l:#2C2A28}
+.m-sofa .lf>*,.m-arm .lf>*{fill:var(--mt-fab);stroke:var(--mt-fab-l)}
+.m-sofa .lf>rect:nth-child(n+2),.m-arm .lf>rect:nth-child(n+2){fill:var(--mt-fab-d)}
+.m-sofa .lf>.ln,.m-arm .lf>.ln{fill:none}
+.m-bed .lf>*{fill:var(--mt-lin);stroke:var(--mt-lin-l)}
+.m-bed .lf>rect:nth-child(n+2){fill:var(--mt-lin-w)}
+.m-bed .lf>.ln{fill:none}
+.m-ctable .lf>*,.m-rtable .lf>*,.m-ltable .lf>*,.m-desk .lf>*{fill:var(--mt-oak);stroke:var(--mt-oak-l)}
+.m-rtable g.lf[transform]>*,.m-ltable g.lf[transform]>*,.m-desk g.lf[transform]>*,.m-island .lf>*,.m-ns .lf>*,.m-dresser .lf>*{fill:var(--mt-wal);stroke:var(--mt-wal-l)}
+.m-desk g.lf:not([transform])>rect:nth-child(2){fill:#E4E1DC;stroke:#6E6860}
+.m-ns .lf>circle{fill:#F3EBD8;stroke:var(--mt-wal-l)}
+.m-rtable .ln,.m-ltable .ln,.m-desk .ln,.m-dresser .ln,.m-ns .ln{fill:none}
+.m-rug .lf>.rug{fill:var(--mt-rug);stroke:var(--mt-rug-l);stroke-opacity:.7}
+.m-tv .lf>*{fill:var(--mt-tv);stroke:var(--mt-tv-l)}
+.m-tv .lf>.ln{stroke:#9A948D;fill:none}
+.m-dog .lf>*{fill:#B99C7C;stroke:#6E5238}
 .lf>.ln,.fx>.ln{fill:none}
 .lf>.rug{fill:var(--rug);stroke:var(--furn);stroke-opacity:.45}
 .fx>*{fill:var(--fx-fill);stroke:var(--fx);stroke-width:.9}
@@ -789,7 +806,7 @@ function wallsSVG(ws){let a='',b='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f
 function unitSVG(u){
   const P=u.plan;let s='';
   P.floors.forEach(fl=>{const cl=fl.t==='base'?'base':fl.t==='wood'?'wd-p':'tl-p';s+=`<rect class="${cl}" x="${f(fl.x)}" y="${f(fl.y)}" width="${f(fl.w)}" height="${f(fl.h)}"/>`;});
-  P.furn.forEach((p,i)=>{s+=`<g${i===P.mvi?' class="fp"':''} transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})">${piece(p)}</g>`;});
+  P.furn.forEach((p,i)=>{s+=`<g class="m-${p.k}" transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})">${piece(p)}</g>`;});
   P.marks.forEach(m=>s+=`<circle class="turn" cx="${f(m.x)}" cy="${f(m.y)}" r="${m.r}"/>`);
   P.doors.forEach(d=>{const ex=d.hx+d.ox*d.w,ey=d.hy+d.oy*d.w,cx=d.hx+d.cx*d.w,cy=d.hy+d.cy*d.w;const sw=(d.cx*d.oy-d.cy*d.ox)>0?1:0;
     s+=`<path class="darc" d="M${f(cx)} ${f(cy)}A${d.w} ${d.w} 0 0 ${sw} ${f(ex)} ${f(ey)}"/><path class="dleaf" d="M${f(d.hx)} ${f(d.hy)}L${f(ex)} ${f(ey)}"/>`;});
