@@ -383,12 +383,7 @@ body.no-social :is(#lTabs,#lTitle,#lGoogle,#lDemoG,.or,#lForm,#lDemo,#pOut,#hSha
 #mob{display:none}
 body.mob .bar,body.mob footer,body.mob .nav,body.mob .add{display:none!important}
 body.mob #mob{display:contents}
-body.mob .mtop{order:1}body.mob .mfocus{order:2}body.mob .stage{order:3}body.mob .mbot{order:4}
-.mfocus{display:none}
-body.mob .mfocus{display:flex;align-items:baseline;gap:8px;padding:2px 12px 4px;height:28px;box-sizing:border-box;flex:none;white-space:nowrap;overflow:hidden}
-.mfocus b{font-size:15px;font-weight:700;letter-spacing:.03em}
-.mfocus span{font-family:var(--narrow);font-size:14px}
-.mfocus i{font-family:var(--narrow);font-style:italic;color:var(--accent);font-size:13px;margin-left:auto;overflow:hidden;text-overflow:ellipsis}
+body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .tb.danger{border-color:#B3261E;color:#B3261E}
 .dels{margin:0 0 12px}
 .toast .tb{margin-left:12px;border-color:#fff;color:#fff;padding:3px 8px}
@@ -423,7 +418,21 @@ body.mob .mfocus{display:flex;align-items:baseline;gap:8px;padding:2px 12px 4px;
 .mi[aria-pressed="true"]{border-color:var(--accent);background:var(--furn-fill)}
 .mi:disabled{opacity:.4}
 .mi.mclose{text-align:center;border-color:var(--ink)}
-@media (prefers-reduced-motion:reduce){.unit.new,.add.pulse::after{animation:none}}
+/* phone: less chrome and less text */
+.mmid{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.mmid .mfocus{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mmid .mfocus b{font-weight:700;margin-right:5px}
+.mmid .mfocus span{font-family:var(--narrow);color:var(--ink-2)}
+.mmid .mcount{font-size:12px;min-width:0;color:var(--ink-2)}
+body.mob .mph{display:none}
+body.mob .mtop{height:34px}
+body.mob .mbot{height:46px;padding:0 10px 0 4px}
+.madd{margin-left:0;width:40px;height:40px;padding:0;justify-content:center;gap:0;flex:none}
+body.mob .msheet{grid-template-columns:1fr 1fr;gap:6px;padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px))}
+body.mob .msheet .mstats,body.mob .msheet .mclose{grid-column:1/-1}
+body.mob .mi{padding:10px 12px;font-size:14px}
+.mstats{padding:0 2px 4px}
+body.mob #track{min-height:100%;align-items:center}@media (prefers-reduced-motion:reduce){.unit.new,.add.pulse::after{animation:none}}
 </style>
 
 </head>
@@ -520,17 +529,16 @@ body.mob .mfocus{display:flex;align-items:baseline;gap:8px;padding:2px 12px 4px;
 
 <div id="mob">
   <div class="mtop"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
-  <div class="mfocus" id="mFocus"></div>
   <div class="mbot">
     <button class="mbtn mnav" id="mPrev" aria-label="Previous unit"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
-    <span class="mcount" id="mCount">1 / 1</span>
+    <div class="mmid"><span class="mfocus" id="mFocus"></span><span class="mcount" id="mCount">1 / 1</span></div>
     <button class="mbtn mnav" id="mNext" aria-label="Next unit"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button>
-    <button class="madd" id="mAdd">New unit <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button class="madd" id="mAdd" aria-label="New unit"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   </div>
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
+  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mDetail" aria-pressed="false">Show dimensions</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
   <button class="mi" id="mUndo">Undo last added unit</button>
   <button class="mi" id="mReset">Restore baseline</button>
   <button class="mi mclose" id="mClose2">Close</button>
@@ -1308,7 +1316,7 @@ const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
 function snapshot(){return{base:PROJ?PROJ.base:false,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
-  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom}));}catch(e){}
+  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail}));}catch(e){}
   if(!PROJ)return;
   try{localStorage.setItem('pad.proj.'+PROJ.id,JSON.stringify(snapshot()));}catch(e){}
   clearTimeout(saveT);saveT=setTimeout(flushSave,500);
@@ -1332,16 +1340,17 @@ const area=u=>u.plan.W*u.plan.D;
 const gross=u=>grossArea(u.plan);
 const netA=u=>netArea(u.plan);
 const eff=u=>netA(u)/gross(u)*100;
-let DM=8.4,BM=0;
+let DM=8.4,BM=0,detail=false;
+const lite=()=>isMob&&!detail;   // phones show room names and areas only, until Show dimensions is on
 
 /* ---------- render ---------- */
 const svg=$('strip'),scroller=$('scroller'),addBtn=$('add');
 let S=40,PADL=36,TOP=70;
 function computeScale(){
-  const h=scroller.clientHeight;TOP=grouped?88:70;
-  const avail=h-TOP-66-12;
+  const h=scroller.clientHeight;TOP=isMob?(lite()?36:60):(grouped?88:70);
+  const avail=h-TOP-(isMob&&lite()?42:66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)));
-  if(isMob)s=Math.max(18,Math.min(s,scroller.clientWidth*0.7/6.5));   // phone: the middle unit takes about 70% of the width
+  if(isMob)s=Math.max(18,Math.min(s,scroller.clientWidth*0.82/6.5));   // phone: the middle unit takes about 70% of the width
   S=s*zoom;TOP+=BM*S;
   const first=ordered()[0];PADL=isMob&&first?Math.max(12,(scroller.clientWidth-first.plan.W*S)/2):36;
 }
@@ -1392,25 +1401,26 @@ function render(){
   list.forEach(u=>{
     const X=PADL+u.ox*S,Wp=u.plan.W*S,mm=Math.round(u.plan.W*1000);
     let t='';
-    const bmPx=BM*S,d1=TOP-30-bmPx,d2=TOP-10-bmPx,fs=Wp<64?9:11;
+    const bmPx=BM*S,d1=lite()?TOP-14-bmPx:TOP-30-bmPx,d2=lite()?d1:TOP-10-bmPx,fs=Wp<64?9:11;
     const uy=TOP+u.oy*S;
     t+=`<path class="ext" d="M${f(X)} ${TOP-42-bmPx}V${f(uy-3)}M${f(X+Wp)} ${TOP-42-bmPx}V${f(uy-3)}"/>`;
     t+=`<path class="dim" d="M${f(X)} ${d1}H${f(X+Wp)}M${f(X)} ${d2}H${f(X+Wp)}M${f(X-4)} ${d1+4}l8 -8M${f(X+Wp-4)} ${d1+4}l8 -8M${f(X-4)} ${d2+4}l8 -8M${f(X+Wp-4)} ${d2+4}l8 -8"/>`;
-    t+=`<text class="dt" x="${f(X+Wp/2)}" y="${d1-5}" font-size="${fs}">${mm}</text><text class="dt" x="${f(X+Wp/2)}" y="${d2-5}" font-size="${fs}">${ftin(mm)}</text>`;
+    t+=`<text class="dt" x="${f(X+Wp/2)}" y="${d1-5}" font-size="${fs}">${mm}</text>${lite()?``:`<text class="dt" x="${f(X+Wp/2)}" y="${d2-5}" font-size="${fs}">${ftin(mm)}</text>`}`;
     const ly=Hc+16,a=gross(u),cxp=f(X+Wp/2);
     const tag=u.minimal?'MIN. STUDIO':TYPE(u.n);
     t+=`<path class="${u.src==='base'?'mark-b':'mark-a'}" d="M${f(X+3)} ${f(Hc+2)}H${f(X+Wp-3)}"/>`;
     const narrow=Wp<118;
     t+=`<text class="lb1" x="${cxp}" y="${ly+2}" font-size="${fs}">${tagOf(u)}</text>`;
     t+=`<text class="lb2" x="${cxp}" y="${ly+15}" font-size="${fs}">${TYPEU(u)}${!narrow&&Math.abs(u.plan.D-8.4)>0.005?' · L '+u.plan.D.toFixed(2)+' m':''}</text>`;
+    if(!lite()){
     t+=`<text class="lb2" x="${cxp}" y="${ly+28}" font-size="${fs}">${netA(u).toFixed(1)} net · ${a.toFixed(1)} gross m²</text>`;
     t+=`<text class="lb2" x="${cxp}" y="${ly+41}" font-size="${fs}">${eff(u).toFixed(0)}% efficient</text>`;
     t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${escapeHtml(priText(u))}</text>`;
-    t+=wallDims(u,X,uy);
-    t+=openingDims(u,X,uy);
+    }
+    if(!lite()){t+=wallDims(u,X,uy);t+=openingDims(u,X,uy);}
     t+=roomLabels(u,X,uy);
     const cfs=Math.max(7,Math.min(10.5,S*0.21));
-    t+=`<text class="cl" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S-1)}" font-size="${f(cfs)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S+cfs)}" font-size="${f(cfs)}">${(u.plan.W*CORR).toFixed(1)} m²</text>`;
+    if(!lite())t+=`<text class="cl" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S-1)}" font-size="${f(cfs)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S+cfs)}" font-size="${f(cfs)}">${(u.plan.W*CORR).toFixed(1)} m²</text>`;
     const hit=`<rect class="hit" x="${f(X)}" y="${TOP-44-bmPx}" width="${f(Wp)}" height="${f(Hc-TOP+80+bmPx)}"/>`;
     const sel=u===selected?`<rect class="sel" x="${f(X-4)}" y="${f(uy-4)}" width="${f(Wp+8)}" height="${f(u.plan.D*S+8)}"/>`:'';
     o+=`<g class="unit${u===lastNew?' new':''}" data-idx="${u.idx}"><g transform="translate(${f(X)} ${f(uy)}) scale(${f(S)})">${unitSVG(u)}</g>${t}${sel}${hit}</g>`;
@@ -1446,8 +1456,8 @@ function occMarkup(u){let pp='';u.people.forEach((p,i)=>{pp+=`<path class="trail
 function roomLabels(u,X,uy,map,sc,fsz){
   const SS=sc||S,fs=fsz||Math.max(6.5,Math.min(10.5,SS*0.21)),df=Math.max(5.8,fs*0.82);let t='';
   u.plan.rooms.forEach(q=>{const pt=map?map(q.lx,q.ly):[X+q.lx*SS,uy+q.ly*SS];const x=f(pt[0]),y=pt[1],nm=escapeHtml(q.n.toUpperCase()),ar=q.a.toFixed(1)+' m²',dm=Math.round(q.w*1000)+' × '+Math.round(q.h*1000);
-    if(q.h*SS<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text><text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`;
-    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text><text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`;});
+    if(q.h*SS<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text>${lite()?``:`<text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`}`;
+    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text>${lite()?``:`<text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`}`;});
   return t;
 }
 function openingDims(u,X,uy){
@@ -1501,6 +1511,7 @@ function mobSync(){
   $('mStats').innerHTML=$('stats').innerHTML;
   $('mBadge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);
   $('mUndo').disabled=!added().length;$('mReset').hidden=!(PROJ&&PROJ.base);$('mReset').disabled=!added().length&&!removedBase.length;
+  $('mDetail').setAttribute('aria-pressed',String(detail));$('mDetail').textContent=detail?'Hide dimensions':'Show dimensions';
   mobFocus();
 }
 function mobFocus(){
@@ -1511,7 +1522,7 @@ function mobFocus(){
   mobIdx=best;const u=list[best];
   $('mCount').textContent=`${best+1} / ${list.length}`;
   $('mPrev').disabled=best<=0;$('mNext').disabled=best>=list.length-1;
-  $('mFocus').innerHTML=`<b>${tagOf(u)}</b><span>${escapeHtml(TYPEU(u))} · ${netA(u).toFixed(1)} net m²</span><i>${escapeHtml(priText(u))}</i>`;
+  $('mFocus').innerHTML=`<b>${tagOf(u)}</b><span>${escapeHtml(TYPEU(u))}</span>`;
 }
 function mobGo(i,smooth){
   const list=mobList();if(!list.length)return;
@@ -2552,6 +2563,7 @@ $('iDel').onclick=()=>{
 };
 $('mZin').onclick=()=>{$('mMenu').hidden=true;$('zin').click();};
 $('mZout').onclick=()=>{$('mMenu').hidden=true;$('zout').click();};
+$('mDetail').onclick=()=>{detail=!detail;$('mMenu').hidden=true;render();save();};
 
 /* ---------- tools ---------- */
 $('undo').onclick=()=>{const ad=added();if(ad.length){const last=ad.reduce((m,x)=>x.idx>m.idx?x:m);units=units.filter(u=>u!==last);nextIdx=last.idx;if(selected===last)showInfo(null);render();save();}};
@@ -2636,7 +2648,7 @@ async function openProject(id){
     closeProject();
     PROJ={id:p.id,name:p.name,role:p.role,base:!!(p.data&&p.data.base)};
     loadData(p.data);
-    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;}}catch(e){}
+    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;}}catch(e){}
     showView('app');setMob();selected=null;
     $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
     chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
@@ -2734,7 +2746,7 @@ addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
 if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
-try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;}}catch(e){}
+try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
 showView('boot');
 BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
