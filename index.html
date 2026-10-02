@@ -361,6 +361,11 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
         <label class="chk"><input type="checkbox" id="fCorner"> <span><b>Corner unit</b><br><span class="sm2">Windows on two sides. Closes off this end of the strip.</span></span></label>
       </div>
       <p class="lead">Size limits are optional. Leave a field blank and it is sized automatically. Units stay flush along the corridor, so a longer unit extends further toward the exterior.</p>
+      <p class="lead" id="limits"></p>
+      <div class="field" id="minAField" hidden>
+        <span class="lbl">Minimum area</span>
+        <div class="seg wide" id="segMin" role="group" aria-label="Studio minimum area"><button type="button" data-a="37" aria-pressed="true">37 m²</button><button type="button" data-a="41" aria-pressed="false">41 m²</button><button type="button" data-a="55" aria-pressed="false">55 m²</button></div>
+      </div>
       <div class="field">
         <label for="fA">Maximum area</label>
         <div class="inrow"><input id="fA" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 55">
@@ -447,7 +452,7 @@ function planStudio(s,R){
   P.hw(0,W,YB,0.2,[eg]);
   P.door(X1-0.06,YB,-1,0,0,-1,0.86);
   // bath
-  if(pri==='bath')P.fu('tub',X0+bathW/2,YB-0.38,0,{w:Math.min(bathW,1.7),d:0.75});
+  if(pri==='bath'){const tb=TUBS[bigBath?1:0];P.fu('tub',X0+bathW/2,YB-tb.d/2,0,{w:tb.w,d:tb.d});}
   else P.fu('shower',X0+bathW/2,YB-0.46,0,{w:bathW,d:0.9});
   P.fu('van',X0+0.4,bTop+0.27,0,{w:0.7,d:0.5});
   P.fu('wc',X0+0.36,bTop+0.98,270);
@@ -554,7 +559,7 @@ function planMulti(s,R){
     if(b.low==='bath'){
       const tub=pri==='bath'||(b.master&&!o.access);
       if(o.access){P.fu('shower',ax+sg*0.75,YB-0.5,0,{w:1.5,d:1.0});P.fu('wc',ax+sg*(1.5+0.45),YB-0.36,180);P.marks.push({x:x0+b.w/2+sg*0.2,y:ly0+depth/2-0.15,r:0.75});}
-      else if(tub){P.fu('tub',ax+sg*0.8,YB-0.38,0,{w:1.6,d:0.75});P.fu('wc',ax+sg*(1.6+0.45),YB-0.36,180);}
+      else if(tub){const tb=TUBS[pri==='bath'?1:0];P.fu('tub',ax+sg*tb.w/2,YB-tb.d/2,0,{w:tb.w,d:tb.d});P.fu('wc',ax+sg*(tb.w+0.45),YB-0.36,180);}
       else{P.fu('shower',ax+sg*0.5,YB-0.5,0,{w:1.0,d:1.0});P.fu('wc',ax+sg*(1.0+0.45),YB-0.36,180);}
       const dbl=pri==='bath'&&depth>=2.5;
       const vw=dbl?1.4:0.85;
@@ -640,18 +645,86 @@ function planMulti(s,R){
 }
 
 const MAXD=14,MAXW=30,FT=0.3048,FT2=0.09290304;
+/* Building code limits for new studios and 1-bedroom units (Toronto / Ontario). */
+const MINWALL=2.0;                  // minimum wall length, m
+const BED1_W=[6,6.5,7];             // allowed 1-bedroom widths, m
+const STUDIO_A=[37,41,55];          // allowed studio minimum areas, m²
+const LIVDIN_MIN=13.5;              // living/sleeping + dining combined, m²
+const WC_CL=0.457;                  // toilet centreline to side wall, m (18 in)
+const TUBS=[{w:1.524,d:0.762},{w:1.524,d:0.813}]; // standard Ontario tubs: 60x30 in and 60x32 in
+const LIVDIN=/^(Living \/ Sleeping|Sleeping|Living|Dining)$/;
+const livDin=P=>P.rooms.filter(q=>LIVDIN.test(q.n)).reduce((s,q)=>s+q.a,0);
+/* Smallest distance from a toilet centreline to a side wall, in metres. Side = across the bowl; the back wall is not counted. */
+function wcClear(P){
+  let m=Infinity;
+  P.furn.filter(p=>p.k==='wc').forEach(p=>{
+    const lat=p.rot%180===0?'x':'y';
+    P.walls.forEach(w=>{
+      const t=lat==='x'?w.w:w.h,l=lat==='x'?w.h:w.w;if(t>0.3||l<=0.3)return;
+      const c=lat==='x'?p.x:p.y,o=lat==='x'?p.y:p.x,a=lat==='x'?w.x:w.y,b=a+t,oa=lat==='x'?w.y:w.x;
+      if(oa+l<o-0.3||oa>o+0.3||(c>a&&c<b))return;
+      m=Math.min(m,Math.abs(c-a),Math.abs(c-b));
+    });
+  });
+  return m;
+}
 function sizeReq(n,pri,o){
   if(n===0)return{mw:(pri==='bath'||o.access)?3.3:2.9,md:(pri==='bath'||o.access)?7.2:7.0};
   const cd=pri==='storage'?0.75:0.62,hd=o.access?1.5:1.1;
   return{mw:f(0.2+0.1*n+n*(o.access?2.9:2.6)+(o.access?3.4:3.0)),md:f(0.3+2.9+cd+0.2+hd+2.0+0.2)};
 }
+/* 1-bedroom units come in set widths. A blank width picks the nearest set width that fits the other limits. */
+function solveOneBed(spec,defW,mw,md){
+  const ok=BED1_W.filter(w=>w>=mw-1e-6),list=ok.join(', ').replace(/, ([^,]*)$/,' or $1')+' m';
+  const fits=w=>!spec.maxA||w*(spec.Lt||md)<=spec.maxA+0.005;
+  let W=null;
+  if(spec.Wt){W=ok.find(w=>Math.abs(w-spec.Wt)<0.02);if(!W)return{err:`A 1-bedroom unit must be ${list} wide.`};}
+  else{
+    const c=ok.filter(fits);
+    if(!c.length)return{err:`${spec.maxA.toFixed(1)} m² is too small. The smallest 1-bedroom unit is ${(ok[0]*(spec.Lt||md)).toFixed(1)} m².`};
+    W=c.find(w=>w>=defW-0.005)||c[c.length-1];
+  }
+  let D=spec.Lt||8.4;
+  if(spec.maxA&&W*D>spec.maxA+0.005){
+    if(!spec.Lt)D=Math.max(md,Math.floor(spec.maxA/W*100)/100);
+    if(W*D>spec.maxA+0.005)return{err:`${spec.maxA.toFixed(1)} m² is too small. With these inputs the smallest 1-bedroom unit is ${(W*(spec.Lt||md)).toFixed(1)} m².`};
+  }
+  return{W:f(W),D:f(D),fit:f(W)};
+}
+/* Studios have a minimum area (37, 41 or 55 m²) and a minimum combined living/sleeping and dining area. */
+function solveStudio(spec,defW,mw,md){
+  const A0=spec.minA||STUDIO_A[0],cl=x=>Math.ceil(x*100-1e-6)/100,fl=x=>Math.floor(x*100)/100;
+  if(spec.maxA&&spec.maxA<A0-0.005)return{err:`A studio of at least ${A0} m² needs a maximum area of ${A0} m² or more.`};
+  let W=spec.Wt,D=spec.Lt;
+  if(!D&&!W){D=8.4;W=Math.max(defW,cl(A0/D));}
+  else if(!W)W=Math.max(defW,cl(A0/D));
+  else if(!D)D=Math.max(8.4,cl(A0/W));
+  if(spec.maxA&&W*D>spec.maxA+0.005){
+    if(!spec.Wt)W=Math.max(mw,fl(spec.maxA/D));
+    if(W*D>spec.maxA+0.005&&!spec.Lt)D=Math.max(md,fl(spec.maxA/W));
+  }
+  if(W>MAXW||D>MAXD)return{err:`A ${A0} m² studio does not fit within ${MAXW} m by ${MAXD} m.`};
+  if(W*D<A0-0.005)return{err:`A studio must be at least ${A0} m². These sizes give ${(W*D).toFixed(1)} m².`};
+  if(spec.maxA&&W*D>spec.maxA+0.005)return{err:`${spec.maxA.toFixed(1)} m² is too small. With these inputs the smallest studio is ${(W*D).toFixed(1)} m².`};
+  const ld=(w,d)=>livDin(buildUnit(Object.assign({},spec,{W:f(w),D:f(d),idx:0})));
+  while(ld(W,D)<LIVDIN_MIN-0.005){
+    const grow=!spec.Wt?[f(W+0.05),D]:!spec.Lt?[W,f(D+0.05)]:null;
+    if(!grow||grow[0]>MAXW||grow[1]>MAXD||(spec.maxA&&grow[0]*grow[1]>spec.maxA+0.005))
+      return{err:`Living/sleeping and dining need at least ${LIVDIN_MIN} m² combined. These sizes give ${ld(W,D).toFixed(1)} m².`};
+    [W,D]=grow;
+  }
+  return{W:f(W),D:f(D),fit:f(W)};
+}
 function solveSize(spec){
   const o=spec.pri==='other'?parseOther(spec.other):{};
-  const {mw,md}=sizeReq(spec.n,spec.pri,o);
+  const sz=sizeReq(spec.n,spec.pri,o),md=sz.md,mw=Math.max(sz.mw,MINWALL);
   const name=spec.n===0?'studio':spec.n+'-bedroom unit';
   const defW=buildUnit(Object.assign({},spec,{W:null,D:8.4,idx:0})).W;
-  if(spec.Wt&&(spec.Wt<mw||spec.Wt>MAXW))return{err:spec.Wt<mw?`A ${name} needs a width of at least ${mw.toFixed(2)} m.`:`Width can be at most ${MAXW} m.`};
+  if(spec.Wt&&spec.Wt<MINWALL)return{err:`Walls must be at least ${MINWALL} m long.`};
+  if(spec.n!==1&&spec.Wt&&(spec.Wt<mw||spec.Wt>MAXW))return{err:spec.Wt<mw?`A ${name} needs a width of at least ${mw.toFixed(2)} m.`:`Width can be at most ${MAXW} m.`};
   if(spec.Lt&&(spec.Lt<md||spec.Lt>MAXD))return{err:spec.Lt<md?`A ${name} needs a length of at least ${md.toFixed(2)} m.`:`Length can be at most ${MAXD} m.`};
+  if(spec.n===0)return solveStudio(spec,defW,mw,md);
+  if(spec.n===1)return solveOneBed(spec,defW,mw,md);
   let W=spec.Wt||defW,D=spec.Lt||8.4;
   if(spec.maxA&&W*D>spec.maxA){
     if(!spec.Wt)W=Math.max(mw,spec.maxA/D);
@@ -1214,7 +1287,7 @@ function readSize(){
   cv($('cL'),Lt,v=>lU==='ft'?`= ${v.toFixed(2)} m`:`= ${ftin(Math.round(v*1000))}`);
   if([A,Wt,Lt].some(Number.isNaN))return{err:'Check the highlighted values.'};
   if(endCorner(place))return{err:endCorner(place==='L'?'R':'L')?'Both ends already have corner units. Undo one of them to add more units.':`The ${place==='L'?'left':'right'} end already has a corner unit. Add this unit at the other end.`};
-  const spec={n:pick.n,pri:pick.pri,other:pick.other,seed:pick.seed,maxA:A||null,Wt:Wt||null,Lt:Lt||null,side:place,corner:$('fCorner').checked?place:null};
+  const spec={n:pick.n,pri:pick.pri,other:pick.other,seed:pick.seed,minA:pick.n===0?(pick.minA||STUDIO_A[0]):null,maxA:A||null,Wt:Wt||null,Lt:Lt||null,side:place,corner:$('fCorner').checked?place:null};
   const r=solveSize(spec);return Object.assign(spec,r);
 }
 function updateSize(){
@@ -1223,13 +1296,22 @@ function updateSize(){
   el.className='result';el.innerHTML=`Result <b>${r.W.toFixed(2)} × ${r.D.toFixed(2)} m</b> = <b>${(r.W*r.D).toFixed(1)} m²</b>${r.maxA?` <span style="color:var(--ink-2)">(max ${r.maxA.toFixed(1)} m²)</span>`:''}`;
   $('gen3').disabled=false;
 }
-function toStep3(){pick.seed=Math.floor(Math.random()*1e9);$('s2').hidden=true;$('s3').hidden=false;$('mStep').textContent='Step 3 of 3';updateSize();setTimeout(()=>$('fA').focus(),30);}
+const LIMITS={
+  0:`Studio limits: at least 37, 41 or 55 m² (your choice below), living/sleeping and dining at least ${LIVDIN_MIN} m² combined, toilet at least 18 in from a side wall, standard 60 in tubs, walls at least ${MINWALL} m.`,
+  1:`1-bedroom limits: width of 6, 6.5 or 7 m, toilet at least 18 in from a side wall, standard 60 in tubs, walls at least ${MINWALL} m.`
+};
+function setMinA(a){pick.minA=a;$('segMin').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.a===a)));}
+$('segMin').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setMinA(+b.dataset.a);updateSize();});
+function toStep3(){pick.seed=Math.floor(Math.random()*1e9);
+  setMinA(STUDIO_A[0]);$('minAField').hidden=pick.n!==0;
+  $('limits').textContent=LIMITS[pick.n]||`Walls must be at least ${MINWALL} m long.`;
+  $('fW').placeholder=pick.n===1?'6, 6.5 or 7':'auto';$('s2').hidden=true;$('s3').hidden=false;$('mStep').textContent='Step 3 of 3';updateSize();setTimeout(()=>$('fA').focus(),30);}
 ['fA','fW','fL'].forEach(id=>$(id).addEventListener('input',updateSize));
 $('segP').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setPlace(b.dataset.p);updateSize();});
 $('fCorner').addEventListener('change',updateSize);
 function segInit(id,set){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));set(b.dataset.u);updateSize();});}
 segInit('segA',u=>{aU=u;$('fA').placeholder=u==='ft2'?'e.g. 600':'e.g. 55';});
-segInit('segL',u=>{lU=u;$('fW').placeholder='auto';$('fL').placeholder=u==='ft'?"27'-6\"":'8.4';});
+segInit('segL',u=>{lU=u;$('fW').placeholder=pick.n===1?(u==='ft'?"19'-8\", 21'-4\" or 23'-0\"":'6, 6.5 or 7'):'auto';$('fL').placeholder=u==='ft'?"27'-6\"":'8.4';});
 $('back3').onclick=()=>{$('s3').hidden=true;$('s2').hidden=false;$('mStep').textContent='Step 2 of 3';};
 $('gen3').onclick=()=>{const r=readSize();if(r.err)return;generate(r);};
 $('s3').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'&&!$('gen3').disabled)$('gen3').click();});
@@ -1262,7 +1344,7 @@ scroller.addEventListener('scroll',navUpdate,{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
-if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,gridOf,isFree,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 load();
 setMob();
 render();

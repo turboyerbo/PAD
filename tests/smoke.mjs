@@ -41,6 +41,23 @@ try {
   const order = await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
   if (order[0] !== 'L2' || order[order.length - 1] !== 'R0') errs.push('unexpected unit order: ' + order.join(' '));
 
+  // Building code limits on new studios and 1-bedroom units
+  const lim = await p.evaluate(() => {
+    const T = window.__pad, out = [];
+    for (const u of T.units()) {
+      if (u.src !== 'add' || u.n > 1) continue;
+      const a = u.plan.W * u.plan.D, tag = (u.corner || '') + u.n + u.pri;
+      if (u.n === 0 && a < 37 - 0.01) out.push(`${tag}: studio area ${a.toFixed(1)} m2 is under 37`);
+      if (u.n === 0 && T.livDin(u.plan) < 13.5 - 0.01) out.push(`${tag}: living and dining ${T.livDin(u.plan).toFixed(1)} m2 is under 13.5`);
+      if (u.n === 1 && ![6, 6.5, 7].some(w => Math.abs(w - u.plan.W) < 0.01)) out.push(`${tag}: 1-bed width ${u.plan.W} is not 6, 6.5 or 7`);
+      if (u.plan.W < 2) out.push(`${tag}: wall under 2 m`);
+      if (T.wcClear(u.plan) < 0.457 - 0.001) out.push(`${tag}: toilet ${T.wcClear(u.plan).toFixed(3)} m from a side wall`);
+      for (const f of u.plan.furn) if (f.k === 'tub' && !(Math.abs(f.w - 1.524) < 0.001 && (Math.abs(f.d - 0.762) < 0.001 || Math.abs(f.d - 0.813) < 0.001))) out.push(`${tag}: tub ${f.w} x ${f.d} is not 60x30 or 60x32 in`);
+    }
+    return out;
+  });
+  errs.push(...lim);
+
   const col = await p.evaluate(async () => {
     const T = window.__pad; let bad = 0, n = 0;
     for (let k = 0; k < 60; k++) {
