@@ -19,7 +19,7 @@
 <style>
 /* Layout: one horizontal drawing sheet; units run left to right on a shared corridor, arrow button docked to the last unit. */
 :root{
-  --paper:#F2F5F7; --sheet:#FFFFFF; --ink:#153243; --ink-2:#4B4F58; --rule:#CECECE; --navy:#153243; --blue:#0274BE;
+  --paper:#F2F5F7; --sheet:#FFFFFF; --ink:#153243; --ink-2:#4B4F58; --rule:#CECECE; --navy:#153243; --ht:#6F8797; --blue:#0274BE;
   --wall:#C6C5BD; --wall-edge:#3D3C36; --fx:#78766B; --fx-fill:#FFFEF8;
   --furn:#2BA6DC; --furn-fill:#EAF7FC; --rug:#DDF1F9; --plant:#6CB23D; --plant-fill:#DCEFC8;
   --grain:#E3E6E8; --tile:#DADEE0; --dots:#C7CBCD;
@@ -120,8 +120,13 @@ footer svg{display:block}
 .cline{stroke:var(--ink-2);stroke-width:.6;fill:none}
 .dim{stroke:var(--ink);stroke-width:.7;fill:none}
 .ext{stroke:var(--ink-2);stroke-width:.5;fill:none}
-.dim2{stroke:var(--accent);stroke-width:.8;fill:none}
-.wdt{font-family:var(--narrow);font-weight:600;fill:var(--accent);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3.2px;stroke-linejoin:round;font-variant-numeric:tabular-nums}
+.dim2{stroke:var(--ht);stroke-width:.8;fill:none}
+.htl{stroke:var(--ht);stroke-width:.6;fill:none}
+.ht{font-family:var(--narrow);fill:var(--ht);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:2.6px;stroke-linejoin:round;font-variant-numeric:tabular-nums;pointer-events:none}
+.pp.w .bd{fill:#F6CFDC;stroke:#C2547E}.pp.w .hd,.pp.w .hr{fill:#C2547E;stroke:#C2547E}.pp.w .ft{fill:#C2547E}
+.pp.c .bd{fill:#CFEBD9;stroke:#2E8B57}.pp.c .hd{fill:#2E8B57;stroke:#2E8B57}.pp.c .ft{fill:#2E8B57}
+.pet{pointer-events:none}.pet .pb{fill:#C99A6B;stroke:#7A4E2B;stroke-width:.9}.pet .pd{fill:#7A4E2B;stroke:#7A4E2B}.pet.cat .pb{fill:#B9BEC4;stroke:#4B4F58}.pet.cat .pd{fill:#4B4F58;stroke:#4B4F58}
+.wdt{font-family:var(--narrow);font-weight:600;fill:var(--ht);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3.2px;stroke-linejoin:round;font-variant-numeric:tabular-nums}
 .dt{font-family:var(--narrow);fill:var(--ink);text-anchor:middle;font-variant-numeric:tabular-nums}
 .lb1{font-family:var(--display);font-weight:600;fill:var(--ink);text-anchor:middle;letter-spacing:.05em}
 .lb2{font-family:var(--narrow);fill:var(--ink-2);text-anchor:middle;font-variant-numeric:tabular-nums}
@@ -657,19 +662,28 @@ function makeUnit(spec){
   const R=rng(u.seed*31+7);
   const count=u.n===0?1:Math.max(1,Math.min(4,u.n+(R()<0.5?1:0)));
   const P=u.plan;
+  // pets: any drawn dog becomes a live one; otherwise some units get a dog or a cat
+  const di=P.furn.findIndex(p=>p.k==='dog');let petAt=null,petKind=null;
+  if(di>=0){petAt={x:P.furn[di].x,y:P.furn[di].y};petKind='dog';P.furn.splice(di,1);}
+  else if(u.idx%3===0)petKind='dog';else if(u.idx%2===0)petKind='cat';
   const MV=['ctable','arm','plant'];let mvi=-1;
   for(const k of MV){mvi=P.furn.findIndex(p=>p.k===k);if(mvi>=0)break;}
   P.mvi=mvi>=0?mvi:null;
-  let roles=count===1?(u.idx%3===0?['mover']:['kit']):count===2?(u.idx%2===0?['talk','talk']:['kit','mover']):count===3?['kit','talk','talk']:['kit','talk','talk','mover'];
-  if(mvi<0)roles=roles.map(x=>x==='mover'?'kit':x);
+  let spec2=count===1?(u.idx%3===0?[['mover','m']]:[['kit',u.idx%2===0?'w':'m']]):count===2?(u.idx%2===0?[['talk','m'],['talk','w']]:[['kit','w'],['mover','m'],['play','c']]):count===3?[['kit','w'],['talk','m'],['talk','w'],['play','c']]:[['kit','w'],['talk','m'],['talk','w'],['mover','m'],['play','c']];
+  if(mvi<0)spec2=spec2.map(q=>q[0]==='mover'?['kit','m']:q);
   u.people=[];u.mv={k:0};
   const st=P.nodes.entry||P.nodes[Object.keys(P.nodes)[0]];
   let side=-1;
-  roles.forEach((role,i)=>{
-    const p={x:st.x,y:st.y,cur:P.nodes.entry?'entry':Object.keys(P.nodes)[0],path:[],wait:i*0.8,phase:R()*6,a:R()*360,v:0.7+R()*0.2,R:rng(u.seed*97+i),role,t:R()*10,init:false,face:null,work:0,walking:false};
+  spec2.forEach(([role,type],i)=>{
+    const p={x:st.x,y:st.y,cur:null,path:[],wait:i*0.8,phase:R()*6,a:R()*360,v:(type==='c'?1.05:0.7)+R()*0.2,R:rng(u.seed*97+i),role,type,sc:type==='c'?0.62:1,t:R()*10,init:false,face:null,work:0,walking:false,pt:0};
     if(role==='talk'){p.side=side;side=1;}
     u.people.push(p);
   });
+  u.pets=[];
+  if(petKind){
+    const sp=petAt||(P.nodes.sofa||P.nodes.win||st);
+    u.pets.push({kind:petKind,x:sp.x,y:sp.y,a:R()*360,path:[],wait:1+R()*3,phase:0,v:petKind==='cat'?0.9:0.85,R:rng(u.seed*53+5),u,walking:false});
+  }
   return u;
 }
 const added=()=>units.filter(u=>u.src==='add');
@@ -752,6 +766,7 @@ function render(){
     t+=`<text class="lb2" x="${cxp}" y="${ly+41}" font-size="${fs}">${eff(u).toFixed(0)}% efficient</text>`;
     t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${escapeHtml(priText(u))}</text>`;
     t+=wallDims(u,X,uy);
+    t+=openingDims(u,X,uy);
     t+=roomLabels(u,X,uy);
     const cfs=Math.max(7,Math.min(10.5,S*0.21));
     t+=`<text class="cl" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S-1)}" font-size="${f(cfs)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S+cfs)}" font-size="${f(cfs)}">${(u.plan.W*CORR).toFixed(1)} m²</text>`;
@@ -762,10 +777,12 @@ function render(){
   o+=runWalls;
   // people
   let pp='';
-  list.forEach(u=>u.people.forEach((p,i)=>{pp+=`<g class="pp" data-u="${u.idx}" data-i="${i}"><ellipse class="ft" cx="-0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="ft" cx="0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="bd" cx="0" cy="0" rx="0.23" ry="0.12"/><circle class="hd" cx="0" cy="-0.01" r="0.1"/></g>`;}));
+  list.forEach(u=>{u.people.forEach((p,i)=>{pp+=`<g class="pp ${p.type==='w'?'w':p.type==='c'?'c':''}" data-u="${u.idx}" data-i="${i}"><ellipse class="ft" cx="-0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="ft" cx="0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="bd" cx="0" cy="0" rx="${p.type==='w'?0.19:0.23}" ry="0.12"/>${p.type==='w'?'<ellipse class="hr" cx="0" cy="0.05" rx="0.115" ry="0.14"/>':''}<circle class="hd" cx="0" cy="-0.01" r="${p.type==='w'?0.09:0.1}"/></g>`;});
+    (u.pets||[]).forEach((q,i)=>{pp+=q.kind==='dog'?`<g class="pet dog" data-u="${u.idx}" data-i="${i}"><ellipse class="pb" cx="0" cy="0.04" rx="0.12" ry="0.24"/><circle class="pb" cx="0" cy="-0.26" r="0.09"/><ellipse class="pd" cx="-0.09" cy="-0.24" rx="0.035" ry="0.06"/><ellipse class="pd" cx="0.09" cy="-0.24" rx="0.035" ry="0.06"/><path class="pb tl" d="M0 0.26Q0.04 0.36 0.02 0.42" fill="none" style="stroke-width:1.6"/></g>`:`<g class="pet cat" data-u="${u.idx}" data-i="${i}"><ellipse class="pb" cx="0" cy="0.02" rx="0.085" ry="0.17"/><circle class="pb" cx="0" cy="-0.19" r="0.07"/><path class="pd" d="M-0.06 -0.23L-0.04 -0.3L-0.01 -0.25ZM0.06 -0.23L0.04 -0.3L0.01 -0.25Z"/><path class="pb tl" d="M0 0.18Q0.12 0.28 0.05 0.4" fill="none" style="stroke-width:1.6"/></g>`;});});
   o+=`<g id="ppl" transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})">${pp}</g>`;
   svg.innerHTML=o;
   svg.querySelectorAll('.pp').forEach(el=>{const u=units.find(x=>x.idx==el.dataset.u);const p=u.people[+el.dataset.i];p.el=el;p.fa=el.children[0];p.fb=el.children[1];p.u=u;});
+  svg.querySelectorAll('.pet').forEach(el=>{const u=units.find(x=>x.idx==el.dataset.u);const q=u.pets[+el.dataset.i];q.el=el;q.tail=el.querySelector('.tl');});
   if(lastNew)svg.querySelectorAll(`.pp[data-u="${lastNew.idx}"]`).forEach(el=>el.classList.add('pnew'));
   units.forEach(u=>{u.mvEl=u.plan.mvi!=null?svg.querySelector(`.unit[data-idx="${u.idx}"] .fp`):null;});
   lastNew=null;
@@ -778,11 +795,24 @@ function render(){
   $('grp').setAttribute('aria-pressed',String(grouped));
 }
 function roomLabels(u,X,uy){
-  const fs=Math.max(6.5,Math.min(10.5,S*0.21));let t='';
-  u.plan.rooms.forEach(q=>{const x=f(X+q.lx*S),y=uy+q.ly*S,nm=escapeHtml(q.n.toUpperCase()),ar=q.a.toFixed(1)+' m²';
-    if(q.h*S<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text>`;
-    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text>`;});
+  const fs=Math.max(6.5,Math.min(10.5,S*0.21)),df=Math.max(5.8,fs*0.82);let t='';
+  u.plan.rooms.forEach(q=>{const x=f(X+q.lx*S),y=uy+q.ly*S,nm=escapeHtml(q.n.toUpperCase()),ar=q.a.toFixed(1)+' m²',dm=Math.round(q.w*1000)+' × '+Math.round(q.h*1000);
+    if(q.h*S<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text><text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`;
+    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text><text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`;});
   return t;
+}
+function openingDims(u,X,uy){
+  const P=u.plan;let o='';const fs=S<26?7:8.5;
+  P.doors.forEach(d=>{
+    const ax=X+d.hx*S,ay=uy+d.hy*S,bx=ax+d.cx*d.w*S,by=ay+d.cy*d.w*S,k=-7,px=k*d.ox,py=k*d.oy;
+    o+=`<path class="htl" d="M${f(ax+px)} ${f(ay+py)}L${f(bx+px)} ${f(by+py)}M${f(ax+px*0.4)} ${f(ay+py*0.4)}L${f(ax+px*1.6)} ${f(ay+py*1.6)}M${f(bx+px*0.4)} ${f(by+py*0.4)}L${f(bx+px*1.6)} ${f(by+py*1.6)}"/>`;
+    o+=`<text class="ht" x="${f((ax+bx)/2+px*1.9)}" y="${f((ay+by)/2+py*1.9)}" font-size="${fs}">${Math.round(d.w*1000)}</text>`;
+  });
+  P.wins.forEach(w=>{
+    const x1=X+w.x1*S,x2=X+w.x2*S,y=uy+0.3*S+8;
+    o+=`<path class="htl" d="M${f(x1)} ${f(y)}H${f(x2)}M${f(x1)} ${f(y-3)}V${f(y+3)}M${f(x2)} ${f(y-3)}V${f(y+3)}"/><text class="ht" x="${f((x1+x2)/2)}" y="${f(y+8)}" font-size="${fs}">W ${Math.round((w.x2-w.x1)*1000)}</text>`;
+  });
+  return o;
 }
 function wallDims(u,X,uy){
   const P=u.plan,W=P.W,D=P.D,g={};
@@ -842,13 +872,58 @@ function scalebar(){
 
 /* ---------- people ---------- */
 function bfs(P,a,b){if(a===b)return[a];const prev={[a]:null},q=[a];while(q.length){const c=q.shift();for(const nb of P.adj[c]||[]){if(!(nb in prev)){prev[nb]=c;if(nb===b){const path=[b];let k=c;while(k!==null){path.unshift(k);k=prev[k];}return path;}q.push(nb);}}}return null;}
-const nodePt=(P,id)=>({id,x:P.nodes[id].x,y:P.nodes[id].y});
-function nearestNode(P,x,y){let b=null,bd=1e9;for(const id in P.nodes){const d=Math.hypot(P.nodes[id].x-x,P.nodes[id].y-y);if(d<bd){bd=d;b=id;}}return b;}
-function goTo(p,pts,face){
-  const P=p.u.plan,start=P.adj[p.cur]?p.cur:Object.keys(P.nodes)[0],nn=nearestNode(P,pts[pts.length-1].x,pts[pts.length-1].y);
-  const route=bfs(P,start,nn)||[nn];
-  p.path=route.slice(1).map(id=>nodePt(P,id)).concat(pts.map(q=>({id:null,x:q.x,y:q.y})));
-  p.face=face;
+/* Obstacle grid (0.1 m cells): walls and furniture inflated by body radius, then A* with line-of-sight smoothing so people walk round furniture. */
+const FDIM={ns:[.44,.44],arm:[.8,.8],sink:[.7,.44],cook:[.6,.54],fridge:[.74,.7],wc:[.4,.7],wd:[.66,.66]};
+function gridOf(P){
+  if(P.grid)return P.grid;
+  const cs=0.1,nx=Math.max(1,Math.ceil(P.W/cs)),ny=Math.max(1,Math.ceil(P.D/cs)),blk=new Uint8Array(nx*ny),rad=0.2,R=[],C=[];
+  P.walls.forEach(w=>R.push([w.x,w.y,w.x+w.w,w.y+w.h]));
+  P.furn.forEach(p=>{const k=p.k;if(k==='rug'||k==='dog'||k==='cat')return;
+    if(k==='rtable'){C.push([p.x,p.y,p.r||0.45]);return;}
+    let w=p.w,d=p.d;
+    if(w===undefined){const q=k==='plant'?[(p.s||0.45)*0.8,(p.s||0.45)*0.8]:FDIM[k];if(!q)return;[w,d]=q;}
+    if((((p.rot%180)+180)%180)===90)[w,d]=[d,w];
+    R.push([p.x-w/2,p.y-d/2,p.x+w/2,p.y+d/2]);});
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+    const x=(i+0.5)*cs,y=(j+0.5)*cs;
+    if(R.some(q=>x>q[0]-rad&&x<q[2]+rad&&y>q[1]-rad&&y<q[3]+rad)||C.some(q=>Math.hypot(x-q[0],y-q[1])<q[2]+rad))blk[j*nx+i]=1;
+  }
+  return P.grid={cs,nx,ny,blk};
+}
+function isFree(P,x,y){const G=gridOf(P),i=Math.floor(x/G.cs),j=Math.floor(y/G.cs);return i>=0&&j>=0&&i<G.nx&&j<G.ny&&!G.blk[j*G.nx+i];}
+function findPath(P,a,b){
+  const G=gridOf(P),{cs,nx,ny,blk}=G,cl=(v,n)=>Math.max(0,Math.min(n-1,Math.floor(v/cs)));
+  const sx=cl(a.x,nx),sy=cl(a.y,ny),gx=cl(b.x,nx),gy=cl(b.y,ny);
+  const near=(i,j)=>{const x=(i+0.5)*cs,y=(j+0.5)*cs;return (x-a.x)**2+(y-a.y)**2<0.3||(x-b.x)**2+(y-b.y)**2<0.3;};
+  const ok=(i,j)=>i>=0&&j>=0&&i<nx&&j<ny&&(!blk[j*nx+i]||near(i,j));
+  const N=nx*ny,g=new Float32Array(N).fill(1e9),par=new Int32Array(N).fill(-1),done=new Uint8Array(N),h=[],fs=new Float32Array(N);
+  const hp=i=>{h.push(i);let c=h.length-1;while(c>0){const q=(c-1)>>1;if(fs[h[q]]<=fs[h[c]])break;[h[q],h[c]]=[h[c],h[q]];c=q;}};
+  const pop=()=>{const t=h[0],l=h.pop();if(h.length){h[0]=l;let c=0;for(;;){let m=c;const L=2*c+1,Rr=L+1;if(L<h.length&&fs[h[L]]<fs[h[m]])m=L;if(Rr<h.length&&fs[h[Rr]]<fs[h[m]])m=Rr;if(m===c)break;[h[m],h[c]]=[h[c],h[m]];c=m;}}return t;};
+  const hf=(i,j)=>{const dx=Math.abs(i-gx),dy=Math.abs(j-gy);return Math.max(dx,dy)+0.414*Math.min(dx,dy);};
+  const s0=sy*nx+sx;g[s0]=0;fs[s0]=hf(sx,sy);hp(s0);let found=false;
+  while(h.length){
+    const c=pop();if(done[c])continue;done[c]=1;
+    if(c===gy*nx+gx){found=true;break;}
+    const ci=c%nx,cj=(c-ci)/nx;
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){
+      if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(!ok(ni,nj))continue;
+      if(di&&dj&&(!ok(ci+di,cj)||!ok(ci,cj+dj)))continue;
+      const n=nj*nx+ni,ng=g[c]+(di&&dj?1.414:1);
+      if(ng<g[n]){g[n]=ng;par[n]=c;fs[n]=ng+hf(ni,nj);hp(n);}
+    }
+  }
+  if(!found)return [{x:b.x,y:b.y}];
+  const cells=[];for(let c=gy*nx+gx;c!==-1;c=par[c]){const i=c%nx;cells.unshift({x:(i+0.5)*cs,y:((c-i)/nx+0.5)*cs});}
+  cells[0]={x:a.x,y:a.y};cells[cells.length-1]={x:b.x,y:b.y};
+  const los=(p,q)=>{const L=Math.hypot(q.x-p.x,q.y-p.y),n=Math.ceil(L/0.05);for(let k=1;k<n;k++){const x=p.x+(q.x-p.x)*k/n,y=p.y+(q.y-p.y)*k/n;if(!ok(Math.floor(x/cs),Math.floor(y/cs)))return false;}return true;};
+  const out=[];let cur=0;
+  while(cur<cells.length-1){let nx2=cur+1;for(let k=cells.length-1;k>cur+1;k--){if(los(cells[cur],cells[k])){nx2=k;break;}}out.push(cells[nx2]);cur=nx2;}
+  return out;
+}
+function goTo(p,pts,face,direct){
+  const P=p.u.plan;let from={x:p.x,y:p.y};const out=[];
+  pts.forEach((q,i)=>{if(i===0||!direct)out.push(...findPath(P,from,q));else out.push({x:q.x,y:q.y});from=q;});
+  p.path=out.map(q=>({id:null,x:q.x,y:q.y}));p.face=face;
 }
 const faceAng=(dx,dy)=>Math.atan2(dy,dx)*180/Math.PI+90;
 function pointNode(P,list){for(const k of list)if(P.nodes[k])return P.nodes[k];return P.nodes[Object.keys(P.nodes)[0]];}
@@ -865,6 +940,10 @@ function act(p,dt){
     const n=pointNode(P,['mid','din','tbl']);
     if(!p.init){p.init=true;goTo(p,[{x:n.x+p.side*0.34,y:n.y}],p.side<0?90:270);return;}
     p.work=2;
+  }else if(p.role==='play'){
+    p.pt-=dt;
+    if(!p.init||p.pt<=0){p.init=true;p.pt=4+p.R()*5;const sp=P.spots.length?P.spots:Object.keys(P.nodes);const n=P.nodes[sp[Math.floor(p.R()*sp.length)]];goTo(p,[{x:n.x+(p.R()-0.5)*0.4,y:n.y+(p.R()-0.5)*0.4}],p.R()*360);return;}
+    p.work=3;
   }else if(p.role==='mover'){
     const pc=P.furn[P.mvi],len=0.45,gap=0.7,mv=u.mv;
     if(!mv.home){mv.home={x:pc.x,y:pc.y};mv.dir=pc.x<P.W/2?1:-1;mv.hy=pc.y<P.D/2?1:-1;mv.k=0;mv.ph=0;mv.wt=0;}
@@ -877,16 +956,26 @@ function act(p,dt){
       if(mv.k>=1){mv.ph=2;mv.wt=3.5;}
     }else if(mv.ph===2){mv.wt-=dt;p.work=1;if(mv.wt<=0){mv.ph=3;p.init=false;}}
     else if(mv.ph===3){
-      if(!p.init){p.init=true;const ex=H.x+d*len;goTo(p,[{x:ex-d*0.1,y:H.y+hy*0.95},{x:ex+d*gap,y:H.y+hy*0.4},{x:ex+d*gap,y:H.y}],faceAng(-d,0));return;}
+      if(!p.init){p.init=true;const ex=H.x+d*len;goTo(p,[{x:ex-d*gap,y:H.y+hy*1.0},{x:ex+d*gap,y:H.y+hy*1.0},{x:ex+d*gap,y:H.y}],faceAng(-d,0),true);return;}
       p.init=false;mv.ph=4;
     }else if(mv.ph===4){
       mv.k=Math.max(0,mv.k-dt*0.3/len);p.x=H.x+d*len*mv.k+d*gap;p.y=H.y;p.a=faceAng(-d,0);p.walking=true;p.phase+=dt*3;
       if(mv.k<=0){mv.ph=5;mv.wt=3.5;}
     }else if(mv.ph===5){mv.wt-=dt;p.work=1;if(mv.wt<=0){mv.ph=6;p.init=false;}}
     else{
-      if(!p.init){p.init=true;goTo(p,[{x:H.x-d*0.1,y:H.y+hy*0.95},{x:H.x-d*gap,y:H.y+hy*0.4},{x:H.x-d*gap,y:H.y}],faceAng(d,0));return;}
+      if(!p.init){p.init=true;goTo(p,[{x:H.x+d*gap,y:H.y+hy*1.0},{x:H.x-d*gap,y:H.y+hy*1.0},{x:H.x-d*gap,y:H.y}],faceAng(d,0),true);return;}
       p.init=false;mv.ph=1;
     }
+  }
+}
+function petStep(q,dt){
+  const P=q.u.plan;q.t=(q.t||0)+dt;
+  if(q.path.length){q.walking=true;const t=q.path[0],dx=t.x-q.x,dy=t.y-q.y,dist=Math.hypot(dx,dy),st=q.v*dt;if(dist>0.001)q.a=faceAng(dx,dy);if(dist<=st){q.x=t.x;q.y=t.y;q.path.shift();q.phase+=dist*12;}else{q.x+=dx/dist*st;q.y+=dy/dist*st;q.phase+=st*12;}return;}
+  q.walking=false;q.wait-=dt;
+  if(q.wait<=0){
+    q.wait=3+q.R()*7;const m=q.u.people[0]||q;
+    for(let k=0;k<8;k++){const an=q.R()*6.283,rd=0.7+q.R()*1.0,x=m.x+Math.cos(an)*rd,y=m.y+Math.sin(an)*rd;
+      if(x>0.2&&y>0.35&&x<P.W-0.2&&y<P.D-0.4&&isFree(P,x,y)){q.path=findPath(P,{x:q.x,y:q.y},{x,y});break;}}
   }
 }
 function step(p,dt){
@@ -906,12 +995,14 @@ function drawPeople(){
     let ox=0,oy=0,ra=0;
     if(p.work===1){ra=Math.sin(p.t*7)*6;ox=Math.sin(p.t*7)*0.025;oy=Math.cos(p.t*5.3)*0.02;}
     else if(p.work===2){ra=Math.sin(p.t*2.1+p.side)*7;oy=Math.abs(Math.sin(p.t*3.3+p.side*2))*-0.03;}
-    p.el.setAttribute('transform',`translate(${f(u.ox+p.x+ox)} ${f((u.oy||0)+p.y+oy)}) rotate(${f(p.a+ra)})`);
+    if(p.work===3){oy=-Math.abs(Math.sin(p.t*4))*0.05;ra=Math.sin(p.t*3)*10;}
+    p.el.setAttribute('transform',`translate(${f(u.ox+p.x+ox)} ${f((u.oy||0)+p.y+oy)}) rotate(${f(p.a+ra)}) scale(${p.sc||1})`);
     const sw=p.walking?Math.sin(p.phase)*0.11:0;p.fa.setAttribute('cy',f(-sw));p.fb.setAttribute('cy',f(sw));}));
 }
+function drawPets(){units.forEach(u=>(u.pets||[]).forEach(q=>{if(!q.el)return;const sw=q.walking?Math.sin(q.phase)*0.05:0;q.el.setAttribute('transform',`translate(${f(u.ox+q.x)} ${f((u.oy||0)+q.y)}) rotate(${f(q.a)})`);q.tail.setAttribute('transform',`rotate(${f(Math.sin((q.t||0)*(q.walking?9:4))*(q.walking?18:10))} 0 0.2)`);}));}
 function drawFurn(){units.forEach(u=>{const pc=u.plan.furn[u.plan.mvi];if(u.mvEl&&pc&&u.mv&&u.mv.home)u.mvEl.setAttribute('transform',`translate(${f(pc.x+u.mv.dir*0.45*u.mv.k)} ${f(pc.y)}) rotate(${pc.rot})`);});}
 let lt=0;
-function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;units.forEach(u=>u.people.forEach(p=>step(p,dt)));drawPeople();drawFurn();requestAnimationFrame(loop);}
+function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;units.forEach(u=>{u.people.forEach(p=>step(p,dt));(u.pets||[]).forEach(q=>petStep(q,dt));});drawPeople();drawPets();drawFurn();requestAnimationFrame(loop);}
 
 /* ---------- dialog ---------- */
 const modal=$('modal');let pick={n:0};
