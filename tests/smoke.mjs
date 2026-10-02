@@ -106,11 +106,49 @@ try {
     else out.deadFixed = true;
     // Doors slide along their wall (and the wall re-cuts around them)
     out.doorMoved = T.edState().P.doors.some(d => T.moveDoor(T.edState().P, d, 0.1) || T.moveDoor(T.edState().P, d, -0.1));
+    out.used = T.edState().used;
+    // Tracing paper: review, then confirm the sheet as a new iteration
     document.getElementById('edDone').click();
+    out.review = !document.getElementById('edConfirm').hidden && document.querySelectorAll('#ecBody li').length > 0;
+    document.getElementById('ecNote').value = 'smoke test';
+    document.getElementById('ecOk').click();
     out.saved = !!u.custom && u.plan.furn.length >= nf + 1 && u.plan.rooms.length >= 1;
+    out.iters = !!u.iters && u.iters.length === 2 && u.cur === 2 && u.iters[1].note === 'smoke test';
     out.idx = u.idx;
     return out;
   });
+  if (edit.used < 3 || edit.used > 5) errs.push('change meter did not count the changes: ' + edit.used);
+  if (!edit.review) errs.push('review sheet did not list the changes');
+  if (!edit.iters) errs.push('confirming did not record a new iteration');
+
+  // A sheet allows only a few changes; extra ones are refused. Discarding leaves the unit as it was.
+  const bud = await p.evaluate(async () => {
+    const T = window.__pad, u = T.units().find(x => x.n === 4), out = {}, nf = u.plan.furn.length;
+    if (document.getElementById('info').hidden) document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.getElementById('iCust').click();
+    for (let i = 0; i < 8; i++) document.querySelector(`[data-act="add"][data-g="${i % 4}"][data-i="0"]`).click();
+    out.used = T.edState().used;
+    out.msg = /used all/.test(T.edState().msg);
+    out.ghost = !!document.querySelector('#edSvg .ghost');
+    document.getElementById('edCancel').click(); document.getElementById('edCancel').click();
+    await new Promise(r => setTimeout(r, 800));
+    out.closed = document.getElementById('ed').hidden;
+    out.same = u.plan.furn.length === nf;
+    return out;
+  });
+  if (bud.used !== 5 || !bud.msg) errs.push('change budget was not enforced: ' + JSON.stringify(bud));
+  if (!bud.ghost) errs.push('tracing sheet did not show the layer underneath');
+  if (!bud.closed || !bud.same) errs.push('discarding did not close the sheet and keep the unit unchanged');
+  // Restoring the original layout from the iteration list
+  const rest = await p.evaluate(() => {
+    const T = window.__pad, u = T.units().find(x => x.n === 4);
+    document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.querySelector('[data-restore="1"]').click();
+    const first = u.cur === 1 && !u.custom;
+    document.querySelector('[data-restore="2"]').click();
+    return first && u.cur === 2 && !!u.custom;
+  });
+  if (!rest) errs.push('iteration restore did not switch between layouts');
   if (!edit.open) errs.push('customize did not open the editor');
   if (!edit.moved) errs.push('editor could not move a wall');
   if (!edit.saved) errs.push('editor did not save the edited unit');
@@ -122,7 +160,8 @@ try {
     const T = window.__pad; let bad = 0, n = 0;
     for (let k = 0; k < 60; k++) {
       await new Promise(r => setTimeout(r, 150));
-      for (const u of T.units()) for (const q of u.people) { n++; if (!T.isFree(u.plan, q.x, q.y)) bad++; }
+      // People lying on a bed or sofa, or rising from one, are on the furniture on purpose.
+      for (const u of T.units()) for (const q of u.people) { if (q.lie > 0.02 || q.tr) continue; n++; if (!T.isFree(u.plan, q.x, q.y)) bad++; }
     }
     return { bad, n };
   });

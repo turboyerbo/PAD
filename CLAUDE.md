@@ -12,5 +12,7 @@ Follow CONTRIBUTING.md, plus these rules:
 - Run `node tests/smoke.mjs` before opening the pull request and fix anything it reports.
 - Keep it one self-contained file with no build step. External scripts only if unavoidable.
 - Occupants must never overlap walls or furniture. Anything solid goes into `gridOf`.
+  The one exception is a person lying on a bed or sofa, or getting up from it (`p.lie` above 0 or `p.tr` set). The smoke test skips them.
+- Colours: the drawing is bluish (indigo walls, periwinkle furniture) and people and pets are orange. Use the CSS variables, not new hex values.
 - On-screen text: plain and short, no em-dashes.
 - In the pull request description, say what you changed, what you tested, and anything you could not test.
