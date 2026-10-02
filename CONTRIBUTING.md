@@ -52,6 +52,7 @@ node tests/smoke.mjs
 | Building code limits | `BED1_W`, `STUDIO_A`, `solveStudio`, `solveOneBed`, `wcClear` |
 | Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `moveDoor`, `deadEnds`, `PAL`, `applyCustom` |
 | Tracing paper session (change budget, ghost layer, review, iterations) | `TRACE_BUDGET`, `edPush`, `edReview`, `edSummary`, `restoreIter` |
+| Kitchen templates (U, L, galley) and kitchen code checks | `kTemplate`, `kitchenIssues`, `kitchenNeed`, `applyKitchen` |
 | Resting people (lying on the sofa, getting out of bed) | `seatPeople`, `restSetup`, `restAct` |
 | Accounts, buildings and chat data layer (Supabase or demo) | `window.PADBE`, the first script block |
 | Landing page, building list, open and save a building | `showLanding`, `showProjects`, `openProject`, `snapshot`, `loadData` |

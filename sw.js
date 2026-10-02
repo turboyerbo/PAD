@@ -1,5 +1,5 @@
 ﻿// PAD offline cache. Bump VERSION on each deploy so clients pick up the new build.
-const VERSION = 'pad-v14';
+const VERSION = 'pad-v15';
 const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/patry-logo.png'];
 
 self.addEventListener('install', e => {

@@ -158,6 +158,27 @@ try {
   if (bud.used !== 5 || !bud.msg) errs.push('change budget was not enforced: ' + JSON.stringify(bud));
   if (!bud.ghost) errs.push('tracing sheet did not show the layer underneath');
   if (!bud.closed || !bud.same) errs.push('discarding did not close the sheet and keep the unit unchanged');
+  // Kitchen templates: every kitchen offers at least one, applying costs one change and keeps the code checks happy
+  const kit = await p.evaluate(() => {
+    const T = window.__pad, out = { tried: [] }, units = T.units().filter(x => x.src === 'add' || x.src === 'base');
+    for (const u of T.units()) {
+      if (document.getElementById('info').hidden) document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      document.getElementById('iCust').click();
+      const P = T.edState().P, avail = ['u', 'l', 'gal2', 'gal1'].filter(k => T.kTemplate(P, k).ok);
+      if (!avail.length) { out.tried.push(`${u.idx}: none`); document.getElementById('edCancel').click(); continue; }
+      const k = avail[0];
+      document.querySelector(`[data-act="kitchen"][data-kind="${k}"]`).click();
+      const E = T.edState(), bad = T.kitchenIssues(E.P, u).filter(x => x[0] === 'bad' || /Aisle/.test(x[1]));
+      out.tried.push(`${u.idx}:${k}:used${E.used}:${bad.length}`);
+      if (E.used !== 1 || bad.length) out.err = `${u.idx} ${k} used ${E.used} issues ${bad.map(x => x[1]).join('; ')}`;
+      document.getElementById('edCancel').click(); document.getElementById('edCancel').click();
+    }
+    return out;
+  });
+  if (kit.err) errs.push('kitchen template problem: ' + kit.err);
+  if (kit.tried.some(s => /: none/.test(s))) errs.push('a unit offered no kitchen template: ' + kit.tried.join(' '));
+  await p.waitForTimeout(800);
+
   // Restoring the original layout from the iteration list
   const rest = await p.evaluate(() => {
     const T = window.__pad, u = T.units().find(x => x.n === 4);
