@@ -1,0 +1,76 @@
+// Smoke test for PAD. Serves the folder, opens the app at desktop and phone size,
+// builds units through the real dialog, and checks for script errors and for
+// occupants standing inside walls or furniture. Run: node tests/smoke.mjs
+import { chromium } from 'playwright';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PORT = 8137;
+const srv = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: root, stdio: 'ignore' });
+await new Promise(r => setTimeout(r, 900));
+const URL = `http://localhost:${PORT}/?debug`;
+const errs = [];
+const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
+
+try {
+  // Desktop
+  const p = await browser.newPage({ viewport: { width: 1500, height: 860 } });
+  p.on('pageerror', e => errs.push('desktop script error: ' + e.message));
+  await p.goto(URL);
+  await p.waitForSelector('#s1:not([hidden])', { timeout: 5000 }).catch(() => errs.push('landing dialog did not open'));
+
+  const add = async (n, pri, side = 'R', corner = false, other = '') => {
+    if (!(await p.isVisible('#modal'))) await p.click(side === 'L' ? '#addL' : '#add');
+    await p.click(`#bedOpts [data-n="${n}"]`);
+    await p.click(`#priOpts [data-p="${pri}"]`);
+    if (pri === 'other') { await p.fill('#otherTxt', other); await p.click('#gen'); }
+    await p.click(`#segP [data-p="${side}"]`);
+    if (corner) await p.check('#fCorner');
+    if (await p.isDisabled('#gen3')) { errs.push(`could not generate ${n}-bed ${pri} on ${side}: ` + (await p.textContent('#sizeRes'))); await p.click('#mClose'); return; }
+    await p.click('#gen3');
+    await p.waitForTimeout(150);
+  };
+  await add(2, 'balanced', 'L', true);
+  await add(1, 'storage', 'R');
+  await add(3, 'other', 'R', false, 'family with kids, kitchen island, home office, dog');
+  await add(4, 'bath', 'R');
+  await add(0, 'bedroom', 'R', true);
+
+  const order = await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
+  if (order[0] !== 'L2' || order[order.length - 1] !== 'R0') errs.push('unexpected unit order: ' + order.join(' '));
+
+  const col = await p.evaluate(async () => {
+    const T = window.__pad; let bad = 0, n = 0;
+    for (let k = 0; k < 60; k++) {
+      await new Promise(r => setTimeout(r, 150));
+      for (const u of T.units()) for (const q of u.people) { n++; if (!T.isFree(u.plan, q.x, q.y)) bad++; }
+    }
+    return { bad, n };
+  });
+  if (col.bad) errs.push(`collision: ${col.bad} of ${col.n} occupant samples inside walls or furniture`);
+
+  await p.reload();
+  await p.waitForTimeout(400);
+  const after = await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
+  if (after.join() !== order.join()) errs.push('added units did not survive a reload');
+
+  // Phone
+  const m = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  m.on('pageerror', e => errs.push('phone script error: ' + e.message));
+  await m.goto(URL);
+  await m.waitForSelector('#s1:not([hidden])', { timeout: 5000 }).catch(() => errs.push('phone landing dialog did not open'));
+  await m.click('#mClose');
+  if (!(await m.isVisible('#pager .pg'))) errs.push('phone pager did not render');
+  await m.click('#mNext');
+  await m.waitForTimeout(400);
+  const count = await m.textContent('#mCount');
+  if (!/^2 \//.test(count.trim())) errs.push('phone next arrow did not advance: ' + count);
+} finally {
+  await browser.close();
+  srv.kill();
+}
+
+if (errs.length) { console.error('Smoke test failed:\n- ' + errs.join('\n- ')); process.exit(1); }
+console.log('Smoke test passed.');

@@ -1,0 +1,43 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Offline cache version bumped
+        if: github.event_name == 'pull_request'
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          changed=$(git diff --name-only "$base" HEAD | grep -vE '^(\.github/|tests/|netlify\.toml$)|\.md$' || true)
+          if [ -n "$changed" ]; then
+            if git diff "$base" HEAD -- sw.js | grep -q '^+const VERSION'; then
+              echo "sw.js VERSION bumped."
+            else
+              echo "::error file=sw.js::App files changed ($changed) but sw.js VERSION was not bumped. Installed copies would keep the old version."
+              exit 1
+            fi
+          else
+            echo "Only docs, tests or CI changed. No bump needed."
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-package-lock playwright@1
+          npx playwright install --with-deps chromium
+
+      - name: Smoke test
+        run: node tests/smoke.mjs
