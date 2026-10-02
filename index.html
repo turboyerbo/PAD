@@ -238,7 +238,12 @@ textarea{width:100%;box-sizing:border-box;border:1px solid var(--ink);background
 #edSvg{display:block;touch-action:none;cursor:default;user-select:none;-webkit-user-select:none}
 #edSvg *{vector-effect:non-scaling-stroke}
 #edSvg pattern *{vector-effect:none}
-.wsel{fill:rgba(2,116,190,.28);stroke:var(--accent);stroke-width:1.5}
+.ed-bub{position:absolute;inset:0;pointer-events:none}
+.bub{position:absolute;transform:translate(-50%,-100%);width:216px;box-sizing:border-box;background:var(--sheet);border:1.5px solid var(--ink);border-radius:10px;padding:10px 12px 10px;box-shadow:0 8px 24px rgba(21,50,67,.28);pointer-events:auto;font-size:12.5px;line-height:1.4;z-index:3}
+.bub::after{content:"";position:absolute;left:50%;bottom:-8px;width:12px;height:12px;background:var(--sheet);border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:translateX(-50%) rotate(45deg)}
+.bub p{margin:0 14px 6px 0}
+.bub .bx{position:absolute;top:2px;right:4px;border:none;background:none;font-size:18px;line-height:1;padding:2px 5px;color:var(--ink-2)}
+.bub .edbtns{margin-top:4px}.wsel{fill:rgba(2,116,190,.28);stroke:var(--accent);stroke-width:1.5}
 .ed-side{width:300px;flex:none;overflow:auto;background:var(--sheet);border-left:1px solid var(--rule);padding:4px 14px 16px;box-sizing:border-box}
 .ed-side .sub{margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
 .ed-side .note{margin:8px 0 0;font-size:12px;color:var(--ink-2);line-height:1.45}
@@ -435,7 +440,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
     <div class="ed-act"><button class="tb" id="edUndo">Undo</button><button class="tb" id="edReset">Reset layout</button><button class="tb" id="edCancel">Cancel</button><button class="tb primary" id="edDone">Done</button></div>
   </div>
   <div class="ed-body">
-    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div></div>
     <aside class="ed-side" id="edSide"></aside>
   </div>
 </div>
@@ -1390,19 +1395,22 @@ function quickAdd(n){
   generate(Object.assign(spec,r));
 }
 
-/* ---------- unit editor: move walls, add and remove furniture and fixtures ---------- */
+/* ---------- unit editor: move walls and doors, add and remove furniture, fixtures and walls ---------- */
 const EDKEYS=['walls','doors','wins','furn','floors','rooms','marks'];
 const KN={bed:'Bed',ns:'Nightstand',sofa:'Sofa',arm:'Armchair',ctable:'Coffee table',rtable:'Round table',ltable:'Dining table',desk:'Desk',dresser:'Dresser',closet:'Closet',shelf:'Shelving',tv:'TV',rug:'Rug',plant:'Plant',wd:'Washer / dryer',counter:'Counter',sink:'Sink',cook:'Cooktop',fridge:'Fridge',island:'Island',wc:'Toilet',van:'Vanity',tub:'Tub',shower:'Shower',dog:'Dog bed'};
 const PAL=[
   {g:'Washroom',it:[{n:'Toilet',k:'wc'},{n:'Vanity',k:'van',w:0.85,d:0.52},{n:'Double vanity',k:'van',w:1.4,d:0.52},{n:'Tub 60×30 in',k:'tub',w:1.524,d:0.762},{n:'Tub 60×32 in',k:'tub',w:1.524,d:0.813},{n:'Shower',k:'shower',w:1,d:1},{n:'Roll-in shower',k:'shower',w:1.5,d:1}]},
   {g:'Bedroom',it:[{n:'Double bed',k:'bed',w:1.4,d:2},{n:'Queen bed',k:'bed',w:1.55,d:2},{n:'Twin bed',k:'bed',w:0.95,d:2},{n:'Nightstand',k:'ns'},{n:'Dresser',k:'dresser',w:1.1,d:0.48},{n:'Closet',k:'closet',w:1.2,d:0.62},{n:'Desk',k:'desk',w:1,d:0.5}]},
   {g:'Living',it:[{n:'Sofa',k:'sofa',w:2.1,d:0.9},{n:'Armchair',k:'arm'},{n:'Coffee table',k:'ctable',w:0.55,d:1},{n:'Round table',k:'rtable',r:0.45,c:4},{n:'Dining table',k:'ltable',w:1.6,d:0.9,c:3},{n:'TV',k:'tv',w:1.7,d:0.42},{n:'Shelving',k:'shelf',w:1,d:0.4},{n:'Rug',k:'rug',w:1.5,d:2.3},{n:'Plant',k:'plant',s:0.45}]},
-  {g:'Kitchen and laundry',it:[{n:'Counter',k:'counter',w:1.2,d:0.62},{n:'Sink',k:'sink'},{n:'Cooktop',k:'cook'},{n:'Fridge',k:'fridge'},{n:'Island',k:'island',w:0.9,d:1.6},{n:'Washer / dryer',k:'wd'}]}
+  {g:'Kitchen and laundry',it:[{n:'Counter',k:'counter',w:1.2,d:0.62},{n:'Sink',k:'sink'},{n:'Cooktop',k:'cook'},{n:'Fridge',k:'fridge'},{n:'Island',k:'island',w:0.9,d:1.6},{n:'Washer / dryer',k:'wd'}]},
+  {g:'Walls',it:[{n:'Wall, horizontal',wall:'h'},{n:'Wall, vertical',wall:'v'}]}
 ];
+const DEAD_END=1.5;                 // a hall may run this far past its last door before it counts as a dead end, m
 let E=null;
 const edClone=P=>{const o={W:P.W,D:P.D,sideWins:P.sideWins,side:P.side};EDKEYS.forEach(k=>o[k]=JSON.parse(JSON.stringify(P[k]||[])));return o;};
 const edSnap=P=>JSON.stringify(EDKEYS.reduce((o,k)=>(o[k]=P[k],o),{}));
 const edRestore=(P,s)=>Object.assign(P,JSON.parse(s));
+const clampX=(P,v)=>f(Math.max(0.15,Math.min(P.W-0.15,v))),clampY=(P,v)=>f(Math.max(0.35,Math.min(P.D-0.25,v)));
 function dimsOf(p){
   const k=p.k;
   if(p.w!==undefined)return k==='ltable'?[p.w+0.1,p.d+0.9]:k==='desk'?[p.w,p.d+0.5]:[p.w,p.d];
@@ -1412,20 +1420,66 @@ function dimsOf(p){
 }
 const aabb=p=>{let[w,d]=dimsOf(p);if(((p.rot%180)+180)%180===90)[w,d]=[d,w];return[p.x-w/2,p.y-d/2,p.x+w/2,p.y+d/2];};
 function inItem(p,pt){const a=p.rot*Math.PI/180,dx=pt.x-p.x,dy=pt.y-p.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a),[w,d]=dimsOf(p);return Math.abs(lx)<=w/2&&Math.abs(ly)<=d/2;}
-/* Movable interior walls: collinear pieces joined across doorways and openings (gaps of 0.5 to 1.3 m). Outer walls are fixed. */
+
+/* Doors. A door on a horizontal wall has its closed leaf along x (cx is not 0); on a vertical wall it runs along y. */
+const doorHor=d=>d.cx!==0;
+const doorRng=d=>{const a=doorHor(d)?d.hx:d.hy,l=doorHor(d)?d.cx:d.cy;return[Math.min(a,a+l*d.w),Math.max(a,a+l*d.w)];};
 const doorOn=(d,g,lo,hi)=>{const h=g.hor?d.hy:d.hx,al=g.hor?d.hx:d.hy;return h>=g.pos-0.03&&h<=g.pos+g.t+0.03&&al>=lo&&al<=hi;};
-function wallGroups(P){
-  const by={};
+const onGroup=(P,g)=>P.doors.filter(x=>doorHor(x)===g.hor&&doorOn(x,g,g.a-0.15,g.b+0.15));
+function inDoor(d,pt,strip){
+  const[lo,hi]=doorRng(d);
+  if(strip){const al=doorHor(d)?pt.x:pt.y,pr=doorHor(d)?pt.y-d.hy:pt.x-d.hx;return al>=lo&&al<=hi&&Math.abs(pr)<=0.2;}
+  const vx=pt.x-d.hx,vy=pt.y-d.hy;
+  return Math.hypot(vx,vy)<=d.w&&vx*d.cx+vy*d.cy>=-0.03&&vx*d.ox+vy*d.oy>=-0.03;
+}
+/* Walls: collinear pieces joined across doorways and openings (gaps of 0.5 to 1.3 m). Outer walls only when ext is set. */
+function wallGroups(P,ext){
+  const by={},stubs=[];
   P.walls.forEach((w,i)=>{const hor=w.w>w.h,t=hor?w.h:w.w,pos=hor?w.y:w.x;
-    if(hor?(pos<0.01||pos+t>P.D-0.01):(pos<0.01||pos+t>P.W-0.01))return;
-    const k=(hor?'h':'v')+Math.round(pos*1000)+'_'+Math.round(t*1000);
+    if(Math.max(w.w,w.h)<0.13){stubs.push(i);return;}   // door jambs, too short to tell which way they run
+    if(!ext&&(hor?(pos<0.01||pos+t>P.D-0.01):(pos<0.01||pos+t>P.W-0.01)))return;
+    const k=(hor?'h':'v')+Math.round(pos*1000)+'_'+Math.round(t*1000)+(w.u?'u'+i:'');
     (by[k]=by[k]||[]).push({i,a:hor?w.x:w.y,b:hor?w.x+w.w:w.y+w.h,hor,pos,t});});
   const out=[];
   Object.values(by).forEach(list=>{list.sort((p,q)=>p.a-q.a);let cur=null;
     list.forEach(s=>{const gap=cur?s.a-cur.b:0;
       if(cur&&(gap>=0.5&&gap<=1.3||(gap<=1.3&&P.doors.some(d=>doorOn(d,cur,cur.b-0.15,s.a+0.15))))){cur.b=Math.max(cur.b,s.b);cur.idxs.push(s.i);}
       else{cur={hor:s.hor,pos:s.pos,t:s.t,a:s.a,b:s.b,idxs:[s.i]};out.push(cur);}});});
+  stubs.forEach(i=>{const w=P.walls[i];let best=null,bd=1.01;
+    out.forEach(g=>{const t=g.hor?w.h:w.w,pos=g.hor?w.y:w.x,a=g.hor?w.x:w.y,b=a+(g.hor?w.w:w.h);
+      if(Math.abs(t-g.t)>0.011||Math.abs(pos-g.pos)>0.011||isUser(P,g))return;
+      const lo=a>g.b?g.b:b,hi=a>g.b?a:g.a,dist=Math.max(0,a-g.b,g.a-b);
+      const doorway=P.doors.some(d=>doorHor(d)===g.hor&&doorOn(d,g,lo-0.15,hi+0.15)&&Math.min(doorRng(d)[1],hi)-Math.max(doorRng(d)[0],lo)>0.03);
+      const score=dist-(doorway?2:0);if(score<bd){bd=score;best={g,a,b};}});
+    if(best){best.g.idxs.push(i);best.g.a=Math.min(best.g.a,best.a);best.g.b=Math.max(best.g.b,best.b);}});
   return out;
+}
+const isUser=(P,g)=>!!(g&&P.walls[g.idxs[0]]&&P.walls[g.idxs[0]].u);
+const doorGroup=(P,d)=>wallGroups(P,true).find(g=>g.hor===doorHor(d)&&doorOn(d,g,g.a-0.15,g.b+0.15));
+/* Openings in a wall run that are not doorways (hall openings and the like) keep their place when a door moves. */
+function keptGaps(P,g){
+  const runs=g.idxs.map(i=>P.walls[i]).map(w=>g.hor?[w.x,w.x+w.w]:[w.y,w.y+w.h]).sort((p,q)=>p[0]-q[0]),ds=onGroup(P,g).map(doorRng),out=[];
+  let end=runs.length?runs[0][1]:0;
+  for(let i=1;i<runs.length;i++){const a=end,b=runs[i][0];end=Math.max(end,runs[i][1]);
+    if(b-a<0.05)continue;if(!ds.some(r=>Math.min(r[1],b)-Math.max(r[0],a)>0.03))out.push([a,b]);}
+  return out;
+}
+/* Rebuild a wall run so every door has its gap and the kept openings stay open. */
+function relayWalls(P,g,kept){
+  const rm=new Set(g.idxs);P.walls=P.walls.filter((w,i)=>!rm.has(i));
+  const gaps=[...kept,...onGroup(P,g).map(doorRng)];
+  cutGaps(g.a,g.b,gaps).forEach(([a,b])=>{if(b-a>0.01)P.walls.push(g.hor?{x:f(a),y:g.pos,w:f(b-a),h:g.t}:{x:g.pos,y:f(a),w:g.t,h:f(b-a)});});
+}
+/* Slide a door along its wall by d metres (50 mm steps), stopping at openings, other doors and the ends of the wall. */
+function moveDoor(P,d,delta){
+  const g=doorGroup(P,d);if(!g)return false;
+  const kept=keptGaps(P,g),others=onGroup(P,g).filter(x=>x!==d).map(doorRng),r0=doorRng(d),block=[...kept,...others];
+  const ok=s=>{const lo=r0[0]+s,hi=r0[1]+s;return lo>=g.a+0.05&&hi<=g.b-0.05&&!block.some(q=>Math.min(q[1],hi)-Math.max(q[0],lo)>0.02);};
+  const n=Math.round(delta/0.05),sg=Math.sign(n);let k=0;
+  for(let i=1;i<=Math.abs(n);i++){if(ok(sg*i*0.05))k=sg*i;else break;}
+  if(!k)return false;
+  const s=f(k*0.05);if(g.hor)d.hx=f(d.hx+s);else d.hy=f(d.hy+s);
+  relayWalls(P,g,kept);return true;
 }
 /* Move one wall group by d metres (perpendicular to the wall, snapped to 50 mm). Doors, floors and room areas follow. */
 function moveWall(P,g,d){
@@ -1435,8 +1489,10 @@ function moveWall(P,g,d){
   const ax=g.hor?['y','h','x','w']:['x','w','y','h'],near=(v,a)=>Math.abs(v-a)<0.16,y1=g.pos,y2=g.pos+g.t;
   const hits=r=>{const lo2=r[ax[2]],hi2=lo2+r[ax[3]];return Math.min(hi2,g.b)-Math.max(lo2,g.a)>0.2;};
   const edge=r=>{if(!hits(r))return 0;const e1=r[ax[0]]+r[ax[1]],e0=r[ax[0]];if(near(e1,y1)||near(e1,y2))return 1;if(near(e0,y2)||near(e0,y1))return 2;return 0;};
-  for(const q of P.rooms){const s=edge(q);if(s&&q[ax[1]]+(s===1?dd:-dd)<0.5)return false;}
+  const user=isUser(P,g);
+  if(!user)for(const q of P.rooms){const s=edge(q);if(s&&q[ax[1]]+(s===1?dd:-dd)<0.5)return false;}
   g.idxs.forEach(i=>{const w=P.walls[i];w[ax[0]]=f(w[ax[0]]+dd);});
+  if(user)return true;
   P.doors.forEach(dr=>{if(doorOn(dr,g,g.a-0.15,g.b+0.15)){if(g.hor)dr.hy=f(dr.hy+dd);else dr.hx=f(dr.hx+dd);}});
   const shift=(r,room)=>{const s=edge(r);if(!s)return;const a0=r.w*r.h;
     if(s===1)r[ax[1]]=f(r[ax[1]]+dd);else{r[ax[0]]=f(r[ax[0]]+dd);r[ax[1]]=f(r[ax[1]]-dd);}
@@ -1444,10 +1500,42 @@ function moveWall(P,g,d){
   P.rooms.forEach(q=>shift(q,true));P.floors.forEach(fl=>shift(fl,false));
   return true;
 }
+/* Dead-end halls: a closed end of a Hall that runs more than DEAD_END past its last door. */
+const deKey=d=>d.R.n+Math.round(d.R.x*100)+'_'+Math.round(d.R.y*100)+d.end;
+function deadEnds(P){
+  const out=[];
+  P.rooms.forEach((R,ri)=>{
+    if(R.n!=='Hall'||R.w<=R.h)return;
+    const ops=P.doors.filter(d=>doorHor(d)&&(Math.abs(d.hy-R.y)<0.2||Math.abs(d.hy-(R.y+R.h))<0.2)).map(doorRng).filter(r=>r[1]>R.x-0.05&&r[0]<R.x+R.w+0.05);
+    if(!ops.length)return;
+    const closed=xe=>{let c=0;P.walls.forEach(w=>{if(w.w<=0.3&&w.h>0.3&&w.x<=xe+0.25&&w.x+w.w>=xe-0.25)c+=Math.max(0,Math.min(w.y+w.h,R.y+R.h)-Math.max(w.y,R.y));});return c>=R.h*0.9;};
+    const lo=Math.min(...ops.map(r=>r[0])),hi=Math.max(...ops.map(r=>r[1]));
+    if(closed(R.x)&&lo-R.x>DEAD_END)out.push({ri,R,end:'L',len:lo-R.x,edge:lo});
+    if(closed(R.x+R.w)&&R.x+R.w-hi>DEAD_END)out.push({ri,R,end:'R',len:R.x+R.w-hi,edge:hi});
+  });
+  return out;
+}
+/* Fix a dead end: close it off with a wall (mode wall), or turn it into a closet with a doorway (mode closet). */
+function deadFix(key,mode){
+  const P=E.P,de=deadEnds(P).find(d=>deKey(d)===key);if(!de)return;
+  edPush();
+  const R=P.rooms[de.ri],left=de.end==='L',x0=R.x,x1=R.x+R.w,px=f(left?de.edge-0.15:de.edge+0.05);
+  const gw=Math.min(0.8,R.h-0.2),g0=R.y+(R.h-gw)/2;
+  const segs=mode==='closet'?cutGaps(R.y,R.y+R.h,[[g0,g0+gw]]):[[R.y,R.y+R.h]];
+  const first=P.walls.length;
+  segs.forEach(([a,b])=>{const w={x:px,y:f(a),w:0.1,h:f(b-a)};if(mode==='wall')w.u=1;P.walls.push(w);});
+  const cx0=left?x0:px+0.1,cw=left?px-x0:x1-(px+0.1);
+  if(mode==='closet')P.rooms.push({n:'Closet',x:f(cx0),y:R.y,w:f(cw),h:R.h,lx:f(cx0+cw/2),ly:f(R.y+R.h/2),a:cw*R.h});
+  if(left){R.x=f(px+0.1);R.w=f(x1-R.x);}else R.w=f(px-x0);
+  R.a=R.w*R.h;R.lx=f(R.x+R.w/2);
+  if(mode==='wall'){E.sel={t:'w',wi:first};return;}
+  P.furn.push({id:++E.nid,k:'closet',x:f(left?x0+0.31:x1-0.31),y:f(R.y+R.h/2),rot:left?270:90,w:f(R.h-0.1),d:0.62});
+  E.sel=null;
+}
 function edOverlaps(P){
   const set=new Set(),it=P.furn.filter(p=>!/^(rug|plant|dog)$/.test(p.k)),bb=it.map(aabb),X=(a,b)=>Math.min(a[2],b[2])-Math.max(a[0],b[0])>0.04&&Math.min(a[3],b[3])-Math.max(a[1],b[1])>0.04;
   it.forEach((p,i)=>{for(let j=i+1;j<it.length;j++)if(X(bb[i],bb[j]))set.add(p.id+'|'+it[j].id);
-    P.walls.forEach((w,wi)=>{if(X(bb[i],[w.x,w.y,w.x+w.w,w.y+w.h]))set.add(p.id+'|w'+wi);});});
+    P.walls.forEach(w=>{if(X(bb[i],[w.x,w.y,w.x+w.w,w.y+w.h]))set.add(p.id+'|w'+Math.round(w.x*100)+','+Math.round(w.y*100));});});
   return set;
 }
 function edIssues(P,u){
@@ -1456,7 +1544,8 @@ function edIssues(P,u){
   else{const m=wcClear(P);if(m<WC_CL-0.001)o.push(['bad',`Toilet is ${Math.round(m*1000)} mm from a side wall. Minimum is 457 mm (18 in).`]);}
   P.furn.filter(p=>p.k==='tub').forEach(p=>{if(!(Math.abs(p.w-1.524)<0.002&&(Math.abs(p.d-0.762)<0.002||Math.abs(p.d-0.813)<0.002)))o.push(['bad','Tub is not a standard 60×30 or 60×32 in size.']);});
   if(u.n===0&&livDin(P)<LIVDIN_MIN-0.005)o.push(['bad',`Living/sleeping and dining total ${livDin(P).toFixed(1)} m². Minimum is ${LIVDIN_MIN} m².`]);
-  const nowSet=edOverlaps(P);let ov=0;nowSet.forEach(k=>{if(!E.base.has(k))ov++;});
+  deadEnds(P).forEach(d=>o.push(['warn',`Dead-end hall, ${d.len.toFixed(1)} m past the last door. Add a closet or close it off.`]));
+  let ov=0;edOverlaps(P).forEach(k=>{if(!E.base.has(k))ov++;});
   if(ov)o.push(['warn',`${ov} item${ov>1?'s overlap':' overlaps'} a wall or another item.`]);
   if(!o.length)o.push(['ok','Meets the code limits checked here.']);
   return o;
@@ -1464,11 +1553,12 @@ function edIssues(P,u){
 function openEditor(u){
   showInfo(null);
   const P=edClone(u.plan);let mx=0;P.furn.forEach(p=>{if(p.id>mx)mx=p.id;});P.furn.forEach(p=>{if(p.id===undefined)p.id=++mx;});
-  E={u,P,sel:null,hist:[],drag:null,nid:mx,base:null,dirty:false};E.base=edOverlaps(P);
+  let dm=0;P.doors.forEach(d=>{if(d.id>dm)dm=d.id;});P.doors.forEach(d=>{if(d.id===undefined)d.id=++dm;});
+  E={u,P,sel:null,hist:[],drag:null,nid:Math.max(mx,dm),base:null,dirty:false,dis:new Set(),msg:''};E.base=edOverlaps(P);
   $('edTitle').textContent=tagOf(u)+' · '+(u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
   $('ed').hidden=false;edRender();edPanel();
 }
-function edPush(){E.hist.push(edSnap(E.P));E.dirty=true;}
+function edPush(){E.hist.push(edSnap(E.P));E.dirty=true;E.msg='';}
 function edRender(){
   const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=30,Wt=P.W+0.4,Dt=P.D+CORR+0.2;
   const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR)*Sc)/2;
@@ -1477,56 +1567,98 @@ function edRender(){
   let g=`<rect class="base" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/>`+unitSVG(fu)+wallsSVG(ws)+sideWinSVG(P);
   const s=E.sel;
   if(s&&s.t==='f'){const p=P.furn.find(x=>x.id===s.id);if(p){const[w,d]=dimsOf(p);g+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})"><rect class="sel" x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/></g>`;}}
+  if(s&&s.t==='d'){const d=P.doors.find(x=>x.id===s.id);if(d){const[lo,hi]=doorRng(d);g+=doorHor(d)?`<rect class="wsel" x="${f(lo)}" y="${f(d.hy-0.15)}" width="${f(hi-lo)}" height="0.3"/>`:`<rect class="wsel" x="${f(d.hx-0.15)}" y="${f(lo)}" width="0.3" height="${f(hi-lo)}"/>`;}}
   if(s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr)gr.idxs.forEach(i=>{const w=P.walls[i];g+=`<rect class="wsel" x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"/>`;});}
   const fs=Math.max(8,Math.min(12,Sc*0.22));
   $('edSvg').setAttribute('width',cw);$('edSvg').setAttribute('height',ch);$('edSvg').setAttribute('viewBox',`0 0 ${cw} ${ch}`);
   $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs);
+  edBubbles(cw);
+}
+/* Comment bubbles over each dead-end hall. */
+function edBubbles(cw){
+  const box=$('edBub');let h='';
+  deadEnds(E.P).forEach((de,i)=>{
+    const k=deKey(de);if(E.dis.has(k))return;
+    const R=de.R,mid=de.end==='L'?(R.x+de.edge)/2:(de.edge+R.x+R.w)/2;
+    const px=Math.max(112,Math.min(cw-112,E.x0+mid*E.Sc)),py=E.y0+(R.y+R.h/2)*E.Sc-10;
+    h+=`<div class="bub" style="left:${f(px)}px;top:${f(py)}px"><button class="bx" data-m="dismiss" data-k="${k}" aria-label="Dismiss">×</button><p>This hall is a dead end, ${de.len.toFixed(1)} m past the last door. Do you want to add a closet here, or close it off with a wall?</p><div class="edbtns"><button class="tb" data-m="closet" data-k="${k}">Add closet</button><button class="tb" data-m="wall" data-k="${k}">Add wall</button></div></div>`;
+  });
+  box.innerHTML=h;
 }
 function edHit(pt){
   const P=E.P,G=wallGroups(P),wallAt=m=>{for(const gr of G)for(const i of gr.idxs){const w=P.walls[i];if(pt.x>=w.x-m&&pt.x<=w.x+w.w+m&&pt.y>=w.y-m&&pt.y<=w.y+w.h+m)return{t:'w',wi:gr.idxs[0]};}return null;};
   let h=wallAt(0);if(h)return h;
+  for(const d of P.doors)if(inDoor(d,pt,true))return{t:'d',id:d.id};
   for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k!=='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
+  for(const d of P.doors)if(inDoor(d,pt,false))return{t:'d',id:d.id};
   for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k==='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
   return wallAt(0.12);
 }
 const edPt=e=>{const r=$('edSvg').getBoundingClientRect();return{x:(e.clientX-r.left-E.x0)/E.Sc,y:(e.clientY-r.top-E.y0)/E.Sc};};
 $('edSvg').addEventListener('pointerdown',e=>{
-  if(!E)return;const pt=edPt(e),h=edHit(pt);E.sel=h;
+  if(!E)return;const pt=edPt(e),h=edHit(pt);E.sel=h;E.msg='';
   if(h){E.drag={pt,start:edSnap(E.P),moved:false};try{$('edSvg').setPointerCapture(e.pointerId);}catch(x){}}
   edRender();edPanel();
 });
 $('edSvg').addEventListener('pointermove',e=>{
   if(!E||!E.drag)return;const pt=edPt(e),dx=pt.x-E.drag.pt.x,dy=pt.y-E.drag.pt.y;
   if(!E.drag.moved&&Math.hypot(dx,dy)<0.05)return;
-  E.drag.moved=true;const P=E.P;edRestore(P,E.drag.start);
-  if(E.sel.t==='f'){const p=P.furn.find(x=>x.id===E.sel.id);p.x=f(Math.max(0.15,Math.min(P.W-0.15,p.x+Math.round(dx/0.05)*0.05)));p.y=f(Math.max(0.35,Math.min(P.D-0.25,p.y+Math.round(dy/0.05)*0.05)));}
-  else{const gr=wallGroups(P).find(q=>q.idxs[0]===E.sel.wi);if(gr)moveWall(P,gr,gr.hor?dy:dx);}
+  E.drag.moved=true;const P=E.P;edRestore(P,E.drag.start);const s=E.sel,sn=v=>Math.round(v/0.05)*0.05;
+  if(s.t==='f'){const p=P.furn.find(x=>x.id===s.id);p.x=clampX(P,p.x+sn(dx));p.y=clampY(P,p.y+sn(dy));}
+  else if(s.t==='d'){const d=P.doors.find(x=>x.id===s.id);moveDoor(P,d,doorHor(d)?dx:dy);}
+  else{const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);
+    if(gr&&isUser(P,gr)){const w=P.walls[gr.idxs[0]];w.x=f(Math.max(0.1,Math.min(P.W-0.1-w.w,w.x+sn(dx))));w.y=f(Math.max(YT,Math.min(P.D-0.2-w.h,w.y+sn(dy))));}
+    else if(gr)moveWall(P,gr,gr.hor?dy:dx);}
   edRender();
 });
 const edEnd=()=>{if(!E||!E.drag)return;if(E.drag.moved){E.hist.push(E.drag.start);E.dirty=true;}E.drag=null;edRender();edPanel();};
 $('edSvg').addEventListener('pointerup',edEnd);$('edSvg').addEventListener('pointercancel',edEnd);
 function edAdd(it){
-  edPush();const P=E.P,p=Object.assign({id:++E.nid,x:f(P.W/2),y:f(Math.min(P.D-1,P.D/2)),rot:0},it);delete p.n;P.furn.push(p);
+  edPush();const P=E.P;
+  if(it.wall){P.walls.push(it.wall==='h'?{x:f(P.W/2-0.5),y:f(P.D/2),w:1,h:0.1,u:1}:{x:f(P.W/2),y:f(P.D/2-0.5),w:0.1,h:1,u:1});E.sel={t:'w',wi:P.walls.length-1};edRender();edPanel();return;}
+  const p=Object.assign({id:++E.nid,x:f(P.W/2),y:f(Math.min(P.D-1,P.D/2)),rot:0},it);delete p.n;P.furn.push(p);
   E.sel={t:'f',id:p.id};edRender();edPanel();
 }
 function edAct(a,b){
-  if(!E)return;const P=E.P,s=E.sel,p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null;
+  if(!E)return;const P=E.P,s=E.sel;E.msg='';
+  const p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null,d=s&&s.t==='d'?P.doors.find(x=>x.id===s.id):null;
+  const gr=s&&s.t==='w'?wallGroups(P).find(q=>q.idxs[0]===s.wi):null,uw=gr&&isUser(P,gr)?P.walls[gr.idxs[0]]:null;
   if(a==='undo'){const h=E.hist.pop();if(h){edRestore(P,h);E.sel=null;}}
   else if(a==='rot'&&p){edPush();p.rot=(p.rot+90)%360;}
   else if(a==='dup'&&p){edPush();const c=Object.assign({},p,{id:++E.nid,x:f(p.x+0.3),y:f(p.y+0.3)});P.furn.push(c);E.sel={t:'f',id:c.id};}
   else if(a==='del'&&p){edPush();P.furn=P.furn.filter(x=>x!==p);E.sel=null;}
-  else if(a==='fnudge'&&p){edPush();p.x=f(Math.max(0.15,Math.min(P.W-0.15,p.x+(+b.dx))));p.y=f(Math.max(0.35,Math.min(P.D-0.25,p.y+(+b.dy))));}
-  else if(a==='wnudge'&&s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr){const st=edSnap(P);if(moveWall(P,gr,+b.d)){E.hist.push(st);E.dirty=true;}}}
-  else if(a==='wdel'&&s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr){edPush();const rm=new Set(gr.idxs);P.walls=P.walls.filter((w,i)=>!rm.has(i));P.doors=P.doors.filter(dr=>!doorOn(dr,gr,gr.a-0.15,gr.b+0.15));E.sel=null;}}
-  else if(a==='reset'){edPush();const fresh=buildUnit(Object.assign({},E.u,{custom:null}));const c=edClone(fresh);EDKEYS.forEach(k=>P[k]=c[k]);let mx=E.nid;P.furn.forEach(q=>{q.id=++mx;});E.nid=mx;E.base=edOverlaps(P);E.sel=null;}
+  else if(a==='fnudge'&&p){edPush();p.x=clampX(P,p.x+(+b.dx));p.y=clampY(P,p.y+(+b.dy));}
+  else if(a==='wnudge'&&gr){const st=edSnap(P);if(moveWall(P,gr,+b.d)){E.hist.push(st);E.dirty=true;}}
+  else if(a==='wdel'&&gr){edPush();const rm=new Set(gr.idxs);P.walls=P.walls.filter((w,i)=>!rm.has(i));P.doors=P.doors.filter(dr=>!(doorHor(dr)===gr.hor&&doorOn(dr,gr,gr.a-0.15,gr.b+0.15)));E.sel=null;}
+  else if(a==='unudge'&&uw){edPush();uw.x=f(Math.max(0.1,Math.min(P.W-0.1-uw.w,uw.x+(+b.dx))));uw.y=f(Math.max(YT,Math.min(P.D-0.2-uw.h,uw.y+(+b.dy))));}
+  else if(a==='ulen'&&uw){edPush();if(uw.w>=uw.h)uw.w=f(Math.max(0.3,uw.w+(+b.d)));else uw.h=f(Math.max(0.3,uw.h+(+b.d)));}
+  else if(a==='urot'&&uw){edPush();const cx=uw.x+uw.w/2,cy=uw.y+uw.h/2,t=uw.w;uw.w=uw.h;uw.h=t;uw.x=f(cx-uw.w/2);uw.y=f(cy-uw.h/2);}
+  else if(a==='dnudge'&&d){const st=edSnap(P);if(moveDoor(P,d,+b.d)){E.hist.push(st);E.dirty=true;}}
+  else if(a==='dflip'&&d){edPush();if(doorHor(d)){d.hx=f(d.hx+d.cx*d.w);d.cx=-d.cx;}else{d.hy=f(d.hy+d.cy*d.w);d.cy=-d.cy;}}
+  else if(a==='dswing'&&d){const g=doorGroup(P,d);if(g){edPush();if(doorHor(d)){d.oy=-d.oy;d.hy=f(d.oy>0?g.pos+g.t:g.pos);}else{d.ox=-d.ox;d.hx=f(d.ox>0?g.pos+g.t:g.pos);}}}
+  else if(a==='ddel'&&d){edPush();P.doors=P.doors.filter(x=>x!==d);E.sel=null;}
+  else if(a==='dadd'&&gr){
+    const runs=gr.idxs.map(i=>P.walls[i]).map(w=>gr.hor?[w.x,w.x+w.w]:[w.y,w.y+w.h]).sort((q,r)=>(r[1]-r[0])-(q[1]-q[0]));
+    if(!runs.length||runs[0][1]-runs[0][0]<1.1)E.msg='This wall is too short for a door. Move or lengthen it first.';
+    else{edPush();const c=(runs[0][0]+runs[0][1])/2,lo=f(c-0.41),w=0.82,kept=keptGaps(P,gr),id=++E.nid;
+      let nd;
+      if(gr.hor){const oy=gr.pos+gr.t/2<P.D/2?1:-1;nd={id,hx:lo,hy:f(oy>0?gr.pos+gr.t:gr.pos),cx:1,cy:0,ox:0,oy,w};}
+      else{const ox=gr.pos+gr.t/2<P.W/2?1:-1;nd={id,hx:f(ox>0?gr.pos+gr.t:gr.pos),hy:lo,cx:0,cy:1,ox,oy:0,w};}
+      P.doors.push(nd);relayWalls(P,gr,kept);E.sel={t:'d',id};}
+  }
+  else if(a==='reset'){edPush();const fresh=buildUnit(Object.assign({},E.u,{custom:null}));const c=edClone(fresh);EDKEYS.forEach(k=>P[k]=c[k]);let mx=E.nid;P.furn.forEach(q=>{q.id=++mx;});P.doors.forEach(q=>{q.id=++mx;});E.nid=mx;E.base=edOverlaps(P);E.sel=null;}
   edRender();edPanel();
 }
 function edPanel(){
   const P=E.P,s=E.sel,u=E.u;let h='';
-  const p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null,gr=s&&s.t==='w'?wallGroups(P).find(q=>q.idxs[0]===s.wi):null;
-  if(p){h+=`<h3 class="sub">${KN[p.k]||p.k}</h3><div class="edbtns"><button class="tb" data-act="rot">Rotate 90°</button><button class="tb" data-act="dup">Duplicate</button><button class="tb" data-act="del">Delete</button></div><div class="edbtns nudge"><button class="tb" data-act="fnudge" data-dx="-0.05" data-dy="0" aria-label="Nudge left">◀</button><button class="tb" data-act="fnudge" data-dx="0" data-dy="-0.05" aria-label="Nudge up">▲</button><button class="tb" data-act="fnudge" data-dx="0" data-dy="0.05" aria-label="Nudge down">▼</button><button class="tb" data-act="fnudge" data-dx="0.05" data-dy="0" aria-label="Nudge right">▶</button></div><p class="note">Drag it, or nudge 50 mm at a time.</p>`;}
-  else if(gr){h+=`<h3 class="sub">${gr.hor?'Horizontal':'Vertical'} wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round((gr.b-gr.a)*1000)} mm</dd><dt>Position</dt><dd>${Math.round(gr.pos*1000)} mm from the ${gr.hor?'window wall':'left wall'}</dd></dl><div class="edbtns"><button class="tb" data-act="wnudge" data-d="-0.1">${gr.hor?'▲ 100':'◀ 100'}</button><button class="tb" data-act="wnudge" data-d="-0.05">${gr.hor?'▲ 50':'◀ 50'}</button><button class="tb" data-act="wnudge" data-d="0.05">${gr.hor?'▼ 50':'▶ 50'}</button><button class="tb" data-act="wnudge" data-d="0.1">${gr.hor?'▼ 100':'▶ 100'}</button></div><div class="edbtns"><button class="tb" data-act="wdel">Remove wall</button></div><p class="note">Drag the wall, or nudge it in millimetres. Doors and room areas follow.</p>`;}
-  else h+=`<p class="note">Click a wall to move it. Click an item to move, rotate or delete it. Add items below.</p>`;
+  const p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null,d=s&&s.t==='d'?P.doors.find(x=>x.id===s.id):null,gr=s&&s.t==='w'?wallGroups(P).find(q=>q.idxs[0]===s.wi):null,usr=isUser(P,gr);
+  if(E.msg)h+=`<p class="chk-warn">${escapeHtml(E.msg)}</p>`;
+  const nudge=(act,st)=>`<div class="edbtns nudge"><button class="tb" data-act="${act}" data-dx="-${st}" data-dy="0" aria-label="Nudge left">◀</button><button class="tb" data-act="${act}" data-dx="0" data-dy="-${st}" aria-label="Nudge up">▲</button><button class="tb" data-act="${act}" data-dx="0" data-dy="${st}" aria-label="Nudge down">▼</button><button class="tb" data-act="${act}" data-dx="${st}" data-dy="0" aria-label="Nudge right">▶</button></div>`;
+  if(p){h+=`<h3 class="sub">${KN[p.k]||p.k}</h3><div class="edbtns"><button class="tb" data-act="rot">Rotate 90°</button><button class="tb" data-act="dup">Duplicate</button><button class="tb" data-act="del">Delete</button></div>${nudge('fnudge',0.05)}<p class="note">Drag it, or nudge 50 mm at a time.</p>`;}
+  else if(d){const hor=doorHor(d);h+=`<h3 class="sub">Door</h3><dl class="edl"><dt>Width</dt><dd>${Math.round(d.w*1000)} mm</dd></dl><div class="edbtns"><button class="tb" data-act="dnudge" data-d="-0.1">${hor?'◀ 100':'▲ 100'}</button><button class="tb" data-act="dnudge" data-d="-0.05">${hor?'◀ 50':'▲ 50'}</button><button class="tb" data-act="dnudge" data-d="0.05">${hor?'▶ 50':'▼ 50'}</button><button class="tb" data-act="dnudge" data-d="0.1">${hor?'▶ 100':'▼ 100'}</button></div><div class="edbtns"><button class="tb" data-act="dflip">Flip hinge</button><button class="tb" data-act="dswing">Flip swing</button><button class="tb" data-act="ddel">Delete door</button></div><p class="note">Drag the door along its wall. The wall opens and closes around it.</p>`;}
+  else if(gr&&usr){const w=P.walls[gr.idxs[0]];h+=`<h3 class="sub">Added wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round(Math.max(w.w,w.h)*1000)} mm</dd></dl><div class="edbtns"><button class="tb" data-act="ulen" data-d="-0.1">Shorter</button><button class="tb" data-act="ulen" data-d="0.1">Longer</button><button class="tb" data-act="urot">Rotate 90°</button><button class="tb" data-act="wdel">Remove wall</button></div>${nudge('unudge',0.05)}<div class="edbtns"><button class="tb" data-act="dadd">Add door</button></div><p class="note">Drag it anywhere, or nudge 50 mm at a time.</p>`;}
+  else if(gr){h+=`<h3 class="sub">${gr.hor?'Horizontal':'Vertical'} wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round((gr.b-gr.a)*1000)} mm</dd><dt>Position</dt><dd>${Math.round(gr.pos*1000)} mm from the ${gr.hor?'window wall':'left wall'}</dd></dl><div class="edbtns"><button class="tb" data-act="wnudge" data-d="-0.1">${gr.hor?'▲ 100':'◀ 100'}</button><button class="tb" data-act="wnudge" data-d="-0.05">${gr.hor?'▲ 50':'◀ 50'}</button><button class="tb" data-act="wnudge" data-d="0.05">${gr.hor?'▼ 50':'▶ 50'}</button><button class="tb" data-act="wnudge" data-d="0.1">${gr.hor?'▼ 100':'▶ 100'}</button></div><div class="edbtns"><button class="tb" data-act="dadd">Add door</button><button class="tb" data-act="wdel">Remove wall</button></div><p class="note">Drag the wall, or nudge it in millimetres. Doors and room areas follow.</p>`;}
+  else h+=`<p class="note">Click a wall to move it, or a door to slide it. Click an item to move, rotate or delete it. Add items below.</p>`;
   h+=PAL.map((gp,gi)=>`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
   h+=`<h3 class="sub">Code check</h3>`+edIssues(P,u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('');
   const rm=P.rooms.slice().sort((a,b)=>b.a-a.a),net=rm.reduce((t,q)=>t+q.a,0);
@@ -1534,6 +1666,9 @@ function edPanel(){
   $('edSide').innerHTML=h;$('edUndo').disabled=!E.hist.length;
 }
 $('edSide').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E)return;if(b.dataset.act==='add')edAdd(PAL[+b.dataset.g].it[+b.dataset.i]);else edAct(b.dataset.act,b.dataset);});
+$('edBub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E)return;
+  if(b.dataset.m==='dismiss'){E.dis.add(b.dataset.k);edRender();return;}
+  deadFix(b.dataset.k,b.dataset.m);edRender();edPanel();});
 $('edUndo').onclick=()=>edAct('undo');
 $('edReset').onclick=()=>edAct('reset');
 function edClose(){$('ed').hidden=true;E=null;}
@@ -1546,17 +1681,21 @@ $('edDone').onclick=()=>{
 };
 document.addEventListener('keydown',e=>{
   if(!E||$('ed').hidden||/INPUT|TEXTAREA/.test(e.target.tagName))return;
-  const k=e.key,p=E.sel&&E.sel.t==='f';
+  const k=e.key,s=E.sel,p=s&&s.t==='f';
   if(k==='Escape'&&!E.dirty){edClose();return;}
-  if(!E.sel)return;
-  if((k==='Delete'||k==='Backspace')){e.preventDefault();edAct(p?'del':'wdel');}
+  if(!s)return;
+  const gr=s.t==='w'?wallGroups(E.P).find(q=>q.idxs[0]===s.wi):null,usr=isUser(E.P,gr);
+  if(k==='Delete'||k==='Backspace'){e.preventDefault();edAct(p?'del':s.t==='d'?'ddel':'wdel');}
   else if(p&&(k==='r'||k==='R'))edAct('rot');
-  else if(k.startsWith('Arrow')){e.preventDefault();const st=e.shiftKey?0.25:0.05;
-    if(p)edAct('fnudge',{dx:k==='ArrowLeft'?-st:k==='ArrowRight'?st:0,dy:k==='ArrowUp'?-st:k==='ArrowDown'?st:0});
-    else{const gr=wallGroups(E.P).find(q=>q.idxs[0]===E.sel.wi);if(gr&&(gr.hor?/Up|Down/.test(k):/Left|Right/.test(k)))edAct('wnudge',{d:/Up|Left/.test(k)?-st:st});}}
+  else if(k.startsWith('Arrow')){e.preventDefault();const st=e.shiftKey?0.25:0.05,dx=k==='ArrowLeft'?-st:k==='ArrowRight'?st:0,dy=k==='ArrowUp'?-st:k==='ArrowDown'?st:0;
+    if(p)edAct('fnudge',{dx,dy});
+    else if(usr)edAct('unudge',{dx,dy});
+    else if(s.t==='d'){const d=E.P.doors.find(x=>x.id===s.id);if(d)edAct('dnudge',{d:doorHor(d)?dx:dy});}
+    else if(gr&&(gr.hor?dy:dx))edAct('wnudge',{d:gr.hor?dy:dx});}
 });
 addEventListener('resize',()=>{if(E){edRender();}});
 $('iCust').onclick=()=>{if(selected)openEditor(selected);};
+
 /* Apply saved or edited layout data to a unit and put its occupants back at the door. */
 function applyCustom(u,d){
   const P=u.plan;u.custom=d;EDKEYS.forEach(k=>P[k]=JSON.parse(JSON.stringify(d[k])));
@@ -1582,7 +1721,7 @@ scroller.addEventListener('scroll',navUpdate,{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
-if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,openEditor,edState:()=>E,wallGroups,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 load();
 setMob();
 render();
