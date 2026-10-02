@@ -32,6 +32,12 @@ try {
     await p.click('#gen3');
     await p.waitForTimeout(150);
   };
+  // Quick add: one click builds a standard unit
+  const before = await p.evaluate(() => window.__pad.units().length);
+  await p.click('#quickOpts [data-n="2"]');
+  await p.waitForTimeout(150);
+  if ((await p.evaluate(() => window.__pad.units().length)) !== before + 1) errs.push('quick add did not add a unit');
+
   await add(2, 'balanced', 'L', true);
   await add(1, 'storage', 'R');
   await add(3, 'other', 'R', false, 'family with kids, kitchen island, home office, dog');
@@ -58,6 +64,28 @@ try {
   });
   errs.push(...lim);
 
+  // Customize: open the editor on the 4-bed, move a wall, add a toilet, save
+  const edit = await p.evaluate(() => {
+    const T = window.__pad, u = T.units().find(x => x.n === 4), out = {};
+    const nf = u.plan.furn.length, nw = u.plan.walls.length;
+    document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.getElementById('iCust').click();
+    out.open = !document.getElementById('ed').hidden;
+    const gs = T.wallGroups(T.edState().P), gi = gs.findIndex(g => !g.hor), wi = gs[gi].idxs[0];
+    T.edSelect({ t: 'w', wi });
+    const pos = () => T.wallGroups(T.edState().P).find(g => g.idxs[0] === wi).pos, p0 = pos();
+    for (const d of ['0.05', '-0.05']) { document.querySelector(`[data-act="wnudge"][data-d="${d}"]`).click(); if (Math.abs(pos() - p0) > 0.001) break; }
+    out.moved = Math.abs(pos() - p0) > 0.001;
+    document.querySelector('[data-act="add"][data-g="0"][data-i="0"]').click();
+    document.getElementById('edDone').click();
+    out.saved = !!u.custom && u.plan.furn.length === nf + 1 && u.plan.walls.length === nw;
+    out.idx = u.idx;
+    return out;
+  });
+  if (!edit.open) errs.push('customize did not open the editor');
+  if (!edit.moved) errs.push('editor could not move a wall');
+  if (!edit.saved) errs.push('editor did not save the edited unit');
+
   const col = await p.evaluate(async () => {
     const T = window.__pad; let bad = 0, n = 0;
     for (let k = 0; k < 60; k++) {
@@ -72,6 +100,7 @@ try {
   await p.waitForTimeout(400);
   const after = await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
   if (after.join() !== order.join()) errs.push('added units did not survive a reload');
+  if (!(await p.evaluate(i => !!window.__pad.units().find(u => u.idx === i).custom, edit.idx))) errs.push('customized layout did not survive a reload');
 
   // Phone
   const m = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
