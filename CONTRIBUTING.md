@@ -1,4 +1,4 @@
-# Working on PAD
+﻿# Working on PAD
 
 PAD is one static page (`index.html`) hosted on Netlify at https://padufs.netlify.app.
 `main` is the live site. Every change goes through a pull request so it can be
@@ -50,7 +50,7 @@ node tests/smoke.mjs
 | New-unit dialog | `openModal`, `readSize` |
 | Quick add (one-click standard unit) | `quickAdd` |
 | Building code limits | `BED1_W`, `STUDIO_A`, `solveStudio`, `solveOneBed`, `wcClear` |
-| Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `PAL`, `applyCustom` |
+| Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `moveDoor`, `deadEnds`, `PAL`, `applyCustom` |
 
 ## Writing style for on-screen text
 

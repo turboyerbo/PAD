@@ -77,14 +77,24 @@ try {
     for (const d of ['0.05', '-0.05']) { document.querySelector(`[data-act="wnudge"][data-d="${d}"]`).click(); if (Math.abs(pos() - p0) > 0.001) break; }
     out.moved = Math.abs(pos() - p0) > 0.001;
     document.querySelector('[data-act="add"][data-g="0"][data-i="0"]').click();
+    // Dead-end hall: the bubble offers a closet, which removes it
+    const P = T.edState().P, de0 = T.deadEnds(P);
+    out.bubbles = document.querySelectorAll('.bub').length === de0.length;
+    if (de0.length) { document.querySelector('.bub [data-m="closet"]').click(); out.deadFixed = T.deadEnds(T.edState().P).length === de0.length - 1; }
+    else out.deadFixed = true;
+    // Doors slide along their wall (and the wall re-cuts around them)
+    out.doorMoved = T.edState().P.doors.some(d => T.moveDoor(T.edState().P, d, 0.1) || T.moveDoor(T.edState().P, d, -0.1));
     document.getElementById('edDone').click();
-    out.saved = !!u.custom && u.plan.furn.length === nf + 1 && u.plan.walls.length === nw;
+    out.saved = !!u.custom && u.plan.furn.length >= nf + 1 && u.plan.rooms.length >= 1;
     out.idx = u.idx;
     return out;
   });
   if (!edit.open) errs.push('customize did not open the editor');
   if (!edit.moved) errs.push('editor could not move a wall');
   if (!edit.saved) errs.push('editor did not save the edited unit');
+  if (!edit.bubbles) errs.push('dead-end bubbles did not match the dead ends found');
+  if (!edit.deadFixed) errs.push('Add closet did not remove the dead end');
+  if (!edit.doorMoved) errs.push('editor could not slide a door');
 
   const col = await p.evaluate(async () => {
     const T = window.__pad; let bad = 0, n = 0;
