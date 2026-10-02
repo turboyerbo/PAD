@@ -1,5 +1,5 @@
 ﻿// PAD offline cache. Bump VERSION on each deploy so clients pick up the new build.
-const VERSION = 'pad-v11';
+const VERSION = 'pad-v15';
 const CORE = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/patry-logo.png'];
 
 self.addEventListener('install', e => {
@@ -11,6 +11,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // Only this site and Google Fonts are cached. Sign-in and database calls always go to the network.
+  const host = new URL(req.url).hostname;
+  if (host !== self.location.hostname && !/(^|\.)(googleapis|gstatic)\.com$/.test(host)) return;
   // Page: network first so new deploys show up, cache as fallback when offline.
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(VERSION).then(x => x.put('/index.html', c)); return r; })
