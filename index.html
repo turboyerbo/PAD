@@ -220,6 +220,39 @@ textarea{width:100%;box-sizing:border-box;border:1px solid var(--ink);background
   .opts.five .opt{padding:10px 2px}
   .opt .nm{font-size:10px}
 }
+/* quick add and unit editor */
+.quick{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.quick .lead{margin:2px 0 8px}
+.quick .seg.wide{margin-bottom:6px}
+.cust{margin:0 0 12px;padding:10px 12px;background:var(--furn-fill);border:1px solid var(--rule)}
+.cust p{margin:0 0 8px;font-size:13px}
+.ed{position:fixed;inset:0;z-index:20;background:var(--paper);display:flex;flex-direction:column}
+.ed-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:10px 16px;background:var(--navy);color:#fff;border-bottom:3px solid var(--blue)}
+.ed-top .step{color:#C9D3DA}
+.ed-top h2{margin:0;font-size:18px;font-weight:600}
+.ed-act{display:flex;gap:6px;flex-wrap:wrap}
+.ed-top .tb{border-color:#fff;color:#fff}
+.ed-top .tb.primary{background:#fff;color:var(--navy)}
+.ed-body{flex:1;min-height:0;display:flex}
+.ed-cv{flex:1;min-width:0;position:relative;overflow:hidden}
+#edSvg{display:block;touch-action:none;cursor:default;user-select:none;-webkit-user-select:none}
+#edSvg *{vector-effect:non-scaling-stroke}
+#edSvg pattern *{vector-effect:none}
+.wsel{fill:rgba(2,116,190,.28);stroke:var(--accent);stroke-width:1.5}
+.ed-side{width:300px;flex:none;overflow:auto;background:var(--sheet);border-left:1px solid var(--rule);padding:4px 14px 16px;box-sizing:border-box}
+.ed-side .sub{margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.ed-side .note{margin:8px 0 0;font-size:12px;color:var(--ink-2);line-height:1.45}
+.edbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.edbtns .tb{padding:6px 9px}
+.pal{display:flex;flex-wrap:wrap;gap:6px}
+.edl{display:grid;grid-template-columns:1fr auto;gap:3px 12px;margin:0;font-size:13px}
+.edl dt{color:var(--ink-2)}.edl dd{margin:0;font-family:var(--narrow);font-variant-numeric:tabular-nums}
+.edl .tot{border-top:1px solid var(--rule);padding-top:3px;font-weight:600;color:var(--ink)}
+.chk-ok,.chk-warn,.chk-bad{margin:4px 0;font-size:13px;line-height:1.4;padding-left:18px;position:relative}
+.chk-ok::before,.chk-warn::before,.chk-bad::before{position:absolute;left:0;font-weight:700}
+.chk-ok::before{content:"✓";color:#2E8B57}.chk-warn::before{content:"!";color:#B26B00}.chk-bad::before{content:"✕";color:#B3261E}
+.chk-bad{color:#B3261E}
+@media (max-width:700px){.ed-body{flex-direction:column}.ed-side{width:auto;height:44%;border-left:0;border-top:1px solid var(--rule)}}
 /* phone interface */
 #mob{display:none}
 body.mob .bar,body.mob .stage,body.mob footer{display:none!important}
@@ -313,6 +346,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 </aside>
 <aside class="info" id="info" hidden aria-labelledby="iTitle">
   <div class="info-head"><div><span class="step" id="iKicker">Baseline unit</span><h2 id="iTitle">PAD-01</h2></div><button class="x" id="iClose" aria-label="Close unit details">×</button></div>
+  <div class="cust"><p>Do you want to customize this unit?</p><button class="tb primary" id="iCust">Customize</button></div>
   <dl id="iList"></dl>
   <h3 class="sub">Room areas</h3>
   <dl id="iRooms"></dl>
@@ -330,6 +364,12 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
         <button class="opt" data-n="2"><span class="num">2</span><span class="nm">Two bed</span></button>
         <button class="opt" data-n="3"><span class="num">3</span><span class="nm">Three bed</span></button>
         <button class="opt" data-n="4"><span class="num">4</span><span class="nm">Four bed</span></button>
+      </div>
+      <div class="quick">
+        <span class="lbl">Or add a standard unit in one click</span>
+        <p class="lead">Balanced layout, sized automatically to meet the code limits.</p>
+        <div class="seg wide" id="quickOpts" role="group" aria-label="Quick add a standard unit"><button type="button" data-n="0">Studio</button><button type="button" data-n="1">1 bed</button><button type="button" data-n="2">2 bed</button><button type="button" data-n="3">3 bed</button><button type="button" data-n="4">4 bed</button></div>
+        <div class="result err" id="quickMsg" hidden></div>
       </div>
     </section>
     <section id="s2" hidden>
@@ -361,6 +401,11 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
         <label class="chk"><input type="checkbox" id="fCorner"> <span><b>Corner unit</b><br><span class="sm2">Windows on two sides. Closes off this end of the strip.</span></span></label>
       </div>
       <p class="lead">Size limits are optional. Leave a field blank and it is sized automatically. Units stay flush along the corridor, so a longer unit extends further toward the exterior.</p>
+      <p class="lead" id="limits"></p>
+      <div class="field" id="minAField" hidden>
+        <span class="lbl">Minimum area</span>
+        <div class="seg wide" id="segMin" role="group" aria-label="Studio minimum area"><button type="button" data-a="37" aria-pressed="true">37 m²</button><button type="button" data-a="41" aria-pressed="false">41 m²</button><button type="button" data-a="55" aria-pressed="false">55 m²</button></div>
+      </div>
       <div class="field">
         <label for="fA">Maximum area</label>
         <div class="inrow"><input id="fA" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 55">
@@ -381,6 +426,17 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
         <button class="tb primary" id="gen3">Generate unit</button>
       </div>
     </section>
+  </div>
+</div>
+
+<div class="ed" id="ed" hidden role="dialog" aria-modal="true" aria-labelledby="edTitle">
+  <div class="ed-top">
+    <div><span class="step">Customize unit</span><h2 id="edTitle">PAD-01</h2></div>
+    <div class="ed-act"><button class="tb" id="edUndo">Undo</button><button class="tb" id="edReset">Reset layout</button><button class="tb" id="edCancel">Cancel</button><button class="tb primary" id="edDone">Done</button></div>
+  </div>
+  <div class="ed-body">
+    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <aside class="ed-side" id="edSide"></aside>
   </div>
 </div>
 
@@ -447,7 +503,7 @@ function planStudio(s,R){
   P.hw(0,W,YB,0.2,[eg]);
   P.door(X1-0.06,YB,-1,0,0,-1,0.86);
   // bath
-  if(pri==='bath')P.fu('tub',X0+bathW/2,YB-0.38,0,{w:Math.min(bathW,1.7),d:0.75});
+  if(pri==='bath'){const tb=TUBS[bigBath?1:0];P.fu('tub',X0+bathW/2,YB-tb.d/2,0,{w:tb.w,d:tb.d});}
   else P.fu('shower',X0+bathW/2,YB-0.46,0,{w:bathW,d:0.9});
   P.fu('van',X0+0.4,bTop+0.27,0,{w:0.7,d:0.5});
   P.fu('wc',X0+0.36,bTop+0.98,270);
@@ -554,7 +610,7 @@ function planMulti(s,R){
     if(b.low==='bath'){
       const tub=pri==='bath'||(b.master&&!o.access);
       if(o.access){P.fu('shower',ax+sg*0.75,YB-0.5,0,{w:1.5,d:1.0});P.fu('wc',ax+sg*(1.5+0.45),YB-0.36,180);P.marks.push({x:x0+b.w/2+sg*0.2,y:ly0+depth/2-0.15,r:0.75});}
-      else if(tub){P.fu('tub',ax+sg*0.8,YB-0.38,0,{w:1.6,d:0.75});P.fu('wc',ax+sg*(1.6+0.45),YB-0.36,180);}
+      else if(tub){const tb=TUBS[pri==='bath'?1:0];P.fu('tub',ax+sg*tb.w/2,YB-tb.d/2,0,{w:tb.w,d:tb.d});P.fu('wc',ax+sg*(tb.w+0.45),YB-0.36,180);}
       else{P.fu('shower',ax+sg*0.5,YB-0.5,0,{w:1.0,d:1.0});P.fu('wc',ax+sg*(1.0+0.45),YB-0.36,180);}
       const dbl=pri==='bath'&&depth>=2.5;
       const vw=dbl?1.4:0.85;
@@ -640,18 +696,86 @@ function planMulti(s,R){
 }
 
 const MAXD=14,MAXW=30,FT=0.3048,FT2=0.09290304;
+/* Building code limits for new studios and 1-bedroom units (Toronto / Ontario). */
+const MINWALL=2.0;                  // minimum wall length, m
+const BED1_W=[6,6.5,7];             // allowed 1-bedroom widths, m
+const STUDIO_A=[37,41,55];          // allowed studio minimum areas, m²
+const LIVDIN_MIN=13.5;              // living/sleeping + dining combined, m²
+const WC_CL=0.457;                  // toilet centreline to side wall, m (18 in)
+const TUBS=[{w:1.524,d:0.762},{w:1.524,d:0.813}]; // standard Ontario tubs: 60x30 in and 60x32 in
+const LIVDIN=/^(Living \/ Sleeping|Sleeping|Living|Dining)$/;
+const livDin=P=>P.rooms.filter(q=>LIVDIN.test(q.n)).reduce((s,q)=>s+q.a,0);
+/* Smallest distance from a toilet centreline to a side wall, in metres. Side = across the bowl; the back wall is not counted. */
+function wcClear(P){
+  let m=Infinity;
+  P.furn.filter(p=>p.k==='wc').forEach(p=>{
+    const lat=p.rot%180===0?'x':'y';
+    P.walls.forEach(w=>{
+      const t=lat==='x'?w.w:w.h,l=lat==='x'?w.h:w.w;if(t>0.3||l<=0.3)return;
+      const c=lat==='x'?p.x:p.y,o=lat==='x'?p.y:p.x,a=lat==='x'?w.x:w.y,b=a+t,oa=lat==='x'?w.y:w.x;
+      if(oa+l<o-0.3||oa>o+0.3||(c>a&&c<b))return;
+      m=Math.min(m,Math.abs(c-a),Math.abs(c-b));
+    });
+  });
+  return m;
+}
 function sizeReq(n,pri,o){
   if(n===0)return{mw:(pri==='bath'||o.access)?3.3:2.9,md:(pri==='bath'||o.access)?7.2:7.0};
   const cd=pri==='storage'?0.75:0.62,hd=o.access?1.5:1.1;
   return{mw:f(0.2+0.1*n+n*(o.access?2.9:2.6)+(o.access?3.4:3.0)),md:f(0.3+2.9+cd+0.2+hd+2.0+0.2)};
 }
+/* 1-bedroom units come in set widths. A blank width picks the nearest set width that fits the other limits. */
+function solveOneBed(spec,defW,mw,md){
+  const ok=BED1_W.filter(w=>w>=mw-1e-6),list=ok.join(', ').replace(/, ([^,]*)$/,' or $1')+' m';
+  const fits=w=>!spec.maxA||w*(spec.Lt||md)<=spec.maxA+0.005;
+  let W=null;
+  if(spec.Wt){W=ok.find(w=>Math.abs(w-spec.Wt)<0.02);if(!W)return{err:`A 1-bedroom unit must be ${list} wide.`};}
+  else{
+    const c=ok.filter(fits);
+    if(!c.length)return{err:`${spec.maxA.toFixed(1)} m² is too small. The smallest 1-bedroom unit is ${(ok[0]*(spec.Lt||md)).toFixed(1)} m².`};
+    W=c.find(w=>w>=defW-0.005)||c[c.length-1];
+  }
+  let D=spec.Lt||8.4;
+  if(spec.maxA&&W*D>spec.maxA+0.005){
+    if(!spec.Lt)D=Math.max(md,Math.floor(spec.maxA/W*100)/100);
+    if(W*D>spec.maxA+0.005)return{err:`${spec.maxA.toFixed(1)} m² is too small. With these inputs the smallest 1-bedroom unit is ${(W*(spec.Lt||md)).toFixed(1)} m².`};
+  }
+  return{W:f(W),D:f(D),fit:f(W)};
+}
+/* Studios have a minimum area (37, 41 or 55 m²) and a minimum combined living/sleeping and dining area. */
+function solveStudio(spec,defW,mw,md){
+  const A0=spec.minA||STUDIO_A[0],cl=x=>Math.ceil(x*100-1e-6)/100,fl=x=>Math.floor(x*100)/100;
+  if(spec.maxA&&spec.maxA<A0-0.005)return{err:`A studio of at least ${A0} m² needs a maximum area of ${A0} m² or more.`};
+  let W=spec.Wt,D=spec.Lt;
+  if(!D&&!W){D=8.4;W=Math.max(defW,cl(A0/D));}
+  else if(!W)W=Math.max(defW,cl(A0/D));
+  else if(!D)D=Math.max(8.4,cl(A0/W));
+  if(spec.maxA&&W*D>spec.maxA+0.005){
+    if(!spec.Wt)W=Math.max(mw,fl(spec.maxA/D));
+    if(W*D>spec.maxA+0.005&&!spec.Lt)D=Math.max(md,fl(spec.maxA/W));
+  }
+  if(W>MAXW||D>MAXD)return{err:`A ${A0} m² studio does not fit within ${MAXW} m by ${MAXD} m.`};
+  if(W*D<A0-0.005)return{err:`A studio must be at least ${A0} m². These sizes give ${(W*D).toFixed(1)} m².`};
+  if(spec.maxA&&W*D>spec.maxA+0.005)return{err:`${spec.maxA.toFixed(1)} m² is too small. With these inputs the smallest studio is ${(W*D).toFixed(1)} m².`};
+  const ld=(w,d)=>livDin(buildUnit(Object.assign({},spec,{W:f(w),D:f(d),idx:0})));
+  while(ld(W,D)<LIVDIN_MIN-0.005){
+    const grow=!spec.Wt?[f(W+0.05),D]:!spec.Lt?[W,f(D+0.05)]:null;
+    if(!grow||grow[0]>MAXW||grow[1]>MAXD||(spec.maxA&&grow[0]*grow[1]>spec.maxA+0.005))
+      return{err:`Living/sleeping and dining need at least ${LIVDIN_MIN} m² combined. These sizes give ${ld(W,D).toFixed(1)} m².`};
+    [W,D]=grow;
+  }
+  return{W:f(W),D:f(D),fit:f(W)};
+}
 function solveSize(spec){
   const o=spec.pri==='other'?parseOther(spec.other):{};
-  const {mw,md}=sizeReq(spec.n,spec.pri,o);
+  const sz=sizeReq(spec.n,spec.pri,o),md=sz.md,mw=Math.max(sz.mw,MINWALL);
   const name=spec.n===0?'studio':spec.n+'-bedroom unit';
   const defW=buildUnit(Object.assign({},spec,{W:null,D:8.4,idx:0})).W;
-  if(spec.Wt&&(spec.Wt<mw||spec.Wt>MAXW))return{err:spec.Wt<mw?`A ${name} needs a width of at least ${mw.toFixed(2)} m.`:`Width can be at most ${MAXW} m.`};
+  if(spec.Wt&&spec.Wt<MINWALL)return{err:`Walls must be at least ${MINWALL} m long.`};
+  if(spec.n!==1&&spec.Wt&&(spec.Wt<mw||spec.Wt>MAXW))return{err:spec.Wt<mw?`A ${name} needs a width of at least ${mw.toFixed(2)} m.`:`Width can be at most ${MAXW} m.`};
   if(spec.Lt&&(spec.Lt<md||spec.Lt>MAXD))return{err:spec.Lt<md?`A ${name} needs a length of at least ${md.toFixed(2)} m.`:`Length can be at most ${MAXD} m.`};
+  if(spec.n===0)return solveStudio(spec,defW,mw,md);
+  if(spec.n===1)return solveOneBed(spec,defW,mw,md);
   let W=spec.Wt||defW,D=spec.Lt||8.4;
   if(spec.maxA&&W*D>spec.maxA){
     if(!spec.Wt)W=Math.max(mw,spec.maxA/D);
@@ -780,9 +904,9 @@ function makeUnit(spec){
   return u;
 }
 const added=()=>units.filter(u=>u.src==='add');
-function save(){try{localStorage.setItem(STORE,JSON.stringify({added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),grouped,zoom}));}catch(e){}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify({added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom).map(u=>({idx:u.idx,d:u.custom})),grouped,zoom}));}catch(e){}}
 function initial(){nextIdx=1;units=BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b)));}
-function load(){initial();try{const d=JSON.parse(localStorage.getItem(STORE)||'null');if(d){grouped=!!d.grouped;zoom=d.zoom||1;(d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);});}}catch(e){}}
+function load(){initial();try{const d=JSON.parse(localStorage.getItem(STORE)||'null');if(d){grouped=!!d.grouped;zoom=d.zoom||1;(d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);});(d.custom||[]).forEach(c=>{const u=units.find(x=>x.idx===c.idx);if(u&&c.d)applyCustom(u,c.d);});}}catch(e){}}
 const tagOf=u=>'PAD-'+String(u.idx).padStart(2,'0');
 
 /* ---------- formatting ---------- */
@@ -1003,7 +1127,7 @@ function showInfo(u){
   selected=u;const info=$('info');
   if(!u){info.hidden=true;return;}
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
-  $('iKicker').textContent=u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit';
+  $('iKicker').textContent=(u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
   $('iTitle').textContent=tagOf(u)+' · '+(u.minimal?'Minimum studio':u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
   const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Gross area (to wall centrelines)',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
   if(m.storeRooms)rows.push(['Storage rooms',m.storeRooms]);
@@ -1214,7 +1338,7 @@ function readSize(){
   cv($('cL'),Lt,v=>lU==='ft'?`= ${v.toFixed(2)} m`:`= ${ftin(Math.round(v*1000))}`);
   if([A,Wt,Lt].some(Number.isNaN))return{err:'Check the highlighted values.'};
   if(endCorner(place))return{err:endCorner(place==='L'?'R':'L')?'Both ends already have corner units. Undo one of them to add more units.':`The ${place==='L'?'left':'right'} end already has a corner unit. Add this unit at the other end.`};
-  const spec={n:pick.n,pri:pick.pri,other:pick.other,seed:pick.seed,maxA:A||null,Wt:Wt||null,Lt:Lt||null,side:place,corner:$('fCorner').checked?place:null};
+  const spec={n:pick.n,pri:pick.pri,other:pick.other,seed:pick.seed,minA:pick.n===0?(pick.minA||STUDIO_A[0]):null,maxA:A||null,Wt:Wt||null,Lt:Lt||null,side:place,corner:$('fCorner').checked?place:null};
   const r=solveSize(spec);return Object.assign(spec,r);
 }
 function updateSize(){
@@ -1223,13 +1347,22 @@ function updateSize(){
   el.className='result';el.innerHTML=`Result <b>${r.W.toFixed(2)} × ${r.D.toFixed(2)} m</b> = <b>${(r.W*r.D).toFixed(1)} m²</b>${r.maxA?` <span style="color:var(--ink-2)">(max ${r.maxA.toFixed(1)} m²)</span>`:''}`;
   $('gen3').disabled=false;
 }
-function toStep3(){pick.seed=Math.floor(Math.random()*1e9);$('s2').hidden=true;$('s3').hidden=false;$('mStep').textContent='Step 3 of 3';updateSize();setTimeout(()=>$('fA').focus(),30);}
+const LIMITS={
+  0:`Studio limits: at least 37, 41 or 55 m² (your choice below), living/sleeping and dining at least ${LIVDIN_MIN} m² combined, toilet at least 18 in from a side wall, standard 60 in tubs, walls at least ${MINWALL} m.`,
+  1:`1-bedroom limits: width of 6, 6.5 or 7 m, toilet at least 18 in from a side wall, standard 60 in tubs, walls at least ${MINWALL} m.`
+};
+function setMinA(a){pick.minA=a;$('segMin').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.a===a)));}
+$('segMin').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setMinA(+b.dataset.a);updateSize();});
+function toStep3(){pick.seed=Math.floor(Math.random()*1e9);
+  setMinA(STUDIO_A[0]);$('minAField').hidden=pick.n!==0;
+  $('limits').textContent=LIMITS[pick.n]||`Walls must be at least ${MINWALL} m long.`;
+  $('fW').placeholder=pick.n===1?'6, 6.5 or 7':'auto';$('s2').hidden=true;$('s3').hidden=false;$('mStep').textContent='Step 3 of 3';updateSize();setTimeout(()=>$('fA').focus(),30);}
 ['fA','fW','fL'].forEach(id=>$(id).addEventListener('input',updateSize));
 $('segP').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setPlace(b.dataset.p);updateSize();});
 $('fCorner').addEventListener('change',updateSize);
 function segInit(id,set){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));set(b.dataset.u);updateSize();});}
 segInit('segA',u=>{aU=u;$('fA').placeholder=u==='ft2'?'e.g. 600':'e.g. 55';});
-segInit('segL',u=>{lU=u;$('fW').placeholder='auto';$('fL').placeholder=u==='ft'?"27'-6\"":'8.4';});
+segInit('segL',u=>{lU=u;$('fW').placeholder=pick.n===1?(u==='ft'?"19'-8\", 21'-4\" or 23'-0\"":'6, 6.5 or 7'):'auto';$('fL').placeholder=u==='ft'?"27'-6\"":'8.4';});
 $('back3').onclick=()=>{$('s3').hidden=true;$('s2').hidden=false;$('mStep').textContent='Step 2 of 3';};
 $('gen3').onclick=()=>{const r=readSize();if(r.err)return;generate(r);};
 $('s3').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'&&!$('gen3').disabled)$('gen3').click();});
@@ -1244,6 +1377,193 @@ function generate(r){
   const {list}=layout();const x=PADL+u.ox*S;
   requestAnimationFrame(()=>scroller.scrollTo({left:r.side==='L'?0:Math.max(0,x+u.plan.W*S+120-scroller.clientWidth),behavior:reduce?'auto':'smooth'}));
   addBtn.focus({preventScroll:true});
+}
+
+/* ---------- quick add ---------- */
+$('quickOpts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;quickAdd(+b.dataset.n);});
+function quickAdd(n){
+  const msg=$('quickMsg');msg.hidden=true;
+  if(endCorner(place)){msg.textContent=endCorner(place==='L'?'R':'L')?'Both ends already have corner units. Undo one of them to add more units.':`The ${place==='L'?'left':'right'} end already has a corner unit. Add this unit at the other end.`;msg.hidden=false;return;}
+  const spec={n,pri:'balanced',other:'',seed:Math.floor(Math.random()*1e9),minA:n===0?STUDIO_A[0]:null,maxA:null,Wt:null,Lt:null,side:place,corner:null};
+  const r=solveSize(spec);
+  if(r.err){msg.textContent=r.err;msg.hidden=false;return;}
+  generate(Object.assign(spec,r));
+}
+
+/* ---------- unit editor: move walls, add and remove furniture and fixtures ---------- */
+const EDKEYS=['walls','doors','wins','furn','floors','rooms','marks'];
+const KN={bed:'Bed',ns:'Nightstand',sofa:'Sofa',arm:'Armchair',ctable:'Coffee table',rtable:'Round table',ltable:'Dining table',desk:'Desk',dresser:'Dresser',closet:'Closet',shelf:'Shelving',tv:'TV',rug:'Rug',plant:'Plant',wd:'Washer / dryer',counter:'Counter',sink:'Sink',cook:'Cooktop',fridge:'Fridge',island:'Island',wc:'Toilet',van:'Vanity',tub:'Tub',shower:'Shower',dog:'Dog bed'};
+const PAL=[
+  {g:'Washroom',it:[{n:'Toilet',k:'wc'},{n:'Vanity',k:'van',w:0.85,d:0.52},{n:'Double vanity',k:'van',w:1.4,d:0.52},{n:'Tub 60×30 in',k:'tub',w:1.524,d:0.762},{n:'Tub 60×32 in',k:'tub',w:1.524,d:0.813},{n:'Shower',k:'shower',w:1,d:1},{n:'Roll-in shower',k:'shower',w:1.5,d:1}]},
+  {g:'Bedroom',it:[{n:'Double bed',k:'bed',w:1.4,d:2},{n:'Queen bed',k:'bed',w:1.55,d:2},{n:'Twin bed',k:'bed',w:0.95,d:2},{n:'Nightstand',k:'ns'},{n:'Dresser',k:'dresser',w:1.1,d:0.48},{n:'Closet',k:'closet',w:1.2,d:0.62},{n:'Desk',k:'desk',w:1,d:0.5}]},
+  {g:'Living',it:[{n:'Sofa',k:'sofa',w:2.1,d:0.9},{n:'Armchair',k:'arm'},{n:'Coffee table',k:'ctable',w:0.55,d:1},{n:'Round table',k:'rtable',r:0.45,c:4},{n:'Dining table',k:'ltable',w:1.6,d:0.9,c:3},{n:'TV',k:'tv',w:1.7,d:0.42},{n:'Shelving',k:'shelf',w:1,d:0.4},{n:'Rug',k:'rug',w:1.5,d:2.3},{n:'Plant',k:'plant',s:0.45}]},
+  {g:'Kitchen and laundry',it:[{n:'Counter',k:'counter',w:1.2,d:0.62},{n:'Sink',k:'sink'},{n:'Cooktop',k:'cook'},{n:'Fridge',k:'fridge'},{n:'Island',k:'island',w:0.9,d:1.6},{n:'Washer / dryer',k:'wd'}]}
+];
+let E=null;
+const edClone=P=>{const o={W:P.W,D:P.D,sideWins:P.sideWins,side:P.side};EDKEYS.forEach(k=>o[k]=JSON.parse(JSON.stringify(P[k]||[])));return o;};
+const edSnap=P=>JSON.stringify(EDKEYS.reduce((o,k)=>(o[k]=P[k],o),{}));
+const edRestore=(P,s)=>Object.assign(P,JSON.parse(s));
+function dimsOf(p){
+  const k=p.k;
+  if(p.w!==undefined)return k==='ltable'?[p.w+0.1,p.d+0.9]:k==='desk'?[p.w,p.d+0.5]:[p.w,p.d];
+  if(k==='rtable'){const s=2*((p.r||0.45)+0.45);return[s,s];}
+  if(k==='plant'){const s=(p.s||0.45)*0.9;return[s,s];}
+  return FDIM[k]||[0.6,0.6];
+}
+const aabb=p=>{let[w,d]=dimsOf(p);if(((p.rot%180)+180)%180===90)[w,d]=[d,w];return[p.x-w/2,p.y-d/2,p.x+w/2,p.y+d/2];};
+function inItem(p,pt){const a=p.rot*Math.PI/180,dx=pt.x-p.x,dy=pt.y-p.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a),[w,d]=dimsOf(p);return Math.abs(lx)<=w/2&&Math.abs(ly)<=d/2;}
+/* Movable interior walls: collinear pieces joined across doorways and openings (gaps of 0.5 to 1.3 m). Outer walls are fixed. */
+const doorOn=(d,g,lo,hi)=>{const h=g.hor?d.hy:d.hx,al=g.hor?d.hx:d.hy;return h>=g.pos-0.03&&h<=g.pos+g.t+0.03&&al>=lo&&al<=hi;};
+function wallGroups(P){
+  const by={};
+  P.walls.forEach((w,i)=>{const hor=w.w>w.h,t=hor?w.h:w.w,pos=hor?w.y:w.x;
+    if(hor?(pos<0.01||pos+t>P.D-0.01):(pos<0.01||pos+t>P.W-0.01))return;
+    const k=(hor?'h':'v')+Math.round(pos*1000)+'_'+Math.round(t*1000);
+    (by[k]=by[k]||[]).push({i,a:hor?w.x:w.y,b:hor?w.x+w.w:w.y+w.h,hor,pos,t});});
+  const out=[];
+  Object.values(by).forEach(list=>{list.sort((p,q)=>p.a-q.a);let cur=null;
+    list.forEach(s=>{const gap=cur?s.a-cur.b:0;
+      if(cur&&(gap>=0.5&&gap<=1.3||(gap<=1.3&&P.doors.some(d=>doorOn(d,cur,cur.b-0.15,s.a+0.15))))){cur.b=Math.max(cur.b,s.b);cur.idxs.push(s.i);}
+      else{cur={hor:s.hor,pos:s.pos,t:s.t,a:s.a,b:s.b,idxs:[s.i]};out.push(cur);}});});
+  return out;
+}
+/* Move one wall group by d metres (perpendicular to the wall, snapped to 50 mm). Doors, floors and room areas follow. */
+function moveWall(P,g,d){
+  const lo=g.hor?YT+0.3:0.5,hi=g.hor?P.D-0.5-g.t:P.W-0.5-g.t;
+  const dd=f(Math.max(lo,Math.min(hi,g.pos+Math.round(d/0.05)*0.05))-g.pos);
+  if(!dd)return false;
+  const ax=g.hor?['y','h','x','w']:['x','w','y','h'],near=(v,a)=>Math.abs(v-a)<0.16,y1=g.pos,y2=g.pos+g.t;
+  const hits=r=>{const lo2=r[ax[2]],hi2=lo2+r[ax[3]];return Math.min(hi2,g.b)-Math.max(lo2,g.a)>0.2;};
+  const edge=r=>{if(!hits(r))return 0;const e1=r[ax[0]]+r[ax[1]],e0=r[ax[0]];if(near(e1,y1)||near(e1,y2))return 1;if(near(e0,y2)||near(e0,y1))return 2;return 0;};
+  for(const q of P.rooms){const s=edge(q);if(s&&q[ax[1]]+(s===1?dd:-dd)<0.5)return false;}
+  g.idxs.forEach(i=>{const w=P.walls[i];w[ax[0]]=f(w[ax[0]]+dd);});
+  P.doors.forEach(dr=>{if(doorOn(dr,g,g.a-0.15,g.b+0.15)){if(g.hor)dr.hy=f(dr.hy+dd);else dr.hx=f(dr.hx+dd);}});
+  const shift=(r,room)=>{const s=edge(r);if(!s)return;const a0=r.w*r.h;
+    if(s===1)r[ax[1]]=f(r[ax[1]]+dd);else{r[ax[0]]=f(r[ax[0]]+dd);r[ax[1]]=f(r[ax[1]]-dd);}
+    if(room){r.a=r.a*(r.w*r.h)/a0;if(g.hor)r.ly+=dd/2;else r.lx+=dd/2;}};
+  P.rooms.forEach(q=>shift(q,true));P.floors.forEach(fl=>shift(fl,false));
+  return true;
+}
+function edOverlaps(P){
+  const set=new Set(),it=P.furn.filter(p=>!/^(rug|plant|dog)$/.test(p.k)),bb=it.map(aabb),X=(a,b)=>Math.min(a[2],b[2])-Math.max(a[0],b[0])>0.04&&Math.min(a[3],b[3])-Math.max(a[1],b[1])>0.04;
+  it.forEach((p,i)=>{for(let j=i+1;j<it.length;j++)if(X(bb[i],bb[j]))set.add(p.id+'|'+it[j].id);
+    P.walls.forEach((w,wi)=>{if(X(bb[i],[w.x,w.y,w.x+w.w,w.y+w.h]))set.add(p.id+'|w'+wi);});});
+  return set;
+}
+function edIssues(P,u){
+  const o=[],wc=P.furn.filter(p=>p.k==='wc');
+  if(!wc.length)o.push(['bad','No toilet in this unit.']);
+  else{const m=wcClear(P);if(m<WC_CL-0.001)o.push(['bad',`Toilet is ${Math.round(m*1000)} mm from a side wall. Minimum is 457 mm (18 in).`]);}
+  P.furn.filter(p=>p.k==='tub').forEach(p=>{if(!(Math.abs(p.w-1.524)<0.002&&(Math.abs(p.d-0.762)<0.002||Math.abs(p.d-0.813)<0.002)))o.push(['bad','Tub is not a standard 60×30 or 60×32 in size.']);});
+  if(u.n===0&&livDin(P)<LIVDIN_MIN-0.005)o.push(['bad',`Living/sleeping and dining total ${livDin(P).toFixed(1)} m². Minimum is ${LIVDIN_MIN} m².`]);
+  const nowSet=edOverlaps(P);let ov=0;nowSet.forEach(k=>{if(!E.base.has(k))ov++;});
+  if(ov)o.push(['warn',`${ov} item${ov>1?'s overlap':' overlaps'} a wall or another item.`]);
+  if(!o.length)o.push(['ok','Meets the code limits checked here.']);
+  return o;
+}
+function openEditor(u){
+  showInfo(null);
+  const P=edClone(u.plan);let mx=0;P.furn.forEach(p=>{if(p.id>mx)mx=p.id;});P.furn.forEach(p=>{if(p.id===undefined)p.id=++mx;});
+  E={u,P,sel:null,hist:[],drag:null,nid:mx,base:null,dirty:false};E.base=edOverlaps(P);
+  $('edTitle').textContent=tagOf(u)+' · '+(u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
+  $('ed').hidden=false;edRender();edPanel();
+}
+function edPush(){E.hist.push(edSnap(E.P));E.dirty=true;}
+function edRender(){
+  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=30,Wt=P.W+0.4,Dt=P.D+CORR+0.2;
+  const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR)*Sc)/2;
+  Object.assign(E,{Sc,x0,y0});
+  const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
+  let g=`<rect class="base" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/>`+unitSVG(fu)+wallsSVG(ws)+sideWinSVG(P);
+  const s=E.sel;
+  if(s&&s.t==='f'){const p=P.furn.find(x=>x.id===s.id);if(p){const[w,d]=dimsOf(p);g+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})"><rect class="sel" x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/></g>`;}}
+  if(s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr)gr.idxs.forEach(i=>{const w=P.walls[i];g+=`<rect class="wsel" x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"/>`;});}
+  const fs=Math.max(8,Math.min(12,Sc*0.22));
+  $('edSvg').setAttribute('width',cw);$('edSvg').setAttribute('height',ch);$('edSvg').setAttribute('viewBox',`0 0 ${cw} ${ch}`);
+  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs);
+}
+function edHit(pt){
+  const P=E.P,G=wallGroups(P),wallAt=m=>{for(const gr of G)for(const i of gr.idxs){const w=P.walls[i];if(pt.x>=w.x-m&&pt.x<=w.x+w.w+m&&pt.y>=w.y-m&&pt.y<=w.y+w.h+m)return{t:'w',wi:gr.idxs[0]};}return null;};
+  let h=wallAt(0);if(h)return h;
+  for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k!=='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
+  for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k==='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
+  return wallAt(0.12);
+}
+const edPt=e=>{const r=$('edSvg').getBoundingClientRect();return{x:(e.clientX-r.left-E.x0)/E.Sc,y:(e.clientY-r.top-E.y0)/E.Sc};};
+$('edSvg').addEventListener('pointerdown',e=>{
+  if(!E)return;const pt=edPt(e),h=edHit(pt);E.sel=h;
+  if(h){E.drag={pt,start:edSnap(E.P),moved:false};try{$('edSvg').setPointerCapture(e.pointerId);}catch(x){}}
+  edRender();edPanel();
+});
+$('edSvg').addEventListener('pointermove',e=>{
+  if(!E||!E.drag)return;const pt=edPt(e),dx=pt.x-E.drag.pt.x,dy=pt.y-E.drag.pt.y;
+  if(!E.drag.moved&&Math.hypot(dx,dy)<0.05)return;
+  E.drag.moved=true;const P=E.P;edRestore(P,E.drag.start);
+  if(E.sel.t==='f'){const p=P.furn.find(x=>x.id===E.sel.id);p.x=f(Math.max(0.15,Math.min(P.W-0.15,p.x+Math.round(dx/0.05)*0.05)));p.y=f(Math.max(0.35,Math.min(P.D-0.25,p.y+Math.round(dy/0.05)*0.05)));}
+  else{const gr=wallGroups(P).find(q=>q.idxs[0]===E.sel.wi);if(gr)moveWall(P,gr,gr.hor?dy:dx);}
+  edRender();
+});
+const edEnd=()=>{if(!E||!E.drag)return;if(E.drag.moved){E.hist.push(E.drag.start);E.dirty=true;}E.drag=null;edRender();edPanel();};
+$('edSvg').addEventListener('pointerup',edEnd);$('edSvg').addEventListener('pointercancel',edEnd);
+function edAdd(it){
+  edPush();const P=E.P,p=Object.assign({id:++E.nid,x:f(P.W/2),y:f(Math.min(P.D-1,P.D/2)),rot:0},it);delete p.n;P.furn.push(p);
+  E.sel={t:'f',id:p.id};edRender();edPanel();
+}
+function edAct(a,b){
+  if(!E)return;const P=E.P,s=E.sel,p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null;
+  if(a==='undo'){const h=E.hist.pop();if(h){edRestore(P,h);E.sel=null;}}
+  else if(a==='rot'&&p){edPush();p.rot=(p.rot+90)%360;}
+  else if(a==='dup'&&p){edPush();const c=Object.assign({},p,{id:++E.nid,x:f(p.x+0.3),y:f(p.y+0.3)});P.furn.push(c);E.sel={t:'f',id:c.id};}
+  else if(a==='del'&&p){edPush();P.furn=P.furn.filter(x=>x!==p);E.sel=null;}
+  else if(a==='fnudge'&&p){edPush();p.x=f(Math.max(0.15,Math.min(P.W-0.15,p.x+(+b.dx))));p.y=f(Math.max(0.35,Math.min(P.D-0.25,p.y+(+b.dy))));}
+  else if(a==='wnudge'&&s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr){const st=edSnap(P);if(moveWall(P,gr,+b.d)){E.hist.push(st);E.dirty=true;}}}
+  else if(a==='wdel'&&s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr){edPush();const rm=new Set(gr.idxs);P.walls=P.walls.filter((w,i)=>!rm.has(i));P.doors=P.doors.filter(dr=>!doorOn(dr,gr,gr.a-0.15,gr.b+0.15));E.sel=null;}}
+  else if(a==='reset'){edPush();const fresh=buildUnit(Object.assign({},E.u,{custom:null}));const c=edClone(fresh);EDKEYS.forEach(k=>P[k]=c[k]);let mx=E.nid;P.furn.forEach(q=>{q.id=++mx;});E.nid=mx;E.base=edOverlaps(P);E.sel=null;}
+  edRender();edPanel();
+}
+function edPanel(){
+  const P=E.P,s=E.sel,u=E.u;let h='';
+  const p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null,gr=s&&s.t==='w'?wallGroups(P).find(q=>q.idxs[0]===s.wi):null;
+  if(p){h+=`<h3 class="sub">${KN[p.k]||p.k}</h3><div class="edbtns"><button class="tb" data-act="rot">Rotate 90°</button><button class="tb" data-act="dup">Duplicate</button><button class="tb" data-act="del">Delete</button></div><div class="edbtns nudge"><button class="tb" data-act="fnudge" data-dx="-0.05" data-dy="0" aria-label="Nudge left">◀</button><button class="tb" data-act="fnudge" data-dx="0" data-dy="-0.05" aria-label="Nudge up">▲</button><button class="tb" data-act="fnudge" data-dx="0" data-dy="0.05" aria-label="Nudge down">▼</button><button class="tb" data-act="fnudge" data-dx="0.05" data-dy="0" aria-label="Nudge right">▶</button></div><p class="note">Drag it, or nudge 50 mm at a time.</p>`;}
+  else if(gr){h+=`<h3 class="sub">${gr.hor?'Horizontal':'Vertical'} wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round((gr.b-gr.a)*1000)} mm</dd><dt>Position</dt><dd>${Math.round(gr.pos*1000)} mm from the ${gr.hor?'window wall':'left wall'}</dd></dl><div class="edbtns"><button class="tb" data-act="wnudge" data-d="-0.1">${gr.hor?'▲ 100':'◀ 100'}</button><button class="tb" data-act="wnudge" data-d="-0.05">${gr.hor?'▲ 50':'◀ 50'}</button><button class="tb" data-act="wnudge" data-d="0.05">${gr.hor?'▼ 50':'▶ 50'}</button><button class="tb" data-act="wnudge" data-d="0.1">${gr.hor?'▼ 100':'▶ 100'}</button></div><div class="edbtns"><button class="tb" data-act="wdel">Remove wall</button></div><p class="note">Drag the wall, or nudge it in millimetres. Doors and room areas follow.</p>`;}
+  else h+=`<p class="note">Click a wall to move it. Click an item to move, rotate or delete it. Add items below.</p>`;
+  h+=PAL.map((gp,gi)=>`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
+  h+=`<h3 class="sub">Code check</h3>`+edIssues(P,u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('');
+  const rm=P.rooms.slice().sort((a,b)=>b.a-a.a),net=rm.reduce((t,q)=>t+q.a,0);
+  h+=`<h3 class="sub">Room areas</h3><dl class="edl">${rm.map(q=>`<dt>${escapeHtml(q.n)}</dt><dd>${q.a.toFixed(1)} m²</dd>`).join('')}<dt class="tot">Net</dt><dd class="tot">${net.toFixed(1)} m²</dd></dl>`;
+  $('edSide').innerHTML=h;$('edUndo').disabled=!E.hist.length;
+}
+$('edSide').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E)return;if(b.dataset.act==='add')edAdd(PAL[+b.dataset.g].it[+b.dataset.i]);else edAct(b.dataset.act,b.dataset);});
+$('edUndo').onclick=()=>edAct('undo');
+$('edReset').onclick=()=>edAct('reset');
+function edClose(){$('ed').hidden=true;E=null;}
+$('edCancel').onclick=edClose;
+$('edDone').onclick=()=>{
+  const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
+  const changed=E.dirty;edClose();
+  if(changed){applyCustom(u,d);}
+  render();save();showInfo(u);
+};
+document.addEventListener('keydown',e=>{
+  if(!E||$('ed').hidden||/INPUT|TEXTAREA/.test(e.target.tagName))return;
+  const k=e.key,p=E.sel&&E.sel.t==='f';
+  if(k==='Escape'&&!E.dirty){edClose();return;}
+  if(!E.sel)return;
+  if((k==='Delete'||k==='Backspace')){e.preventDefault();edAct(p?'del':'wdel');}
+  else if(p&&(k==='r'||k==='R'))edAct('rot');
+  else if(k.startsWith('Arrow')){e.preventDefault();const st=e.shiftKey?0.25:0.05;
+    if(p)edAct('fnudge',{dx:k==='ArrowLeft'?-st:k==='ArrowRight'?st:0,dy:k==='ArrowUp'?-st:k==='ArrowDown'?st:0});
+    else{const gr=wallGroups(E.P).find(q=>q.idxs[0]===E.sel.wi);if(gr&&(gr.hor?/Up|Down/.test(k):/Left|Right/.test(k)))edAct('wnudge',{d:/Up|Left/.test(k)?-st:st});}}
+});
+addEventListener('resize',()=>{if(E){edRender();}});
+$('iCust').onclick=()=>{if(selected)openEditor(selected);};
+/* Apply saved or edited layout data to a unit and put its occupants back at the door. */
+function applyCustom(u,d){
+  const P=u.plan;u.custom=d;EDKEYS.forEach(k=>P[k]=JSON.parse(JSON.stringify(d[k])));
+  P.meta=Object.assign({},P.meta,{baths:Math.max(1,P.furn.filter(p=>p.k==='wc').length),laundry:P.furn.some(p=>p.k==='wd')});
+  P.grid=null;
+  const st=snapFree(P,P.nodes.entry||{x:P.W/2,y:P.D-0.8});
+  u.people.forEach(q=>{q.x=st.x;q.y=st.y;q.path=[];q.init=false;q.cur=null;q.face=null;});
 }
 
 /* ---------- tools ---------- */
@@ -1262,7 +1582,7 @@ scroller.addEventListener('scroll',navUpdate,{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
-if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,gridOf,isFree,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,openEditor,edState:()=>E,wallGroups,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 load();
 setMob();
 render();

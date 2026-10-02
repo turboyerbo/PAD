@@ -48,6 +48,9 @@ node tests/smoke.mjs
 | Desktop strip | `function render` |
 | Phone pager | `renderMobile`, `pageSVG` |
 | New-unit dialog | `openModal`, `readSize` |
+| Quick add (one-click standard unit) | `quickAdd` |
+| Building code limits | `BED1_W`, `STUDIO_A`, `solveStudio`, `solveOneBed`, `wcClear` |
+| Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `PAL`, `applyCustom` |
 
 ## Writing style for on-screen text
 
