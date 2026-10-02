@@ -408,8 +408,8 @@ function planStudio(s,R){
   P.hw(0,W,0,0.3,[wg]);
   P.vw(0,D,0,0.1);P.vw(0,D,W-0.1,0.1);
   P.hw(X0,bx1+0.1,bTop-0.1,0.1);
-  P.vw(bTop,YB,bx1,0.1,[[bTop+0.12,bTop+0.84]]);
-  P.door(bx1,bTop+0.12,0,1,-1,0,0.72);
+  P.vw(bTop,YB,bx1,0.1,[[bTop+0.12,bTop+0.92]]);
+  P.door(bx1,bTop+0.12,0,1,-1,0,0.8);
   const eg=[X1-0.92,X1-0.06];
   P.hw(0,W,YB,0.2,[eg]);
   P.door(X1-0.06,YB,-1,0,0,-1,0.86);
@@ -711,19 +711,12 @@ function makeUnit(spec){
   u.src=spec.src||'add';
   u.plan=buildUnit(u);
   const R=rng(u.seed*31+7);
-  const count=u.n===0?1:Math.max(1,Math.min(4,u.n+(R()<0.5?1:0)));
-  const P=u.plan;
-  // pets: any drawn dog becomes a live one; otherwise some units get a dog or a cat
-  const di=P.furn.findIndex(p=>p.k==='dog');let petAt=null,petKind=null;
-  if(di>=0){petAt={x:P.furn[di].x,y:P.furn[di].y};petKind='dog';P.furn.splice(di,1);}
-  else if(u.idx%3===0)petKind='dog';else if(u.idx%2===0)petKind='cat';
-  const MV=['ctable','arm','plant'];let mvi=-1;
-  for(const k of MV){mvi=P.furn.findIndex(p=>p.k===k);if(mvi>=0)break;}
-  P.mvi=mvi>=0?mvi:null;
-  let spec2=count===1?(u.idx%3===0?[['mover','m']]:[['kit',u.idx%2===0?'w':'m']]):count===2?(u.idx%2===0?[['talk','m'],['talk','w']]:[['kit','w'],['mover','m'],['play','c']]):count===3?[['kit','w'],['talk','m'],['talk','w'],['play','c']]:[['kit','w'],['talk','m'],['talk','w'],['mover','m'],['play','c']];
-  if(mvi<0)spec2=spec2.map(q=>q[0]==='mover'?['kit','m']:q);
-  u.people=[];u.mv={k:0};
-  const st=P.nodes.entry||P.nodes[Object.keys(P.nodes)[0]];
+  // Occupants kept sparse: one person in studios and 1-beds, two in larger units, and every third unit empty.
+  const P=u.plan;P.mvi=null;
+  const count=u.idx%3===0?0:(u.n<=1?1:2);
+  const spec2=count===0?[]:count===1?[['kit',u.idx%2===0?'w':'m']]:(u.idx%2===0?[['talk','m'],['talk','w']]:[['kit','w'],['play','c']]);
+  u.people=[];
+  const st=snapFree(P,P.nodes.entry||P.nodes[Object.keys(P.nodes)[0]]);
   let side=-1;
   spec2.forEach(([role,type],i)=>{
     const p={x:st.x,y:st.y,cur:null,path:[],wait:i*0.8,phase:R()*6,a:R()*360,v:(type==='c'?1.05:0.7)+R()*0.2,R:rng(u.seed*97+i),role,type,sc:type==='c'?0.62:1,t:R()*10,init:false,face:null,work:0,walking:false,pt:0};
@@ -731,10 +724,6 @@ function makeUnit(spec){
     u.people.push(p);
   });
   u.pets=[];
-  if(petKind){
-    const sp=petAt||(P.nodes.sofa||P.nodes.win||st);
-    u.pets.push({kind:petKind,x:sp.x,y:sp.y,a:R()*360,path:[],wait:1+R()*3,phase:0,v:petKind==='cat'?0.9:0.85,R:rng(u.seed*53+5),u,walking:false});
-  }
   return u;
 }
 const added=()=>units.filter(u=>u.src==='add');
@@ -834,7 +823,6 @@ function render(){
   svg.innerHTML=o;
   bindOcc(svg);
   if(lastNew)svg.querySelectorAll(`.pp[data-u="${lastNew.idx}"]`).forEach(el=>el.classList.add('pnew'));
-  units.forEach(u=>{u.mvEl=u.plan.mvi!=null?svg.querySelector(`.unit[data-idx="${u.idx}"] .fp`):null;});
   lastNew=null;
   addBtn.style.marginTop=Math.round(TOP+(DM-4.2)*S-28)+'px';
   addBtn.classList.toggle('pulse',!added().length);
@@ -848,8 +836,9 @@ function bindOcc(root){
   root.querySelectorAll('.pp').forEach(el=>{const u=units.find(x=>x.idx==el.dataset.u);const p=u.people[+el.dataset.i];p.el=el;p.fa=el.children[0];p.fb=el.children[1];p.u=u;});
   root.querySelectorAll('.pet').forEach(el=>{const u=units.find(x=>x.idx==el.dataset.u);const q=u.pets[+el.dataset.i];q.el=el;q.tail=el.querySelector('.tl');});
 }
+function petSVG(q,u,i){return q.kind==='dog'?`<g class="pet dog" data-u="${u.idx}" data-i="${i}"><ellipse class="pb" cx="0" cy="0.04" rx="0.12" ry="0.24"/><circle class="pb" cx="0" cy="-0.26" r="0.09"/><ellipse class="pd" cx="-0.09" cy="-0.24" rx="0.035" ry="0.06"/><ellipse class="pd" cx="0.09" cy="-0.24" rx="0.035" ry="0.06"/><path class="pb tl" d="M0 0.26Q0.04 0.36 0.02 0.42" fill="none" style="stroke-width:1.6"/></g>`:`<g class="pet cat" data-u="${u.idx}" data-i="${i}"><ellipse class="pb" cx="0" cy="0.02" rx="0.085" ry="0.17"/><circle class="pb" cx="0" cy="-0.19" r="0.07"/><path class="pd" d="M-0.06 -0.23L-0.04 -0.3L-0.01 -0.25ZM0.06 -0.23L0.04 -0.3L0.01 -0.25Z"/><path class="pb tl" d="M0 0.18Q0.12 0.28 0.05 0.4" fill="none" style="stroke-width:1.6"/></g>`;}
 function occMarkup(u){let pp='';u.people.forEach((p,i)=>{pp+=`<g class="pp ${p.type==='w'?'w':p.type==='c'?'c':''}" data-u="${u.idx}" data-i="${i}"><ellipse class="ft" cx="-0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="ft" cx="0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="bd" cx="0" cy="0" rx="${p.type==='w'?0.19:0.23}" ry="0.12"/>${p.type==='w'?'<ellipse class="hr" cx="0" cy="0.05" rx="0.115" ry="0.14"/>':''}<circle class="hd" cx="0" cy="-0.01" r="${p.type==='w'?0.09:0.1}"/></g>`;});
-    (u.pets||[]).forEach((q,i)=>{pp+=q.kind==='dog'?`<g class="pet dog" data-u="${u.idx}" data-i="${i}"><ellipse class="pb" cx="0" cy="0.04" rx="0.12" ry="0.24"/><circle class="pb" cx="0" cy="-0.26" r="0.09"/><ellipse class="pd" cx="-0.09" cy="-0.24" rx="0.035" ry="0.06"/><ellipse class="pd" cx="0.09" cy="-0.24" rx="0.035" ry="0.06"/><path class="pb tl" d="M0 0.26Q0.04 0.36 0.02 0.42" fill="none" style="stroke-width:1.6"/></g>`:`<g class="pet cat" data-u="${u.idx}" data-i="${i}"><ellipse class="pb" cx="0" cy="0.02" rx="0.085" ry="0.17"/><circle class="pb" cx="0" cy="-0.19" r="0.07"/><path class="pd" d="M-0.06 -0.23L-0.04 -0.3L-0.01 -0.25ZM0.06 -0.23L0.04 -0.3L0.01 -0.25Z"/><path class="pb tl" d="M0 0.18Q0.12 0.28 0.05 0.4" fill="none" style="stroke-width:1.6"/></g>`;});
+    (u.pets||[]).forEach((q,i)=>{pp+=petSVG(q,u,i);});
   return pp;}
 function roomLabels(u,X,uy,map,sc,fsz){
   const SS=sc||S,fs=fsz||Math.max(6.5,Math.min(10.5,SS*0.21)),df=Math.max(5.8,fs*0.82);let t='';
@@ -920,8 +909,8 @@ function pageSVG(u,pw,H,first){
   t+=`<text class="cl" x="${f(cp[0])}" y="${f(cp[1]-1)}" font-size="${f(fs*0.92)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${f(cp[0])}" y="${f(cp[1]+fs)}" font-size="${f(fs*0.92)}">${(P.W*CORR).toFixed(1)} m²</text>`;
   const mm=Math.round(P.W*1000),dl=`${mm} mm · ${ftin(mm)}`;
   const a=ts(0,0),b=ts(P.W,0);
-  if(!rot){const y=DIM-7;t+=`<path class="dim" d="M${f(a[0])} ${y}H${f(b[0])}M${f(a[0]-4)} ${y+4}l8 -8M${f(b[0]-4)} ${y+4}l8 -8M${f(a[0])} ${y-6}V${f(a[1]-2)}M${f(b[0])} ${y-6}V${f(b[1]-2)}"/><text class="dt" x="${f((a[0]+b[0])/2)}" y="${y-5}" font-size="11.5">${dl}</text>`;}
-  else{const x=DIM-7;t+=`<path class="dim" d="M${x} ${f(a[1])}V${f(b[1])}M${x-4} ${f(a[1]+4)}l8 -8M${x-4} ${f(b[1]+4)}l8 -8M${x-6} ${f(a[1])}H${f(a[0]-2)}M${x-6} ${f(b[1])}H${f(b[0]-2)}"/><text class="dt" transform="translate(${x-5} ${f((a[1]+b[1])/2)}) rotate(-90)" font-size="11.5">${dl}</text>`;}
+  if(!rot){const y=Math.max(DIM-7,a[1]-9);t+=`<path class="dim" d="M${f(a[0])} ${y}H${f(b[0])}M${f(a[0]-4)} ${y+4}l8 -8M${f(b[0]-4)} ${y+4}l8 -8M${f(a[0])} ${y-6}V${f(a[1]-2)}M${f(b[0])} ${y-6}V${f(b[1]-2)}"/><text class="dt" x="${f((a[0]+b[0])/2)}" y="${y-5}" font-size="11.5">${dl}</text>`;}
+  else{const x=Math.max(DIM-7,a[0]-9);t+=`<path class="dim" d="M${x} ${f(a[1])}V${f(b[1])}M${x-4} ${f(a[1]+4)}l8 -8M${x-4} ${f(b[1]+4)}l8 -8M${x-6} ${f(a[1])}H${f(a[0]-2)}M${x-6} ${f(b[1])}H${f(b[0]-2)}"/><text class="dt" transform="translate(${x-5} ${f((a[1]+b[1])/2)}) rotate(-90)" font-size="11.5">${dl}</text>`;}
   return `<svg viewBox="0 0 ${f(pw)} ${f(H)}" width="${f(pw)}" height="${f(H)}" role="img" aria-label="${tagOf(u)} plan">${first?DEFS:''}<g class="unit" data-idx="${u.idx}"><g transform="${mat}">${g}</g></g>${t}</svg>`;
 }
 function renderMobile(){
@@ -930,7 +919,6 @@ function renderMobile(){
   list.forEach(u=>{u.ox=0;u.oy=0;});
   pager.innerHTML=list.map((u,i)=>`<section class="pg" data-idx="${u.idx}"><div class="ph"><span class="src${u.src==='base'?'':' a'}" title="${u.src==='base'?'Baseline':'Added'}"></span><b>${tagOf(u)}</b><span class="ty">${u.minimal?'MIN. STUDIO':TYPE(u.n)} · ${netA(u).toFixed(1)} net m²</span><span class="pr">${escapeHtml(priText(u))}</span></div>${pageSVG(u,pw,H,i===0)}</section>`).join('');
   bindOcc(pager);
-  units.forEach(u=>{u.mvEl=u.plan.mvi!=null?pager.querySelector(`.pg[data-idx="${u.idx}"] .fp`):null;});
   lastNew=null;
   mobIdx=Math.max(0,Math.min(mobIdx,list.length-1));
   pager.scrollLeft=mobIdx*pw;mobCount();
@@ -989,26 +977,43 @@ function bfs(P,a,b){if(a===b)return[a];const prev={[a]:null},q=[a];while(q.lengt
 const FDIM={ns:[.44,.44],arm:[.8,.8],sink:[.7,.44],cook:[.6,.54],fridge:[.74,.7],wc:[.4,.7],wd:[.66,.66]};
 function gridOf(P){
   if(P.grid)return P.grid;
-  const cs=0.1,nx=Math.max(1,Math.ceil(P.W/cs)),ny=Math.max(1,Math.ceil(P.D/cs)),blk=new Uint8Array(nx*ny),rad=0.2,R=[],C=[];
+  // rad = body half-width (0.23 m shoulders) + half a cell diagonal (0.07 m): anywhere inside a free cell the body stays clear of walls and furniture.
+  const cs=0.1,nx=Math.max(1,Math.ceil(P.W/cs)),ny=Math.max(1,Math.ceil(P.D/cs)),blk=new Uint8Array(nx*ny),rad=0.3,R=[],C=[];
   P.walls.forEach(w=>R.push([w.x,w.y,w.x+w.w,w.y+w.h]));
-  P.furn.forEach(p=>{const k=p.k;if(k==='rug'||k==='dog'||k==='cat')return;
-    if(k==='rtable'){C.push([p.x,p.y,p.r||0.45]);return;}
+  P.furn.forEach(p=>{const k=p.k;if(k==='rug')return;
+    if(k==='rtable'){C.push([p.x,p.y,(p.r||0.45)+0.45]);return;}
     let w=p.w,d=p.d;
-    if(w===undefined){const q=k==='plant'?[(p.s||0.45)*0.8,(p.s||0.45)*0.8]:FDIM[k];if(!q)return;[w,d]=q;}
+    if(w===undefined){const q=k==='plant'?[(p.s||0.45)*0.8,(p.s||0.45)*0.8]:k==='dog'?[0.7,0.5]:FDIM[k];if(!q)return;[w,d]=q;}
+    if(k==='ltable'){w+=0.2;d+=0.9;}else if(k==='desk'){d+=0.6;}else if(k==='island'){w+=0.7;}
     if((((p.rot%180)+180)%180)===90)[w,d]=[d,w];
-    R.push([p.x-w/2,p.y-d/2,p.x+w/2,p.y+d/2]);});
+    let cx=p.x,cy=p.y;
+    if(k==='desk'){const a=p.rot*Math.PI/180;cx+=-Math.sin(a)*0.3;cy+=Math.cos(a)*0.3;}
+    R.push([cx-w/2,cy-d/2,cx+w/2,cy+d/2]);});
+  P.doors.forEach(dr=>{const ex=dr.hx+dr.ox*dr.w,ey=dr.hy+dr.oy*dr.w;R.push([Math.min(dr.hx,ex)-0.03,Math.min(dr.hy,ey)-0.03,Math.max(dr.hx,ex)+0.03,Math.max(dr.hy,ey)+0.03]);});
   for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
     const x=(i+0.5)*cs,y=(j+0.5)*cs;
-    if(R.some(q=>x>q[0]-rad&&x<q[2]+rad&&y>q[1]-rad&&y<q[3]+rad)||C.some(q=>Math.hypot(x-q[0],y-q[1])<q[2]+rad))blk[j*nx+i]=1;
+    if(x<rad||y<rad||x>P.W-rad||y>P.D-rad||R.some(q=>x>q[0]-rad&&x<q[2]+rad&&y>q[1]-rad&&y<q[3]+rad)||C.some(q=>Math.hypot(x-q[0],y-q[1])<q[2]+rad))blk[j*nx+i]=1;
   }
-  return P.grid={cs,nx,ny,blk};
+  // Reachable region: flood fill from the free cell nearest the entry, 4-connected so it never squeezes through a diagonal gap.
+  const comp=new Uint8Array(nx*ny),e=P.nodes.entry||{x:P.W/2,y:P.D-0.8};
+  let seed=-1,bd=1e9;for(let c=0;c<nx*ny;c++)if(!blk[c]){const i=c%nx,j=(c-i)/nx,dd=((i+0.5)*cs-e.x)**2+((j+0.5)*cs-e.y)**2;if(dd<bd){bd=dd;seed=c;}}
+  if(seed>=0){const q=[seed];comp[seed]=1;while(q.length){const c=q.pop(),i=c%nx,j=(c-i)/nx;[[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>{const ni=i+a,nj=j+b;if(ni<0||nj<0||ni>=nx||nj>=ny)return;const n=nj*nx+ni;if(!blk[n]&&!comp[n]){comp[n]=1;q.push(n);}});}}
+  return P.grid={cs,nx,ny,blk,comp};
 }
-function isFree(P,x,y){const G=gridOf(P),i=Math.floor(x/G.cs),j=Math.floor(y/G.cs);return i>=0&&j>=0&&i<G.nx&&j<G.ny&&!G.blk[j*G.nx+i];}
+function isFree(P,x,y){const G=gridOf(P),i=Math.floor(x/G.cs),j=Math.floor(y/G.cs);return i>=0&&j>=0&&i<G.nx&&j<G.ny&&!!G.comp[j*G.nx+i];}
+/* Nearest reachable free cell centre to a point (targets on beds, chairs or counters are moved beside them). */
+function snapFree(P,pt){
+  const G=gridOf(P),{cs,nx,ny,comp}=G,ci=Math.max(0,Math.min(nx-1,Math.floor(pt.x/cs))),cj=Math.max(0,Math.min(ny-1,Math.floor(pt.y/cs)));
+  for(let r=0;r<Math.max(nx,ny);r++){let best=null,bd=1e9;
+    for(let j=cj-r;j<=cj+r;j++)for(let i=ci-r;i<=ci+r;i++){if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r||i<0||j<0||i>=nx||j>=ny||!comp[j*nx+i])continue;const x=(i+0.5)*cs,y=(j+0.5)*cs,dd=(x-pt.x)**2+(y-pt.y)**2;if(dd<bd){bd=dd;best={x,y};}}
+    if(best)return best;}
+  return {x:pt.x,y:pt.y};
+}
 function findPath(P,a,b){
-  const G=gridOf(P),{cs,nx,ny,blk}=G,cl=(v,n)=>Math.max(0,Math.min(n-1,Math.floor(v/cs)));
+  const G=gridOf(P),{cs,nx,ny,comp}=G,cl=(v,n)=>Math.max(0,Math.min(n-1,Math.floor(v/cs)));
+  a=isFree(P,a.x,a.y)?a:snapFree(P,a);b=snapFree(P,b);
   const sx=cl(a.x,nx),sy=cl(a.y,ny),gx=cl(b.x,nx),gy=cl(b.y,ny);
-  const near=(i,j)=>{const x=(i+0.5)*cs,y=(j+0.5)*cs;return (x-a.x)**2+(y-a.y)**2<0.3||(x-b.x)**2+(y-b.y)**2<0.3;};
-  const ok=(i,j)=>i>=0&&j>=0&&i<nx&&j<ny&&(!blk[j*nx+i]||near(i,j));
+  const ok=(i,j)=>i>=0&&j>=0&&i<nx&&j<ny&&!!comp[j*nx+i];
   const N=nx*ny,g=new Float32Array(N).fill(1e9),par=new Int32Array(N).fill(-1),done=new Uint8Array(N),h=[],fs=new Float32Array(N);
   const hp=i=>{h.push(i);let c=h.length-1;while(c>0){const q=(c-1)>>1;if(fs[h[q]]<=fs[h[c]])break;[h[q],h[c]]=[h[c],h[q]];c=q;}};
   const pop=()=>{const t=h[0],l=h.pop();if(h.length){h[0]=l;let c=0;for(;;){let m=c;const L=2*c+1,Rr=L+1;if(L<h.length&&fs[h[L]]<fs[h[m]])m=L;if(Rr<h.length&&fs[h[Rr]]<fs[h[m]])m=Rr;if(m===c)break;[h[m],h[c]]=[h[c],h[m]];c=m;}}return t;};
@@ -1025,17 +1030,23 @@ function findPath(P,a,b){
       if(ng<g[n]){g[n]=ng;par[n]=c;fs[n]=ng+hf(ni,nj);hp(n);}
     }
   }
-  if(!found)return [{x:b.x,y:b.y}];
+  if(!found)return [];
   const cells=[];for(let c=gy*nx+gx;c!==-1;c=par[c]){const i=c%nx;cells.unshift({x:(i+0.5)*cs,y:((c-i)/nx+0.5)*cs});}
   cells[0]={x:a.x,y:a.y};cells[cells.length-1]={x:b.x,y:b.y};
-  const los=(p,q)=>{const L=Math.hypot(q.x-p.x,q.y-p.y),n=Math.ceil(L/0.05);for(let k=1;k<n;k++){const x=p.x+(q.x-p.x)*k/n,y=p.y+(q.y-p.y)*k/n;if(!ok(Math.floor(x/cs),Math.floor(y/cs)))return false;}return true;};
+  // Exact grid traversal: every cell the segment touches must be free (corners included).
+  const los=(p,q)=>{let i=Math.floor(p.x/cs),j=Math.floor(p.y/cs);const ti=Math.floor(q.x/cs),tj=Math.floor(q.y/cs),dx=q.x-p.x,dy=q.y-p.y,si=Math.sign(dx),sj=Math.sign(dy);
+    const tdx=si?cs/Math.abs(dx):1e9,tdy=sj?cs/Math.abs(dy):1e9;let tx=si?((si>0?(i+1)*cs-p.x:p.x-i*cs)/Math.abs(dx)):1e9,ty=sj?((sj>0?(j+1)*cs-p.y:p.y-j*cs)/Math.abs(dy)):1e9;
+    for(let n=0;n<400;n++){if(!ok(i,j))return false;if(i===ti&&j===tj)return true;
+      if(Math.abs(tx-ty)<1e-9){if(!ok(i+si,j)||!ok(i,j+sj))return false;i+=si;j+=sj;tx+=tdx;ty+=tdy;}
+      else if(tx<ty){i+=si;tx+=tdx;}else{j+=sj;ty+=tdy;}}
+    return false;};
   const out=[];let cur=0;
   while(cur<cells.length-1){let nx2=cur+1;for(let k=cells.length-1;k>cur+1;k--){if(los(cells[cur],cells[k])){nx2=k;break;}}out.push(cells[nx2]);cur=nx2;}
   return out;
 }
-function goTo(p,pts,face,direct){
+function goTo(p,pts,face){
   const P=p.u.plan;let from={x:p.x,y:p.y};const out=[];
-  pts.forEach((q,i)=>{if(i===0||!direct)out.push(...findPath(P,from,q));else out.push({x:q.x,y:q.y});from=q;});
+  pts.forEach(q=>{const seg=findPath(P,from,q);out.push(...seg);if(seg.length)from=seg[seg.length-1];});
   p.path=out.map(q=>({id:null,x:q.x,y:q.y}));p.face=face;
 }
 const faceAng=(dx,dy)=>Math.atan2(dy,dx)*180/Math.PI+90;
@@ -1055,40 +1066,36 @@ function act(p,dt){
     p.work=2;
   }else if(p.role==='play'){
     p.pt-=dt;
-    if(!p.init||p.pt<=0){p.init=true;p.pt=4+p.R()*5;const sp=P.spots.length?P.spots:Object.keys(P.nodes);const n=P.nodes[sp[Math.floor(p.R()*sp.length)]];goTo(p,[{x:n.x+(p.R()-0.5)*0.4,y:n.y+(p.R()-0.5)*0.4}],p.R()*360);return;}
+    if(!p.init||p.pt<=0){p.init=true;p.pt=9+p.R()*8;const sp=P.spots.length?P.spots:Object.keys(P.nodes);const n=P.nodes[sp[Math.floor(p.R()*sp.length)]];goTo(p,[{x:n.x+(p.R()-0.5)*0.4,y:n.y+(p.R()-0.5)*0.4}],p.R()*360);return;}
     p.work=3;
-  }else if(p.role==='mover'){
-    const pc=P.furn[P.mvi],len=0.45,gap=0.7,mv=u.mv;
-    if(!mv.home){mv.home={x:pc.x,y:pc.y};mv.dir=pc.x<P.W/2?1:-1;mv.hy=pc.y<P.D/2?1:-1;mv.k=0;mv.ph=0;mv.wt=0;}
-    const H=mv.home,d=mv.dir,hy=mv.hy;
-    if(mv.ph===0){
-      if(!p.init){p.init=true;goTo(p,[{x:H.x-d*gap,y:H.y}],faceAng(d,0));return;}
-      p.init=false;mv.ph=1;
-    }else if(mv.ph===1){
-      mv.k=Math.min(1,mv.k+dt*0.3/len);p.x=H.x+d*len*mv.k-d*gap;p.y=H.y;p.a=faceAng(d,0);p.walking=true;p.phase+=dt*3;
-      if(mv.k>=1){mv.ph=2;mv.wt=3.5;}
-    }else if(mv.ph===2){mv.wt-=dt;p.work=1;if(mv.wt<=0){mv.ph=3;p.init=false;}}
-    else if(mv.ph===3){
-      if(!p.init){p.init=true;const ex=H.x+d*len;goTo(p,[{x:ex-d*gap,y:H.y+hy*1.0},{x:ex+d*gap,y:H.y+hy*1.0},{x:ex+d*gap,y:H.y}],faceAng(-d,0),true);return;}
-      p.init=false;mv.ph=4;
-    }else if(mv.ph===4){
-      mv.k=Math.max(0,mv.k-dt*0.3/len);p.x=H.x+d*len*mv.k+d*gap;p.y=H.y;p.a=faceAng(-d,0);p.walking=true;p.phase+=dt*3;
-      if(mv.k<=0){mv.ph=5;mv.wt=3.5;}
-    }else if(mv.ph===5){mv.wt-=dt;p.work=1;if(mv.wt<=0){mv.ph=6;p.init=false;}}
-    else{
-      if(!p.init){p.init=true;goTo(p,[{x:H.x+d*gap,y:H.y+hy*1.0},{x:H.x-d*gap,y:H.y+hy*1.0},{x:H.x-d*gap,y:H.y}],faceAng(d,0),true);return;}
-      p.init=false;mv.ph=1;
-    }
   }
 }
+/* Pets: at most one at a time, appearing every 1.5 to 3 minutes in a unit on screen, then vanishing after a few seconds. */
+let petClock=60+Math.random()*60;
+function petTick(dt){
+  petClock-=dt;if(petClock>0)return;petClock=90+Math.random()*90;
+  if(units.some(u=>u.pets&&u.pets.length))return;
+  let cand;
+  if(isMob)cand=[mobList()[mobIdx]];
+  else{const l=scroller.scrollLeft,r=l+scroller.clientWidth;cand=units.filter(u=>{const x=PADL+u.ox*S;return x+u.plan.W*S>l+20&&x<r-20;});}
+  cand=cand.filter(Boolean);if(!cand.length)return;
+  const u=cand[Math.floor(Math.random()*cand.length)],P=u.plan;
+  const st=snapFree(P,P.nodes.entry||{x:P.W/2,y:P.D-1});
+  const kind=Math.random()<0.5?'dog':'cat';
+  const q={kind,x:st.x,y:st.y,a:0,path:[],wait:0.6,phase:0,v:kind==='cat'?0.9:0.85,R:rng(Math.floor(Math.random()*1e9)),u,walking:false,life:4+Math.random()*3,age:0};
+  const root=isMob?$('pager').querySelector(`.pg[data-idx="${u.idx}"] .unit > g`):svg.querySelector('#ppl');
+  if(!root)return;
+  u.pets=[q];root.insertAdjacentHTML('beforeend',petSVG(q,u,0));bindOcc(root);
+}
 function petStep(q,dt){
-  const P=q.u.plan;q.t=(q.t||0)+dt;
+  const P=q.u.plan;q.t=(q.t||0)+dt;q.age=(q.age||0)+dt;
+  if(q.age>q.life+0.8){if(q.el)q.el.remove();q.u.pets=[];return;}
   if(q.path.length){q.walking=true;const t=q.path[0],dx=t.x-q.x,dy=t.y-q.y,dist=Math.hypot(dx,dy),st=q.v*dt;if(dist>0.001)q.a=faceAng(dx,dy);if(dist<=st){q.x=t.x;q.y=t.y;q.path.shift();q.phase+=dist*12;}else{q.x+=dx/dist*st;q.y+=dy/dist*st;q.phase+=st*12;}return;}
   q.walking=false;q.wait-=dt;
   if(q.wait<=0){
-    q.wait=3+q.R()*7;const m=q.u.people[0]||q;
+    q.wait=1+q.R()*1.5;const m=q.u.people[0]||q;
     for(let k=0;k<8;k++){const an=q.R()*6.283,rd=0.7+q.R()*1.0,x=m.x+Math.cos(an)*rd,y=m.y+Math.sin(an)*rd;
-      if(x>0.2&&y>0.35&&x<P.W-0.2&&y<P.D-0.4&&isFree(P,x,y)){q.path=findPath(P,{x:q.x,y:q.y},{x,y});break;}}
+      if(isFree(P,x,y)){q.path=findPath(P,{x:q.x,y:q.y},{x,y});break;}}
   }
 }
 function step(p,dt){
@@ -1112,10 +1119,9 @@ function drawPeople(){
     p.el.setAttribute('transform',`translate(${f(u.ox+p.x+ox)} ${f((u.oy||0)+p.y+oy)}) rotate(${f(p.a+ra)}) scale(${p.sc||1})`);
     const sw=p.walking?Math.sin(p.phase)*0.11:0;p.fa.setAttribute('cy',f(-sw));p.fb.setAttribute('cy',f(sw));}));
 }
-function drawPets(){units.forEach(u=>(u.pets||[]).forEach(q=>{if(!q.el)return;const sw=q.walking?Math.sin(q.phase)*0.05:0;q.el.setAttribute('transform',`translate(${f(u.ox+q.x)} ${f((u.oy||0)+q.y)}) rotate(${f(q.a)})`);q.tail.setAttribute('transform',`rotate(${f(Math.sin((q.t||0)*(q.walking?9:4))*(q.walking?18:10))} 0 0.2)`);}));}
-function drawFurn(){units.forEach(u=>{const pc=u.plan.furn[u.plan.mvi];if(u.mvEl&&pc&&u.mv&&u.mv.home)u.mvEl.setAttribute('transform',`translate(${f(pc.x+u.mv.dir*0.45*u.mv.k)} ${f(pc.y)}) rotate(${pc.rot})`);});}
+function drawPets(){units.forEach(u=>(u.pets||[]).forEach(q=>{if(!q.el)return;const ag=q.age||0;q.el.style.opacity=f(Math.max(0,Math.min(1,ag/0.5,(q.life+0.8-ag)/0.8)));const sw=q.walking?Math.sin(q.phase)*0.05:0;q.el.setAttribute('transform',`translate(${f(u.ox+q.x)} ${f((u.oy||0)+q.y)}) rotate(${f(q.a)})`);q.tail.setAttribute('transform',`rotate(${f(Math.sin((q.t||0)*(q.walking?9:4))*(q.walking?18:10))} 0 0.2)`);}));}
 let lt=0;
-function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;units.forEach(u=>{u.people.forEach(p=>step(p,dt));(u.pets||[]).forEach(q=>petStep(q,dt));});drawPeople();drawPets();drawFurn();requestAnimationFrame(loop);}
+function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;units.forEach(u=>{u.people.forEach(p=>step(p,dt));(u.pets||[]).slice().forEach(q=>petStep(q,dt));});petTick(dt);drawPeople();drawPets();requestAnimationFrame(loop);}
 
 /* ---------- dialog ---------- */
 const modal=$('modal');let pick={n:0};
@@ -1193,6 +1199,7 @@ scroller.addEventListener('scroll',navUpdate,{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
+if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,gridOf,isFree,pet:()=>{petClock=0;}};
 load();
 setMob();
 render();
