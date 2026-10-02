@@ -1,5 +1,9 @@
 # Patry Analysis & Design (PAD) · Ninth Line
 
+Live site: https://padufs.netlify.app
+
+To contribute, read [CONTRIBUTING.md](CONTRIBUTING.md). Changes go through pull requests with a Netlify preview and an automated check.
+
 Digital companion to the printed PAD set. A static site with no build step.
 
 ## Files
