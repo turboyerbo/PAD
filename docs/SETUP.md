@@ -1,7 +1,11 @@
 # Connecting PAD to Supabase
 
-Until this is done, PAD runs in demo mode: accounts and buildings live in one browser only, and Google sign-in is a stand-in.
-Connecting Supabase gives real accounts, Google sign-in, buildings that sync between people, invites and live chat.
+Until this is done, PAD runs without accounts. The landing page offers "Start designing", and buildings are saved in that browser only.
+Sign-in, Google, sharing, chat and unit comments are hidden, because they cannot work without a shared service.
+Connecting Supabase switches all of them on and gives real accounts, buildings that sync between people, invites and live chat.
+
+To try the hidden features locally without Supabase, add `?fulldemo` to the address (for example `http://localhost:8000/?fulldemo`).
+That uses fake accounts kept in the browser and is for testing only.
 
 You do these steps yourself in the Supabase and Google dashboards. Nothing here needs a server of your own.
 

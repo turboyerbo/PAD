@@ -370,7 +370,11 @@ body.chat-open .info{right:356px}
 .iter i{font-style:normal;font-size:11px;color:var(--accent)}
 .iter .tb{padding:3px 8px;font-size:11px}
 @media (prefers-reduced-motion:reduce){.ed{transition:none}}
-/* phone interface */
+/* demo mode without the shared service: hide everything that needs it */
+#lGuest{display:none}
+#lGuest .demo-note{margin:0 0 16px;font-size:13px}
+body.no-social #lGuest{display:block}
+body.no-social :is(#lTabs,#lTitle,#lGoogle,#lDemoG,.or,#lForm,#lDemo,#pOut,#hShare,#hChat,#mShare,#mChat,#iChat,.cmt,#chat,#share,#hRole,.social-only){display:none!important}/* phone interface */
 #mob{display:none}
 body.mob .bar,body.mob .stage,body.mob footer{display:none!important}
 body.mob #mob{display:flex;flex-direction:column;height:100%}
@@ -413,14 +417,19 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
   <div class="land-hero">
     <img class="land-logo" src="/patry-logo.png" alt="Patry Group" width="96" height="78">
     <h1>Plan your building, unit by unit.</h1>
-    <p class="land-lead">Create studios and one to four bedroom units that meet the code limits, move walls and doors to suit, and invite your team to comment on each unit as you go.</p>
+    <p class="land-lead">Create studios and one to four bedroom units that meet the code limits, move walls and doors to suit<span class="social-only">, and invite your team to comment on each unit as you go</span>.</p>
     <ul class="land-pts">
       <li>Standard units in one click</li>
       <li>Edit layouts: walls, doors, furniture and washrooms</li>
-      <li>Share a building and chat about any unit</li>
+      <li class="social-only">Share a building and chat about any unit</li>
     </ul>
   </div>
   <section class="land-card" aria-labelledby="lTitle">
+    <div id="lGuest">
+      <h2>Start designing</h2>
+      <p class="demo-note">Sign-in and sharing switch on once the shared service is connected. Until then your buildings are saved in this browser only.</p>
+      <button class="tb primary wide" id="lStart" type="button">Start designing</button>
+    </div>
     <div class="seg wide" id="lTabs" role="group" aria-label="Sign in or create an account"><button type="button" data-m="in" aria-pressed="true">Sign in</button><button type="button" data-m="up" aria-pressed="false">Create account</button></div>
     <h2 id="lTitle">Welcome back</h2>
     <button class="gbtn" id="lGoogle" type="button"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google</button>
@@ -692,6 +701,11 @@ const Local={
     const email=norm(hint&&hint.email);if(!okMail(email))throw new Error('Enter the email for the demo Google account.');
     const d=db();let u=d.users.find(x=>x.email===email);
     if(!u){u={id:uid(),email,name:(hint.name||'').trim()||email.split('@')[0],hash:null};d.users.push(u);joinInvites(d,u);dbw(d);}
+    return begin(u);
+  },
+  async signInGuest(){
+    const d=db();let u=d.users.find(x=>x.email==='guest@pad.local');
+    if(!u){u={id:uid(),email:'guest@pad.local',name:'Guest',hash:null};d.users.push(u);dbw(d);}
     return begin(u);
   },
   async signOut(){sessionStorage.removeItem(SK);cur=null;emit();},
@@ -2248,6 +2262,8 @@ let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120)
 
 /* ---------- accounts, buildings, sharing and chat ---------- */
 const BE=window.PADBE;
+const SOCIAL=BE.mode==='supabase'||/[?&]fulldemo/.test(location.search);   // accounts, sharing and chat need the shared service
+document.body.classList.toggle('no-social',!SOCIAL);
 let view='boot',pendingRemote=null,unsub=null;
 function showView(v){view=v;const c=document.body.classList;['boot','land','proj','app'].forEach(x=>c.toggle('view-'+x,x===v));}
 function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true;},4000);}
@@ -2278,13 +2294,14 @@ $('lGoogle').onclick=async()=>{
   if(BE.mode==='demo'){$('lDemoG').hidden=false;$('lGEmail').focus();return;}
   try{await BE.signInGoogle();}catch(er){fail($('lMsg'),er.message);}
 };
+$('lStart').onclick=async()=>{try{await BE.signInGuest();}catch(er){toast(er.message);}};
 $('lGoDemo').onclick=async()=>{try{await BE.signInGoogle({email:$('lGEmail').value,name:$('lGName').value});}catch(er){fail($('lMsg'),er.message);}};
 BE.onAuth(u=>{if(u){if(view==='land'||view==='boot')showProjects();}else showLanding();});
 
 /* building list */
 async function showProjects(){
   closeProject();showView('proj');
-  const me=BE.user();$('pUser').textContent=me?(me.name+' · '+me.email):'';$('pMsg').hidden=true;
+  const me=BE.user();$('pUser').textContent=!SOCIAL?'Saved in this browser':me?(me.name+' · '+me.email):'';$('pMsg').hidden=true;
   $('pList').innerHTML='<p class="note">Loading.</p>';
   try{
     const L=await BE.listProjects();

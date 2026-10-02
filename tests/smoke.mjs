@@ -10,11 +10,30 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 8137;
 const srv = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: root, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 900));
-const URL = `http://localhost:${PORT}/?debug`;
+// "fulldemo" switches on accounts, sharing and chat, which are hidden until the shared service (Supabase) is connected.
+const URL = `http://localhost:${PORT}/?debug&fulldemo`;
 const errs = [];
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 
 try {
+  // Without the shared service: no sign-in, sharing or chat, just a way in and a building saved in this browser
+  const g = await browser.newPage({ viewport: { width: 1500, height: 860 } });
+  g.on('pageerror', e => errs.push('guest script error: ' + e.message));
+  await g.goto(`http://localhost:${PORT}/?debug`);
+  await g.waitForSelector('#lStart', { state: 'visible', timeout: 5000 }).catch(() => errs.push('landing page has no Start designing button'));
+  for (const sel of ['#lGoogle', '#lForm', '#lTabs']) if (await g.isVisible(sel)) errs.push(`${sel} should be hidden without the shared service`);
+  await g.click('#lStart');
+  await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('Start designing did not reach the building list'));
+  if (await g.isVisible('#pOut')) errs.push('sign out should be hidden without the shared service');
+  await g.fill('#pName', 'Guest Building'); await g.click('#pNew');
+  await g.waitForSelector('body.view-app', { timeout: 5000 }).catch(() => errs.push('guest could not create a building'));
+  for (const sel of ['#hShare', '#hChat']) if (await g.isVisible(sel)) errs.push(`${sel} should be hidden without the shared service`);
+  await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(300);
+  await g.reload();
+  await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('guest reload did not return to the building list'));
+  if (!/Guest Building/.test((await g.textContent('#pList')) || '')) errs.push('guest building was not kept');
+  await g.close();
+
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).
   const signUp = async (page, email, name) => {
     await page.waitForSelector('#land', { state: 'visible', timeout: 5000 });
