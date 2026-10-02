@@ -220,6 +220,76 @@ textarea{width:100%;box-sizing:border-box;border:1px solid var(--ink);background
   .opts.five .opt{padding:10px 2px}
   .opt .nm{font-size:10px}
 }
+/* views: landing, building list, chat, share */
+body:not(.view-app) :is(.bar,.stage,footer,#mob,.info,.modal,#mMenu,.chat,.ed,.msheet,.toast[hidden]){display:none!important}
+#land,#proj{display:none}
+body.view-land #land{display:grid;flex:1;min-height:0;overflow:auto}
+body.view-proj #proj{display:block;flex:1;min-height:0;overflow:auto}
+.land{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:48px;align-items:center;padding:40px 7vw;background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%);color:#fff}
+.land-logo{height:78px;width:auto;margin-bottom:22px}
+.land h1{font-size:clamp(30px,4.4vw,52px);line-height:1.08;font-weight:600;margin:0 0 16px;letter-spacing:-.01em;text-wrap:balance}
+.land-lead{font-size:17px;line-height:1.55;color:#C9D3DA;max-width:34em;margin:0 0 22px}
+.land-pts{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:15px}
+.land-pts li{padding-left:26px;position:relative}
+.land-pts li::before{content:"";position:absolute;left:0;top:.45em;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px rgba(2,116,190,.3)}
+.land-card{background:var(--sheet);color:var(--ink);padding:26px 26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.35);border-radius:4px;max-width:440px;width:100%;justify-self:center;box-sizing:border-box}
+.land-card h2{font-size:22px;font-weight:600;margin:4px 0 16px}
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--ink);background:var(--sheet);border-radius:2px;padding:11px 12px;font-size:15px;font-weight:500}
+.gbtn:hover{background:var(--furn-fill);border-color:var(--accent)}
+.demog{margin-top:12px;padding:12px;background:var(--paper);border:1px solid var(--rule)}
+.demog .conv{margin:0 0 8px}
+.or{display:flex;align-items:center;gap:10px;margin:18px 0 14px;font-size:12px;color:var(--ink-2);letter-spacing:.03em}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--rule)}
+.tb.wide{width:100%;padding:11px 12px;font-size:14px}
+.demo-note{margin:14px 0 0;font-size:12px;color:var(--ink-2);line-height:1.45}
+.projs{background:var(--paper)}
+.projs-top{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--navy);color:#fff;border-bottom:3px solid var(--blue)}
+.projs-top img{height:31px;width:auto}
+.projs-top b{font-size:15px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.projs-top .grow,.grow{flex:1;min-width:0}
+.projs-top .who{font-size:13px;color:#C9D3DA;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.projs-top .tb{border-color:#fff;color:#fff}
+.projs-body{max-width:980px;margin:0 auto;padding:28px 20px 48px;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px;align-items:start}
+.pcard{background:var(--sheet);border:1px solid var(--rule);padding:20px 22px 22px}
+.pcard h2{font-size:19px;font-weight:600;margin:0 0 6px}
+.pcard .lead{margin:0 0 14px}
+.pcard .chk{margin-bottom:14px}
+.pitem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid var(--rule);background:var(--paper);border-radius:2px}
+.pitem:hover{border-color:var(--accent);background:var(--furn-fill)}
+.pitem b{font-size:15px;font-weight:600}
+.pitem span{font-size:12px;color:var(--ink-2);font-family:var(--narrow)}
+.note{font-size:13px;color:var(--ink-2);line-height:1.45;margin:6px 0}
+.cbadge{display:inline-block;min-width:16px;padding:0 5px;margin-left:4px;border-radius:9px;background:#D81E1E;color:#fff;font-size:11px;font-weight:600;text-align:center;line-height:16px;letter-spacing:0}
+.cmt{margin:0 0 12px}
+.chat{position:fixed;top:var(--hbar,80px);right:0;bottom:0;width:340px;z-index:8;background:var(--sheet);border-left:1px solid var(--ink);display:flex;flex-direction:column;box-shadow:-10px 0 30px rgba(21,50,67,.14)}
+.chat-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--rule)}
+.chat-head b{font-size:15px}
+.chat-head select{flex:1;min-width:0;font:inherit;font-size:13px;padding:5px 6px;border:1px solid var(--ink);background:var(--fx-fill);border-radius:2px}
+.chat-msgs{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--paper)}
+.cm{max-width:88%;align-self:flex-start;background:var(--sheet);border:1px solid var(--rule);padding:7px 10px;border-radius:2px 10px 10px 10px}
+.cm.me{align-self:flex-end;background:var(--furn-fill);border-color:#BFE1F2;border-radius:10px 2px 10px 10px}
+.cmh{display:flex;align-items:baseline;gap:6px;font-size:11px;color:var(--ink-2);margin-bottom:2px}
+.cmh b{color:var(--ink);font-size:12px}
+.cmh i{font-style:normal;color:var(--accent)}
+.cmh span{margin-left:auto}
+.cm p{margin:0;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.chat-form{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--rule);align-items:flex-end}
+.chat-form textarea{flex:1;min-width:0;resize:none;font-size:14px}
+body.chat-open .info{right:356px}
+.mrow{display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid var(--rule)}
+.mrow b{font-size:14px}
+.mrow span{font-size:12px;color:var(--ink-2)}
+#shForm .field{margin:0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:4px;font-size:13px;z-index:30;max-width:calc(100% - 32px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+@media (max-width:820px){
+  .land{grid-template-columns:1fr;gap:28px;padding:28px 20px 36px;align-items:start}
+  .land-logo{height:56px;margin-bottom:14px}
+  .projs-body{grid-template-columns:1fr}
+}
+@media (max-width:700px){
+  .chat{top:auto;left:0;width:100%;height:68%;border-left:0;border-top:1px solid var(--ink)}
+  body.chat-open .info{right:0;display:none}
+}
 /* quick add and unit editor */
 .quick{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
 .quick .lead{margin:2px 0 8px}
@@ -296,12 +366,62 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 </style>
 
 </head>
-<body>
+<body class="view-boot">
+<main class="land" id="land">
+  <div class="land-hero">
+    <img class="land-logo" src="/patry-logo.png" alt="Patry Group" width="96" height="78">
+    <h1>Plan your building, unit by unit.</h1>
+    <p class="land-lead">Create studios and one to four bedroom units that meet the code limits, move walls and doors to suit, and invite your team to comment on each unit as you go.</p>
+    <ul class="land-pts">
+      <li>Standard units in one click</li>
+      <li>Edit layouts: walls, doors, furniture and washrooms</li>
+      <li>Share a building and chat about any unit</li>
+    </ul>
+  </div>
+  <section class="land-card" aria-labelledby="lTitle">
+    <div class="seg wide" id="lTabs" role="group" aria-label="Sign in or create an account"><button type="button" data-m="in" aria-pressed="true">Sign in</button><button type="button" data-m="up" aria-pressed="false">Create account</button></div>
+    <h2 id="lTitle">Welcome back</h2>
+    <button class="gbtn" id="lGoogle" type="button"><svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continue with Google</button>
+    <div class="demog" id="lDemoG" hidden>
+      <p class="conv">Demo Google sign-in. Enter any email to continue.</p>
+      <div class="two"><div class="field"><label for="lGEmail" class="sm">Email</label><input id="lGEmail" type="email" autocomplete="off"></div><div class="field"><label for="lGName" class="sm">Name</label><input id="lGName" autocomplete="off"></div></div>
+      <button class="tb primary" id="lGoDemo" type="button">Continue</button>
+    </div>
+    <div class="or"><span>or use an email and password</span></div>
+    <form id="lForm" novalidate>
+      <div class="field" id="lNameF" hidden><label for="lName">Your name</label><input id="lName" autocomplete="name"></div>
+      <div class="field"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="email" inputmode="email"></div>
+      <div class="field"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password"><div class="conv" id="lHint"></div></div>
+      <div class="result err" id="lMsg" role="alert" hidden></div>
+      <button class="tb primary wide" id="lGo" type="submit">Sign in</button>
+    </form>
+    <p class="demo-note" id="lDemo" hidden>Demo mode. Accounts and buildings are kept in this browser only until the shared service is connected.</p>
+  </section>
+</main>
+
+<main class="projs" id="proj">
+  <header class="projs-top"><img src="/patry-logo.png" alt="Patry Group" width="38" height="31"><b>Patry Analysis &amp; Design</b><span class="grow"></span><span class="who" id="pUser"></span><button class="tb" id="pOut" type="button">Sign out</button></header>
+  <div class="projs-body">
+    <section class="pcard">
+      <h2>New building</h2>
+      <p class="lead">Start with an empty strip and add your own units.</p>
+      <div class="field"><label for="pName">Building name</label><input id="pName" maxlength="80" placeholder="e.g. Ninth Line, Block A" autocomplete="off"></div>
+      <label class="chk"><input type="checkbox" id="pSample"><span>Start with the nine Ninth Line sample units<br><span class="sm2">Leave this off to start from scratch.</span></span></label>
+      <div class="result err" id="pMsg" role="alert" hidden></div>
+      <button class="tb primary" id="pNew" type="button">Create building</button>
+    </section>
+    <section class="pcard">
+      <h2>Your buildings</h2>
+      <div id="pList"></div>
+    </section>
+  </div>
+</main>
+
 <header class="bar">
   <img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52">
-  <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p>Ninth Line · Digital companion to the printed set <span class="badge" id="badge">Placeholder baseline</span></p></div>
+  <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p><b id="hProj">Building</b> <span id="hRole"></span> <span class="badge" id="badge">Placeholder baseline</span></p></div>
   <div class="stats" id="stats"></div>
-  <div class="tools">
+  <div class="tools"><button class="tb" id="hBuildings" type="button">Buildings</button><button class="tb" id="hShare" type="button">Share</button><button class="tb" id="hChat" type="button">Chat<span class="cbadge" id="hCnt" hidden>0</span></button>
     <button class="tb" id="grp" aria-pressed="false">Group by bedrooms</button>
     <button class="tb" id="undo">Undo</button>
     <button class="tb" id="reset">Restore baseline</button>
@@ -333,7 +453,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 </footer>
 
 <div id="mob">
-  <div class="mtop"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"><span class="mt"><b>PAD</b> Ninth Line</span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+  <div class="mtop"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
   <div id="pager"></div>
   <div class="mbot">
     <button class="mbtn mnav" id="mPrev" aria-label="Previous unit"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
@@ -344,7 +464,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
+  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
   <button class="mi" id="mUndo">Undo last added unit</button>
   <button class="mi" id="mReset">Restore baseline</button>
   <button class="mi mclose" id="mClose2">Close</button>
@@ -352,6 +472,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 <aside class="info" id="info" hidden aria-labelledby="iTitle">
   <div class="info-head"><div><span class="step" id="iKicker">Baseline unit</span><h2 id="iTitle">PAD-01</h2></div><button class="x" id="iClose" aria-label="Close unit details">×</button></div>
   <div class="cust"><p>Do you want to customize this unit?</p><button class="tb primary" id="iCust">Customize</button></div>
+  <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button></div>
   <dl id="iList"></dl>
   <h3 class="sub">Room areas</h3>
   <dl id="iRooms"></dl>
@@ -434,6 +555,27 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
   </div>
 </div>
 
+<aside class="chat" id="chat" hidden aria-label="Chat">
+  <div class="chat-head"><b>Chat</b><select id="chThread" aria-label="Conversation"></select><button class="x" id="chClose" type="button" aria-label="Close chat">×</button></div>
+  <div class="chat-msgs" id="chMsgs" aria-live="polite"></div>
+  <form class="chat-form" id="chForm"><textarea id="chText" rows="2" maxlength="2000" placeholder="Write a message" aria-label="Message"></textarea><button class="tb primary" id="chSend" type="submit">Send</button></form>
+</aside>
+
+<div class="modal" id="share" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
+  <div class="sheet">
+    <div class="sheet-head"><span class="step">Share building</span><button class="x" id="shClose" type="button" aria-label="Close">×</button></div>
+    <h2 id="shTitle">Invite people to this building</h2>
+    <p class="lead">Everyone you invite can edit units and chat. We do not send an email yet, so share the site link with them.</p>
+    <form id="shForm" class="inrow"><div class="field grow"><input id="shEmail" type="email" placeholder="name@company.com" aria-label="Email to invite" autocomplete="off"></div><button class="tb primary" type="submit">Invite</button></form>
+    <div class="result" id="shMsg" hidden></div>
+    <h3 class="sub">People</h3>
+    <div id="shList"></div>
+    <div class="actions"><button class="tb" id="shCopy" type="button">Copy site link</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
 <div class="ed" id="ed" hidden role="dialog" aria-modal="true" aria-labelledby="edTitle">
   <div class="ed-top">
     <div><span class="step">Customize unit</span><h2 id="edTitle">PAD-01</h2></div>
@@ -444,6 +586,173 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
     <aside class="ed-side" id="edSide"></aside>
   </div>
 </div>
+
+<script>
+/* Accounts, buildings and chat. Uses Supabase when the two values below are filled in (see docs/SETUP.md),
+   otherwise a demo that keeps fake accounts in this browser only. Both expose the same window.PADBE. */
+(function(){
+const SUPABASE_URL='',SUPABASE_ANON_KEY='';   // public values from Supabase > Project settings > API. Row level security protects the data.
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
+const norm=e=>String(e||'').trim().toLowerCase();
+const okMail=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+const listeners=new Set();let cur=null;
+const emit=()=>listeners.forEach(f=>{try{f(cur);}catch(e){}});
+const pubU=u=>({id:u.id,email:u.email,name:u.name});
+
+/* ----- demo backend: everything lives in localStorage ----- */
+const DK='pad.demo.db',SK='pad.demo.session';
+function db(){let d={};try{d=JSON.parse(localStorage.getItem(DK))||{};}catch(e){}['users','projects','members','invites','comments'].forEach(k=>d[k]=d[k]||[]);d.seq=d.seq||0;return d;}
+const dbw=d=>localStorage.setItem(DK,JSON.stringify(d));
+async function hash(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pad-demo:'+s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+const subs=new Set();
+function poke(){
+  const d=db();
+  subs.forEach(s=>{
+    d.comments.filter(c=>c.project_id===s.id&&c.id>s.lastC).forEach(c=>{s.lastC=c.id;s.h.onComment&&s.h.onComment(cmL(d,c));});
+    const p=d.projects.find(x=>x.id===s.id);
+    if(p&&p.updated_at>s.lastU){s.lastU=p.updated_at;if(cur&&p.updated_by!==cur.id)s.h.onProject&&s.h.onProject({data:p.data,name:p.name,updated_by:p.updated_by,updated_at:p.updated_at});}
+  });
+}
+addEventListener('storage',e=>{if(e.key===DK)poke();});
+const nameOf=(d,id)=>(d.users.find(u=>u.id===id)||{}).name||'Someone';
+const cmL=(d,c)=>({id:c.id,unit:c.unit,user_id:c.user_id,name:nameOf(d,c.user_id),body:c.body,at:c.created_at});
+function joinInvites(d,u){
+  d.invites.filter(i=>i.email===u.email).forEach(i=>{if(!d.members.some(m=>m.project_id===i.project_id&&m.user_id===u.id))d.members.push({project_id:i.project_id,user_id:u.id,role:'editor'});});
+  d.invites=d.invites.filter(i=>i.email!==u.email);
+}
+function begin(u){sessionStorage.setItem(SK,u.id);cur=pubU(u);emit();return cur;}
+const Local={
+  mode:'demo',
+  async init(){const id=sessionStorage.getItem(SK),u=id&&db().users.find(x=>x.id===id);cur=u?pubU(u):null;return cur;},
+  async signUp(email,pw,name){
+    email=norm(email);if(!okMail(email))throw new Error('Enter a valid email address.');
+    const d=db();if(d.users.some(u=>u.email===email))throw new Error('That email already has an account. Sign in instead.');
+    const u={id:uid(),email,name:(name||'').trim()||email.split('@')[0],hash:await hash(pw)};d.users.push(u);joinInvites(d,u);dbw(d);return begin(u);
+  },
+  async signIn(email,pw){
+    email=norm(email);const d=db(),u=d.users.find(x=>x.email===email);
+    if(!u||u.hash!==await hash(pw))throw new Error('Wrong email or password.');return begin(u);
+  },
+  async signInGoogle(hint){
+    const email=norm(hint&&hint.email);if(!okMail(email))throw new Error('Enter the email for the demo Google account.');
+    const d=db();let u=d.users.find(x=>x.email===email);
+    if(!u){u={id:uid(),email,name:(hint.name||'').trim()||email.split('@')[0],hash:null};d.users.push(u);joinInvites(d,u);dbw(d);}
+    return begin(u);
+  },
+  async signOut(){sessionStorage.removeItem(SK);cur=null;emit();},
+  async listProjects(){
+    const d=db();
+    return d.members.filter(m=>m.user_id===cur.id).map(m=>{const p=d.projects.find(x=>x.id===m.project_id);return p&&{id:p.id,name:p.name,role:m.role,updated_at:p.updated_at};}).filter(Boolean).sort((a,b)=>b.updated_at.localeCompare(a.updated_at));
+  },
+  async createProject(name,data){const d=db(),p={id:uid(),name,owner:cur.id,data,updated_at:new Date().toISOString(),updated_by:cur.id};d.projects.push(p);d.members.push({project_id:p.id,user_id:cur.id,role:'owner'});dbw(d);return{id:p.id};},
+  async getProject(id){
+    const d=db(),m=d.members.find(x=>x.project_id===id&&x.user_id===cur.id),p=d.projects.find(x=>x.id===id);
+    if(!m||!p)throw new Error('You do not have access to this building.');
+    return{id:p.id,name:p.name,data:p.data,role:m.role,updated_at:p.updated_at,updated_by:p.updated_by};
+  },
+  async saveProject(id,data){
+    const d=db(),p=d.projects.find(x=>x.id===id);if(!p||!d.members.some(m=>m.project_id===id&&m.user_id===cur.id))throw new Error('You do not have access to this building.');
+    p.data=data;p.updated_at=new Date().toISOString();p.updated_by=cur.id;dbw(d);
+    const me=subs.size&&[...subs].find(s=>s.id===id);if(me)me.lastU=p.updated_at;   // do not echo our own save
+  },
+  async members(id){
+    const d=db();
+    return{members:d.members.filter(m=>m.project_id===id).map(m=>{const u=d.users.find(x=>x.id===m.user_id)||{};return{user_id:m.user_id,name:u.name,email:u.email,role:m.role};}),pending:d.invites.filter(i=>i.project_id===id).map(i=>i.email)};
+  },
+  async invite(id,email){
+    email=norm(email);if(!okMail(email))throw new Error('Enter a valid email address.');
+    const d=db();if(!d.members.some(m=>m.project_id===id&&m.user_id===cur.id))throw new Error('You do not have access to this building.');
+    const u=d.users.find(x=>x.email===email);
+    if(u){if(!d.members.some(m=>m.project_id===id&&m.user_id===u.id))d.members.push({project_id:id,user_id:u.id,role:'editor'});dbw(d);return'added';}
+    if(!d.invites.some(i=>i.project_id===id&&i.email===email))d.invites.push({project_id:id,email,invited_by:cur.id});dbw(d);return'pending';
+  },
+  async comments(id){const d=db();return d.comments.filter(c=>c.project_id===id).map(c=>cmL(d,c));},
+  async postComment(id,unit,body){
+    body=String(body||'').trim();if(!body)throw new Error('Write a message first.');if(body.length>2000)throw new Error('Messages are limited to 2000 characters.');
+    const d=db();if(!d.members.some(m=>m.project_id===id&&m.user_id===cur.id))throw new Error('You do not have access to this building.');
+    const c={id:++d.seq,project_id:id,unit:unit==null?null:+unit,user_id:cur.id,body,created_at:new Date().toISOString()};d.comments.push(c);dbw(d);poke();return cmL(d,c);
+  },
+  subscribe(id,h){
+    const d=db(),s={id,h,lastC:d.comments.filter(c=>c.project_id===id).reduce((m,c)=>Math.max(m,c.id),0),lastU:(d.projects.find(p=>p.id===id)||{}).updated_at||''};
+    subs.add(s);return()=>subs.delete(s);
+  }
+};
+
+/* ----- Supabase backend ----- */
+let sb=null;
+const SEL='id,unit,body,created_at,user_id,profiles(name,email)';
+const cmS=r=>({id:r.id,unit:r.unit,user_id:r.user_id,name:(r.profiles&&(r.profiles.name||(r.profiles.email||'').split('@')[0]))||'Someone',body:r.body,at:r.created_at});
+const mapU=u=>({id:u.id,email:u.email,name:(u.user_metadata&&(u.user_metadata.name||u.user_metadata.full_name))||(u.email||'').split('@')[0]});
+const fail=(e,fallback)=>{if(e)throw new Error(e.message||fallback);};
+function loadLib(){
+  return new Promise((res,rej)=>{
+    if(window.supabase)return res();
+    const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+    s.onload=res;s.onerror=()=>rej(new Error('Could not load the sign-in service. Check your connection and reload.'));document.head.appendChild(s);
+  });
+}
+const Supa={
+  mode:'supabase',
+  async init(){
+    await loadLib();
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,detectSessionInUrl:true}});
+    const{data}=await sb.auth.getSession();cur=data.session?mapU(data.session.user):null;
+    sb.auth.onAuthStateChange((ev,s)=>{const n=s?mapU(s.user):null;if((n&&n.id)!==(cur&&cur.id)){cur=n;emit();}});
+    return cur;
+  },
+  async signUp(email,pw,name){
+    email=norm(email);if(!okMail(email))throw new Error('Enter a valid email address.');
+    const{data,error}=await sb.auth.signUp({email,password:pw,options:{data:{name:(name||'').trim()||email.split('@')[0]}}});
+    fail(error,'Could not create the account.');
+    if(!data.session){const e=new Error('Check your email to confirm your account, then sign in.');e.info=true;throw e;}
+    cur=mapU(data.user);emit();return cur;
+  },
+  async signIn(email,pw){
+    const{data,error}=await sb.auth.signInWithPassword({email:norm(email),password:pw});
+    if(error)throw new Error(/confirm/i.test(error.message)?'Confirm your email first, then sign in.':'Wrong email or password.');
+    cur=mapU(data.user);emit();return cur;
+  },
+  async signInGoogle(){const{error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});fail(error,'Google sign-in failed.');},
+  async signOut(){await sb.auth.signOut();cur=null;emit();},
+  async listProjects(){
+    const{data,error}=await sb.from('project_members').select('role,projects(id,name,updated_at)').eq('user_id',cur.id);fail(error,'Could not load your buildings.');
+    return data.filter(r=>r.projects).map(r=>({id:r.projects.id,name:r.projects.name,role:r.role,updated_at:r.projects.updated_at})).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));
+  },
+  async createProject(name,data){const r=await sb.rpc('create_project',{p_name:name,p_data:data});fail(r.error,'Could not create the building.');return{id:r.data};},
+  async getProject(id){
+    const p=await sb.from('projects').select('id,name,data,updated_at,updated_by').eq('id',id).single();fail(p.error,'You do not have access to this building.');
+    const m=await sb.from('project_members').select('role').eq('project_id',id).eq('user_id',cur.id).single();fail(m.error,'You do not have access to this building.');
+    return Object.assign({},p.data,{role:m.data.role});
+  },
+  async saveProject(id,data){const r=await sb.from('projects').update({data}).eq('id',id);fail(r.error,'Could not save.');},
+  async members(id){
+    const m=await sb.from('project_members').select('role,profiles(id,name,email)').eq('project_id',id);fail(m.error,'Could not load members.');
+    const i=await sb.from('project_invites').select('email').eq('project_id',id);fail(i.error,'Could not load invites.');
+    return{members:m.data.map(r=>({user_id:r.profiles.id,name:r.profiles.name,email:r.profiles.email,role:r.role})),pending:i.data.map(r=>r.email)};
+  },
+  async invite(id,email){email=norm(email);if(!okMail(email))throw new Error('Enter a valid email address.');const r=await sb.rpc('invite_to_project',{p_project:id,p_email:email});fail(r.error,'Could not send the invite.');return r.data;},
+  async comments(id){const r=await sb.from('comments').select(SEL).eq('project_id',id).order('id');fail(r.error,'Could not load comments.');return r.data.map(cmS);},
+  async postComment(id,unit,body){
+    body=String(body||'').trim();if(!body)throw new Error('Write a message first.');if(body.length>2000)throw new Error('Messages are limited to 2000 characters.');
+    const r=await sb.from('comments').insert({project_id:id,unit:unit==null?null:+unit,body}).select(SEL).single();fail(r.error,'Could not send the message.');return cmS(r.data);
+  },
+  subscribe(id,h){
+    const ch=sb.channel('pad-'+id)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'comments',filter:'project_id=eq.'+id},async p=>{const r=await sb.from('comments').select(SEL).eq('id',p.new.id).single();if(r.data&&h.onComment)h.onComment(cmS(r.data));})
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'projects',filter:'id=eq.'+id},p=>{if(h.onProject&&cur&&p.new.updated_by!==cur.id)h.onProject({data:p.new.data,name:p.new.name,updated_by:p.new.updated_by,updated_at:p.new.updated_at});})
+      .subscribe();
+    return()=>{sb.removeChannel(ch);};
+  }
+};
+
+const configured=!!(SUPABASE_URL&&SUPABASE_ANON_KEY),impl=configured?Supa:Local;
+window.PADBE=Object.assign(Object.create(impl),{
+  mode:impl.mode,
+  onAuth:f=>{listeners.add(f);return()=>listeners.delete(f);},
+  user:()=>cur
+});
+})();
+</script>
 
 <script>
 (function(){
@@ -884,7 +1193,7 @@ const BASELINE=[
   {n:2,pri:'bedroom',seed:78},
   {n:3,pri:'balanced',seed:89}
 ];
-const STORE='pad.ninthline.v1';
+const PREF='pad.prefs.v1';const HINT=$('hint').textContent;
 let units=[],nextIdx=1,grouped=false,zoom=1,lastNew=null,selected=null;
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -909,9 +1218,24 @@ function makeUnit(spec){
   return u;
 }
 const added=()=>units.filter(u=>u.src==='add');
-function save(){try{localStorage.setItem(STORE,JSON.stringify({added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom).map(u=>({idx:u.idx,d:u.custom})),grouped,zoom}));}catch(e){}}
-function initial(){nextIdx=1;units=BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b)));}
-function load(){initial();try{const d=JSON.parse(localStorage.getItem(STORE)||'null');if(d){grouped=!!d.grouped;zoom=d.zoom||1;(d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);});(d.custom||[]).forEach(c=>{const u=units.find(x=>x.idx===c.idx);if(u&&c.d)applyCustom(u,c.d);});}}catch(e){}}
+let PROJ=null,saveT=null;   // the open building: {id,name,role,base}
+function snapshot(){return{base:PROJ?PROJ.base:false,added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom).map(u=>({idx:u.idx,d:u.custom}))};}
+function save(){
+  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom}));}catch(e){}
+  if(!PROJ)return;
+  try{localStorage.setItem('pad.proj.'+PROJ.id,JSON.stringify(snapshot()));}catch(e){}
+  clearTimeout(saveT);saveT=setTimeout(flushSave,500);
+}
+function flushSave(){
+  if(!PROJ||!saveT)return;clearTimeout(saveT);saveT=null;
+  BE.saveProject(PROJ.id,snapshot()).catch(er=>toast('Could not save: '+er.message));
+}
+function initial(base){nextIdx=1;units=base?BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b))):[];}
+function loadData(d){
+  d=d||{};initial(!!d.base);
+  (d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{try{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);}catch(e){}});
+  (d.custom||[]).forEach(c=>{try{const u=units.find(x=>x.idx===c.idx);if(u&&c.d)applyCustom(u,c.d);}catch(e){}});
+}
 const tagOf=u=>'PAD-'+String(u.idx).padStart(2,'0');
 
 /* ---------- formatting ---------- */
@@ -953,9 +1277,10 @@ function layout(){
   return {list,runs,total:x};
 }
 function render(){
+  if(view!=='app')return;
   if(isMob){renderMobile();return;}
   const {list,runs,total}=layout();
-  DM=Math.max(...units.map(u=>u.plan.D));list.forEach(u=>u.oy=DM-u.plan.D);
+  DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);
   computeScale();
   const W=PADL+total*S+12, Hc=TOP+(DM+CORR+0.2)*S, H=Hc+80;
   svg.setAttribute('width',Math.ceil(W));svg.setAttribute('height',Math.ceil(H));svg.setAttribute('viewBox',`0 0 ${Math.ceil(W)} ${Math.ceil(H)}`);
@@ -1015,7 +1340,7 @@ function render(){
   drawPeople();
   stats();scalebar();
   $('undo').disabled=!added().length;$('reset').disabled=!added().length;
-  $('badge').hidden=!BASELINE_IS_PLACEHOLDER;
+  $('badge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('reset').hidden=!(PROJ&&PROJ.base);$('hint').textContent=units.length?HINT:'No units yet. Press the arrow to create your first unit.';
   $('grp').setAttribute('aria-pressed',String(grouped));
 }
 function bindOcc(root){
@@ -1103,18 +1428,19 @@ function renderMobile(){
   svg.innerHTML='';
   const list=mobList(),pager=$('pager'),pw=pager.clientWidth,H=Math.max(200,pager.clientHeight-30);
   list.forEach(u=>{u.ox=0;u.oy=0;});
+  if(!list.length){pager.innerHTML='<section class="pg"><p class="note" style="padding:24px 20px">No units yet. Press New unit to create the first one.</p></section>';mobIdx=0;mobCount();stats();$('mStats').innerHTML=$('stats').innerHTML;$('mBadge').hidden=true;$('mUndo').disabled=true;$('mReset').hidden=!(PROJ&&PROJ.base);return;}
   pager.innerHTML=list.map((u,i)=>`<section class="pg" data-idx="${u.idx}"><div class="ph"><span class="src${u.src==='base'?'':' a'}" title="${u.src==='base'?'Baseline':'Added'}"></span><b>${tagOf(u)}</b><span class="ty">${TYPEU(u)} · ${netA(u).toFixed(1)} net m²</span><span class="pr">${escapeHtml(priText(u))}</span></div>${pageSVG(u,pw,H,i===0)}</section>`).join('');
   bindOcc(pager);
   lastNew=null;
   mobIdx=Math.max(0,Math.min(mobIdx,list.length-1));
   pager.scrollLeft=mobIdx*pw;mobCount();
   stats();$('mStats').innerHTML=$('stats').innerHTML;
-  $('mBadge').hidden=!BASELINE_IS_PLACEHOLDER;
+  $('mBadge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('mReset').hidden=!(PROJ&&PROJ.base);
   $('mUndo').disabled=$('mReset').disabled=!added().length;
   $('mGrp').setAttribute('aria-pressed',String(grouped));
   drawPeople();
 }
-function mobCount(){const n=mobList().length;$('mCount').textContent=`${mobIdx+1} / ${n}`;$('mPrev').disabled=mobIdx<=0;$('mNext').disabled=mobIdx>=n-1;}
+function mobCount(){const n=mobList().length;$('mCount').textContent=`${n?mobIdx+1:0} / ${n}`;$('mPrev').disabled=mobIdx<=0;$('mNext').disabled=mobIdx>=n-1;}
 function mobGo(i,smooth){const pager=$('pager');mobIdx=Math.max(0,Math.min(i,mobList().length-1));pager.scrollTo({left:mobIdx*pager.clientWidth,behavior:smooth&&!reduce?'smooth':'auto'});mobCount();}
 let mst;$('pager').addEventListener('scroll',()=>{clearTimeout(mst);mst=setTimeout(()=>{const pg=$('pager');mobIdx=Math.round(pg.scrollLeft/pg.clientWidth);mobCount();},60);},{passive:true});
 $('pager').addEventListener('click',e=>{const sct=e.target.closest('.pg');if(!sct)return;showInfo(units.find(x=>x.idx==sct.dataset.idx));});
@@ -1141,14 +1467,14 @@ function showInfo(u){
   const rm=u.plan.rooms.slice().sort((p,q)=>q.a-p.a);const net=rm.reduce((s,q)=>s+q.a,0);
   $('iRooms').innerHTML=rm.map(q=>`<dt>${escapeHtml(q.n)}</dt><dd>${q.a.toFixed(1)} m²</dd>`).join('')+`<dt class="tot">Total net area</dt><dd class="tot">${net.toFixed(1)} m²</dd><dt class="tot">Total gross area</dt><dd class="tot">${gross(u).toFixed(1)} m²</dd><dt class="tot">Efficiency</dt><dd class="tot">${eff(u).toFixed(1)}%</dd><dt>Corridor frontage</dt><dd>${(u.plan.W*CORR).toFixed(1)} m²</dd>`;
   $('iNote').textContent=u.pri==='other'&&u.other?`Brief: "${u.other}"`:(u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Placeholder layout. It will be replaced by the matching unit from the printed PAD set.':'Matches the printed PAD set.'):'Generated on screen from the options chosen. Not part of the printed set.');
-  info.hidden=false;
+  info.hidden=false;infoCount();
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function stats(){
   const c=[0,0,0,0,0];let a=0;let nt=0;units.forEach(u=>{c[u.n]++;a+=gross(u);nt+=netA(u);});
   const lab=['Studio','1B','2B','3B','4B'];
   const ad=added().length;
-  $('stats').innerHTML=`<span><b>${units.length}</b> unit${units.length>1?'s':''}${ad?` (${ad} added)`:''}</span><span><b>${a.toFixed(1)}</b> m² gross</span><span><b>${nt.toFixed(1)}</b> m² net</span><span><b>${(nt/a*100).toFixed(0)}%</b> efficient</span><span>${c.map((v,i)=>v?`${lab[i]} <b>${v}</b>`:'').filter(Boolean).join(' · ')}</span>`;
+  $('stats').innerHTML=`<span><b>${units.length}</b> unit${units.length>1?'s':''}${ad?` (${ad} added)`:''}</span><span><b>${a.toFixed(1)}</b> m² gross</span><span><b>${nt.toFixed(1)}</b> m² net</span><span><b>${(a?nt/a*100:0).toFixed(0)}%</b> efficient</span><span>${c.map((v,i)=>v?`${lab[i]} <b>${v}</b>`:'').filter(Boolean).join(' · ')}</span>`;
 }
 function scalebar(){
   const sb=$('scalebar');const w=5*S+40;sb.setAttribute('width',Math.ceil(w));
@@ -1671,18 +1997,18 @@ $('edBub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
   deadFix(b.dataset.k,b.dataset.m);edRender();edPanel();});
 $('edUndo').onclick=()=>edAct('undo');
 $('edReset').onclick=()=>edAct('reset');
-function edClose(){$('ed').hidden=true;E=null;}
-$('edCancel').onclick=edClose;
+function edClose(apply){const pr=pendingRemote;pendingRemote=null;$('ed').hidden=true;E=null;if(apply&&pr)applyRemote(pr);}
+$('edCancel').onclick=()=>edClose(true);
 $('edDone').onclick=()=>{
   const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
-  const changed=E.dirty;edClose();
+  const changed=E.dirty;edClose(!changed);
   if(changed){applyCustom(u,d);}
   render();save();showInfo(u);
 };
 document.addEventListener('keydown',e=>{
   if(!E||$('ed').hidden||/INPUT|TEXTAREA/.test(e.target.tagName))return;
   const k=e.key,s=E.sel,p=s&&s.t==='f';
-  if(k==='Escape'&&!E.dirty){edClose();return;}
+  if(k==='Escape'&&!E.dirty){edClose(true);return;}
   if(!s)return;
   const gr=s.t==='w'?wallGroups(E.P).find(q=>q.idxs[0]===s.wi):null,usr=isUser(E.P,gr);
   if(k==='Delete'||k==='Backspace'){e.preventDefault();edAct(p?'del':s.t==='d'?'ddel':'wdel');}
@@ -1707,7 +2033,7 @@ function applyCustom(u,d){
 
 /* ---------- tools ---------- */
 $('undo').onclick=()=>{const ad=added();if(ad.length){const last=ad.reduce((m,x)=>x.idx>m.idx?x:m);units=units.filter(u=>u!==last);nextIdx=last.idx;if(selected===last)showInfo(null);render();save();}};
-$('reset').onclick=()=>{showInfo(null);initial();render();save();scroller.scrollTo({left:0});};
+$('reset').onclick=()=>{showInfo(null);initial(PROJ&&PROJ.base);render();save();scroller.scrollTo({left:0});};
 svg.addEventListener('click',e=>{const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);showInfo(selected===u?null:u);render();});
 $('iClose').onclick=()=>{showInfo(null);if(!isMob)render();};
 $('grp').onclick=()=>{grouped=!grouped;render();save();};
@@ -1721,12 +2047,172 @@ scroller.addEventListener('scroll',navUpdate,{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
-if(/[?&]debug/.test(location.search))window.__pad={units:()=>units,openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
-load();
+/* ---------- accounts, buildings, sharing and chat ---------- */
+const BE=window.PADBE;
+let view='boot',pendingRemote=null,unsub=null;
+function showView(v){view=v;const c=document.body.classList;['boot','land','proj','app'].forEach(x=>c.toggle('view-'+x,x===v));}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true;},4000);}
+function when(iso){const s=(Date.now()-new Date(iso).getTime())/1000;if(!(s>=0))return '';if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+const fail=(el,msg,info)=>{el.textContent=msg;el.className='result '+(info?'':'err');el.hidden=false;};
+
+/* landing */
+let lMode='in';
+function setLMode(m){
+  lMode=m;$('lTabs').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===m)));
+  $('lTitle').textContent=m==='in'?'Welcome back':'Create your account';
+  $('lNameF').hidden=m==='in';$('lGo').textContent=m==='in'?'Sign in':'Create account';
+  $('lPass').autocomplete=m==='in'?'current-password':'new-password';$('lHint').textContent=m==='up'?'At least 8 characters.':'';$('lMsg').hidden=true;
+}
+function showLanding(){closeProject();showView('land');setLMode('in');$('lDemo').hidden=BE.mode!=='demo';$('lDemoG').hidden=true;$('lPass').value='';setTimeout(()=>$('lEmail').focus(),30);}
+$('lTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLMode(b.dataset.m);});
+$('lForm').addEventListener('submit',async e=>{
+  e.preventDefault();const email=$('lEmail').value.trim(),pw=$('lPass').value,msg=$('lMsg');msg.hidden=true;
+  if(!email||!pw){fail(msg,'Enter your email and password.');return;}
+  if(lMode==='up'&&pw.length<8){fail(msg,'Use at least 8 characters for your password.');return;}
+  $('lGo').disabled=true;
+  try{if(lMode==='in')await BE.signIn(email,pw);else await BE.signUp(email,pw,$('lName').value);}
+  catch(er){fail(msg,er.message,er.info);}
+  $('lGo').disabled=false;
+});
+$('lGoogle').onclick=async()=>{
+  $('lMsg').hidden=true;
+  if(BE.mode==='demo'){$('lDemoG').hidden=false;$('lGEmail').focus();return;}
+  try{await BE.signInGoogle();}catch(er){fail($('lMsg'),er.message);}
+};
+$('lGoDemo').onclick=async()=>{try{await BE.signInGoogle({email:$('lGEmail').value,name:$('lGName').value});}catch(er){fail($('lMsg'),er.message);}};
+BE.onAuth(u=>{if(u){if(view==='land'||view==='boot')showProjects();}else showLanding();});
+
+/* building list */
+async function showProjects(){
+  closeProject();showView('proj');
+  const me=BE.user();$('pUser').textContent=me?(me.name+' · '+me.email):'';$('pMsg').hidden=true;
+  $('pList').innerHTML='<p class="note">Loading.</p>';
+  try{
+    const L=await BE.listProjects();
+    $('pList').innerHTML=L.length?L.map(p=>`<button class="pitem" data-id="${escapeHtml(p.id)}"><b>${escapeHtml(p.name)}</b><span>${p.role==='owner'?'Owner':'Shared with you'} · ${escapeHtml(when(p.updated_at))}</span></button>`).join(''):'<p class="note">No buildings yet. Create your first one.</p>';
+  }catch(er){$('pList').innerHTML=`<p class="note">${escapeHtml(er.message)}</p>`;}
+}
+$('pList').addEventListener('click',e=>{const b=e.target.closest('.pitem');if(b)openProject(b.dataset.id);});
+$('pOut').onclick=async()=>{try{await BE.signOut();}catch(er){toast(er.message);}};
+$('pNew').onclick=async()=>{
+  const name=$('pName').value.trim(),msg=$('pMsg');msg.hidden=true;
+  if(!name){fail(msg,'Give the building a name.');return;}
+  $('pNew').disabled=true;
+  try{const r=await BE.createProject(name,{base:$('pSample').checked,added:[],custom:[]});$('pName').value='';await openProject(r.id);}
+  catch(er){fail(msg,er.message);}
+  $('pNew').disabled=false;
+};
+$('pName').addEventListener('keydown',e=>{if(e.key==='Enter')$('pNew').click();});
+
+/* opening and closing a building */
+async function openProject(id){
+  try{
+    const p=await BE.getProject(id);
+    closeProject();
+    PROJ={id:p.id,name:p.name,role:p.role,base:!!(p.data&&p.data.base)};
+    loadData(p.data);
+    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;}}catch(e){}
+    showView('app');setMob();selected=null;
+    $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
+    chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
+    render();
+    if(!added().length)openModal('R');
+  }catch(er){toast(er.message);}
+}
+function closeProject(){
+  if(PROJ&&saveT)flushSave();
+  if(unsub){unsub();unsub=null;}
+  if(E)edClose(false);
+  modal.hidden=true;$('share').hidden=true;$('chat').hidden=true;document.body.classList.remove('chat-open');$('info').hidden=true;$('mMenu').hidden=true;
+  PROJ=null;units=[];selected=null;pendingRemote=null;
+}
+$('hBuildings').onclick=()=>showProjects();
+$('mBuildings').onclick=()=>{$('mMenu').hidden=true;showProjects();};
+
+/* changes made by someone else */
+function applyRemote(row){loadData(row.data);if(row.name){PROJ.name=row.name;$('hProj').textContent=row.name;$('mProj').textContent=row.name;}selected=null;$('info').hidden=true;render();toast('A teammate updated this building.');}
+function remoteProject(row){if(!PROJ)return;if(E){pendingRemote=row;toast('A teammate changed this building. It updates when you close the editor.');return;}applyRemote(row);}
+
+/* chat */
+let CH={msgs:[],thread:'g',unread:0,seen:new Set()};
+const unitTag=idx=>{const u=units.find(x=>x.idx===idx);return u?tagOf(u)+' · '+TYPEU(u):'PAD-'+String(idx).padStart(2,'0')+' (removed)';};
+const threadOf=m=>m.unit==null?'g':String(m.unit);
+function renderChatBtn(){const n=CH.unread;['hCnt','mCnt'].forEach(id=>{$(id).textContent=n>9?'9+':n;$(id).hidden=!n;});}
+async function chatInit(){
+  CH={msgs:[],thread:'g',unread:0,seen:new Set()};renderChatBtn();
+  try{CH.msgs=await BE.comments(PROJ.id);CH.msgs.forEach(m=>CH.seen.add(m.id));}catch(er){toast(er.message);}
+  chatThreads();chatDraw();
+}
+function chatThreads(){
+  const sel=$('chThread'),cnt={};CH.msgs.forEach(m=>{const k=threadOf(m);cnt[k]=(cnt[k]||0)+1;});
+  const ids=new Set(units.map(u=>String(u.idx)));Object.keys(cnt).forEach(k=>{if(k!=='g')ids.add(k);});
+  const opt=(v,t)=>`<option value="${v}"${v===CH.thread?' selected':''}>${escapeHtml(t)}${cnt[v]?' ('+cnt[v]+')':''}</option>`;
+  sel.innerHTML=`<option value="all"${CH.thread==='all'?' selected':''}>All messages (${CH.msgs.length})</option>`+opt('g','General')+[...ids].sort((a,b)=>a-b).map(k=>opt(k,unitTag(+k))).join('');
+}
+function chatDraw(scroll){
+  const box=$('chMsgs'),me=BE.user(),list=CH.msgs.filter(m=>CH.thread==='all'||threadOf(m)===CH.thread);
+  box.innerHTML=list.length?list.map(m=>`<div class="cm${me&&m.user_id===me.id?' me':''}"><div class="cmh"><b>${escapeHtml(m.name)}</b>${CH.thread==='all'?`<i>${escapeHtml(m.unit==null?'General':unitTag(m.unit))}</i>`:''}<span>${escapeHtml(when(m.at))}</span></div><p>${escapeHtml(m.body).replace(/\n/g,'<br>')}</p></div>`).join(''):`<p class="note">${CH.thread==='all'?'No messages yet.':'No messages here yet. Say something to your team.'}</p>`;
+  if(scroll!==false)box.scrollTop=box.scrollHeight;
+}
+function chatIncoming(m){
+  if(!PROJ||CH.seen.has(m.id))return;CH.seen.add(m.id);CH.msgs.push(m);
+  const me=BE.user();
+  if(!$('chat').hidden){chatThreads();chatDraw();}
+  else if(!me||m.user_id!==me.id){CH.unread++;renderChatBtn();}
+  if(selected)infoCount();
+}
+function openChat(thread){
+  if(thread!==undefined)CH.thread=String(thread);
+  $('chat').hidden=false;document.body.classList.add('chat-open');
+  document.documentElement.style.setProperty('--hbar',(document.querySelector('.bar').offsetHeight||80)+'px');
+  CH.unread=0;renderChatBtn();chatThreads();chatDraw();setTimeout(()=>$('chText').focus(),30);
+}
+function closeChat(){$('chat').hidden=true;document.body.classList.remove('chat-open');}
+function toggleChat(){if($('chat').hidden)openChat();else closeChat();}
+$('hChat').onclick=toggleChat;
+$('mChat').onclick=()=>{$('mMenu').hidden=true;openChat();};
+$('chClose').onclick=closeChat;
+$('chThread').addEventListener('change',e=>{CH.thread=e.target.value;chatDraw();});
+async function chatSend(){
+  const ta=$('chText'),text=ta.value;if(!text.trim()||!PROJ)return;
+  const unit=CH.thread==='g'||CH.thread==='all'?null:+CH.thread;
+  $('chSend').disabled=true;
+  try{const m=await BE.postComment(PROJ.id,unit,text);ta.value='';chatIncoming(Object.assign({},m));if($('chat').hidden===false){chatThreads();chatDraw();}}
+  catch(er){toast(er.message);}
+  $('chSend').disabled=false;ta.focus();
+}
+$('chForm').addEventListener('submit',e=>{e.preventDefault();chatSend();});
+$('chText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend();}});
+function infoCount(){const n=CH.msgs.filter(m=>selected&&m.unit===selected.idx).length;$('iChat').textContent=n?`Comments (${n})`:'Comment on this unit';}
+$('iChat').onclick=()=>{if(selected)openChat(selected.idx);};
+
+/* sharing */
+async function drawMembers(){
+  try{
+    const m=await BE.members(PROJ.id);
+    $('shList').innerHTML=m.members.map(x=>`<div class="mrow"><b>${escapeHtml(x.name||x.email)}</b><span>${escapeHtml(x.email||'')} · ${x.role==='owner'?'Owner':'Editor'}</span></div>`).join('')+m.pending.map(x=>`<div class="mrow"><b>${escapeHtml(x)}</b><span>Invited, not signed up yet</span></div>`).join('');
+  }catch(er){$('shList').innerHTML=`<p class="note">${escapeHtml(er.message)}</p>`;}
+}
+function openShare(){if(!PROJ)return;$('shMsg').hidden=true;$('shEmail').value='';$('share').hidden=false;drawMembers();setTimeout(()=>$('shEmail').focus(),30);}
+$('hShare').onclick=openShare;
+$('mShare').onclick=()=>{$('mMenu').hidden=true;openShare();};
+$('shClose').onclick=()=>{$('share').hidden=true;};
+$('share').addEventListener('click',e=>{if(e.target===$('share'))$('share').hidden=true;});
+$('shForm').addEventListener('submit',async e=>{
+  e.preventDefault();const em=$('shEmail').value.trim(),msg=$('shMsg');msg.hidden=true;if(!em)return;
+  try{const r=await BE.invite(PROJ.id,em);fail(msg,r==='added'?'Added. They can open this building from their list.':'Invite saved. They will see this building after they sign up or sign in with that email. Send them the site link.',true);$('shEmail').value='';drawMembers();}
+  catch(er){fail(msg,er.message);}
+});
+$('shCopy').onclick=async()=>{try{await navigator.clipboard.writeText(location.origin+location.pathname);toast('Site link copied.');}catch(er){toast('Copy failed. The address is '+location.origin);}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
+addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
+
+if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
-render();
-openModal('R');
+try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
+showView('boot');
+BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
 })();
 </script>
 

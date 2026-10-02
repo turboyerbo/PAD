@@ -15,11 +15,33 @@ const errs = [];
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 
 try {
+  // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).
+  const signUp = async (page, email, name) => {
+    await page.waitForSelector('#land', { state: 'visible', timeout: 5000 });
+    await page.click('#lTabs [data-m="up"]');
+    await page.fill('#lName', name); await page.fill('#lEmail', email); await page.fill('#lPass', 'password123');
+    await page.click('#lGo');
+    await page.waitForSelector('#proj', { state: 'visible', timeout: 5000 });
+  };
+  const newBuilding = async (page, name, sample = false) => {
+    await page.fill('#pName', name);
+    if (sample) await page.check('#pSample');
+    await page.click('#pNew');
+    await page.waitForSelector('body.view-app', { timeout: 5000 });
+  };
+
   // Desktop
-  const p = await browser.newPage({ viewport: { width: 1500, height: 860 } });
+  const ctx = await browser.newContext({ viewport: { width: 1500, height: 860 } });
+  const p = await ctx.newPage();
   p.on('pageerror', e => errs.push('desktop script error: ' + e.message));
   await p.goto(URL);
-  await p.waitForSelector('#s1:not([hidden])', { timeout: 5000 }).catch(() => errs.push('landing dialog did not open'));
+  await p.waitForSelector('#land', { state: 'visible', timeout: 5000 }).catch(() => errs.push('landing page did not show'));
+  await p.fill('#lEmail', 'nobody@example.com'); await p.fill('#lPass', 'wrongpass1'); await p.click('#lGo');
+  await p.waitForSelector('#lMsg', { state: 'visible', timeout: 3000 }).catch(() => errs.push('wrong sign-in did not show an error'));
+  await signUp(p, 'alex@example.com', 'Alex').catch(() => errs.push('sign up did not reach the building list'));
+  await newBuilding(p, 'Smoke Test').catch(() => errs.push('could not create a building'));
+  await p.waitForSelector('#s1:not([hidden])', { timeout: 5000 }).catch(() => errs.push('new building did not open the unit dialog'));
+  if ((await p.evaluate(() => window.__pad.units().length)) !== 0) errs.push('a new building should start with no units');
 
   const add = async (n, pri, side = 'R', corner = false, other = '') => {
     if (!(await p.isVisible('#modal'))) await p.click(side === 'L' ? '#addL' : '#add');
@@ -106,9 +128,35 @@ try {
   });
   if (col.bad) errs.push(`collision: ${col.bad} of ${col.n} occupant samples inside walls or furniture`);
 
-  await p.reload();
+  // Sharing and chat: invite a second person, who then sees the building and chats live
+  await p.click('#hShare'); await p.fill('#shEmail', 'bob@example.com'); await p.click('#shForm button');
+  await p.waitForSelector('#shMsg:not([hidden])', { timeout: 3000 }).catch(() => errs.push('invite did not confirm'));
+  await p.click('#shClose');
+  const q = await ctx.newPage();
+  q.on('pageerror', e => errs.push('second user script error: ' + e.message));
+  await q.goto(URL);
+  await signUp(q, 'bob@example.com', 'Bob').catch(() => errs.push('second user could not sign up'));
+  if (!/Smoke Test/.test((await q.textContent('#pList')) || '')) errs.push('invited person did not see the shared building');
+  await q.click('.pitem'); await q.waitForSelector('#strip', { state: 'visible', timeout: 5000 });
+  await q.click('#hChat'); await q.fill('#chText', 'Hello from Bob'); await q.click('#chSend');
   await p.waitForTimeout(400);
-  const after = await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
+  if ((await p.textContent('#hCnt')) !== '1') errs.push('unread chat badge did not count the new message');
+  await p.click('#hChat'); await p.waitForTimeout(200);
+  if (!/Hello from Bob/.test(await p.textContent('#chMsgs'))) errs.push('chat message did not arrive for the other person');
+  await p.click('#chClose');
+  await q.close();
+
+  // Sign out returns to the landing page, and the building is still listed after signing back in
+  await p.reload();
+  await p.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('reload did not return to the building list'));
+  await p.click('#pOut');
+  await p.waitForSelector('#land', { state: 'visible', timeout: 3000 }).catch(() => errs.push('sign out did not return to the landing page'));
+  await p.fill('#lEmail', 'alex@example.com'); await p.fill('#lPass', 'password123'); await p.click('#lGo');
+  await p.waitForSelector('.pitem', { timeout: 5000 }).catch(() => errs.push('building missing after signing back in'));
+  await p.click('.pitem');
+  await p.waitForSelector('#strip', { state: 'visible', timeout: 5000 });
+  await p.waitForTimeout(400);
+  const after =await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
   if (after.join() !== order.join()) errs.push('added units did not survive a reload');
   if (!(await p.evaluate(i => !!window.__pad.units().find(u => u.idx === i).custom, edit.idx))) errs.push('customized layout did not survive a reload');
 
@@ -116,8 +164,9 @@ try {
   const m = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   m.on('pageerror', e => errs.push('phone script error: ' + e.message));
   await m.goto(URL);
-  await m.waitForSelector('#s1:not([hidden])', { timeout: 5000 }).catch(() => errs.push('phone landing dialog did not open'));
-  await m.click('#mClose');
+  await signUp(m, 'phone@example.com', 'Phone').catch(() => errs.push('phone sign up failed'));
+  await newBuilding(m, 'Phone Test', true).catch(() => errs.push('phone could not create a building'));
+  await m.click('#mClose').catch(() => {});
   if (!(await m.isVisible('#pager .pg'))) errs.push('phone pager did not render');
   await m.click('#mNext');
   await m.waitForTimeout(400);

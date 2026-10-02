@@ -51,6 +51,11 @@ node tests/smoke.mjs
 | Quick add (one-click standard unit) | `quickAdd` |
 | Building code limits | `BED1_W`, `STUDIO_A`, `solveStudio`, `solveOneBed`, `wcClear` |
 | Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `moveDoor`, `deadEnds`, `PAL`, `applyCustom` |
+| Accounts, buildings and chat data layer (Supabase or demo) | `window.PADBE`, the first script block |
+| Landing page, building list, open and save a building | `showLanding`, `showProjects`, `openProject`, `snapshot`, `loadData` |
+| Chat and sharing | `chatInit`, `chatIncoming`, `openShare` |
+
+Accounts and sharing run in demo mode (browser only) until Supabase is connected. See `docs/SETUP.md` and `supabase/schema.sql`.
 
 ## Writing style for on-screen text
 
