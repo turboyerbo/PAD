@@ -53,6 +53,7 @@ node tests/smoke.mjs
 | Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `moveDoor`, `deadEnds`, `PAL`, `applyCustom` |
 | Tracing paper session (change budget, ghost layer, review, iterations) | `TRACE_BUDGET`, `edPush`, `edReview`, `edSummary`, `restoreIter` |
 | Kitchen templates (U, L, galley) and kitchen code checks | `kTemplate`, `kitchenIssues`, `kitchenNeed`, `applyKitchen` |
+| Balcony, bump-outs (den, nook) and bump-ins (recessed balcony, entry vestibule) | `BUMPS`, `syncBumps`, `addBump`, `netArea`, `grossArea` |
 | Resting people (lying on the sofa, getting out of bed) | `seatPeople`, `restSetup`, `restAct` |
 | Accounts, buildings and chat data layer (Supabase or demo) | `window.PADBE`, the first script block |
 | Landing page, building list, open and save a building | `showLanding`, `showProjects`, `openProject`, `snapshot`, `loadData` |

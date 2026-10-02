@@ -189,6 +189,36 @@ try {
     return first && u.cur === 2 && !!u.custom;
   });
   if (!rest) errs.push('iteration restore did not switch between layouts');
+
+  // Balcony, bump-outs and bump-ins: add them, confirm, then take them away again and get the original walls back
+  const bump = await p.evaluate(() => {
+    const T = window.__pad, u = T.units().find(x => x.n === 4), out = {};
+    const facade = P => JSON.stringify(P.walls.filter(w => w.w > w.h && Math.abs(w.y) < 0.01 && !w.bw).map(w => [Math.round(w.x * 1000), Math.round(w.w * 1000)]).sort((a, b) => a[0] - b[0]));
+    const entryHy = P => Math.max(...P.doors.map(d => d.hy));
+    const fresh = T.buildUnit(u), f0 = facade(fresh), hy0 = entryHy(fresh);
+    const open = () => { if (document.getElementById('info').hidden) document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true })); document.getElementById('iCust').click(); };
+    const rooms = P => P.rooms.reduce((s, q) => s + q.a, 0);
+    open();
+    let E = T.edState(), n0 = rooms(E.P);
+    const add = i => document.querySelector(`[data-act="add"][data-g="5"][data-i="${i}"]`).click();
+    add(0); out.balcony = E.P.bumps.some(b => b.kind === 'balcony') && Math.abs(rooms(E.P) - n0) < 0.001;     // outdoor: no net area
+    add(1); out.den = rooms(E.P) > n0 + 1.9;                                                                 // a den adds area
+    add(4); out.vestibule = entryHy(E.P) < hy0 - 0.9 && E.P.bumps.some(b => b.kind === 'vestibule');          // the entry door moves back
+    out.used = E.used;
+    document.getElementById('edDone').click(); document.getElementById('ecOk').click();
+    out.saved = u.plan.bumps.length === 3 && u.plan.walls.some(w => w.bw);
+    out.gross = T.units().length > 0;
+    open(); E = T.edState();
+    for (const b of E.P.bumps.slice()) { T.edSelect({ t: 'b', id: b.id }); document.querySelector('[data-act="bdel"]').click(); }
+    out.removed = E.P.bumps.length === 0 && facade(E.P) === f0 && Math.abs(entryHy(E.P) - hy0) < 0.001 && !E.P.walls.some(w => w.bw) && Math.abs(rooms(E.P) - n0) < 0.001;
+    document.getElementById('edDone').click(); document.getElementById('ecOk').click();
+    return out;
+  });
+  if (!bump.balcony) errs.push('balcony should add no net area');
+  if (!bump.den) errs.push('den bump-out did not add floor area');
+  if (!bump.vestibule) errs.push('entry vestibule did not move the entry door back');
+  if (!bump.saved) errs.push('bumps were not saved with the iteration');
+  if (!bump.removed) errs.push('removing the bumps did not restore the original walls, door and area');
   if (!edit.open) errs.push('customize did not open the editor');
   if (!edit.moved) errs.push('editor could not move a wall');
   if (!edit.saved) errs.push('editor did not save the edited unit');
