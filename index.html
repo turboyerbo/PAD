@@ -381,8 +381,18 @@ body.no-social :is(#lTabs,#lTitle,#lGoogle,#lDemoG,.or,#lForm,#lDemo,#pOut,#hSha
 .ktp:disabled{opacity:.45;cursor:default}
 .kt small{font-size:10.5px;color:var(--ink-2);line-height:1.3}/* phone interface */
 #mob{display:none}
-body.mob .bar,body.mob .stage,body.mob footer{display:none!important}
-body.mob #mob{display:flex;flex-direction:column;height:100%}
+body.mob .bar,body.mob footer,body.mob .nav,body.mob .add{display:none!important}
+body.mob #mob{display:contents}
+body.mob .mtop{order:1}body.mob .mfocus{order:2}body.mob .stage{order:3}body.mob .mbot{order:4}
+.mfocus{display:none}
+body.mob .mfocus{display:flex;align-items:baseline;gap:8px;padding:2px 12px 4px;height:28px;box-sizing:border-box;flex:none;white-space:nowrap;overflow:hidden}
+.mfocus b{font-size:15px;font-weight:700;letter-spacing:.03em}
+.mfocus span{font-family:var(--narrow);font-size:14px}
+.mfocus i{font-family:var(--narrow);font-style:italic;color:var(--accent);font-size:13px;margin-left:auto;overflow:hidden;text-overflow:ellipsis}
+.tb.danger{border-color:#B3261E;color:#B3261E}
+.dels{margin:0 0 12px}
+.toast .tb{margin-left:12px;border-color:#fff;color:#fff;padding:3px 8px}
+/* the building strip is shared with the desktop; the phone adds a top bar, the unit in focus and a bottom bar */
 .mtop{display:flex;align-items:center;gap:8px;height:40px;padding:0 4px 0 10px;flex:none}
 .mlogo{height:24px;width:auto}
 .mt{font-size:14px;letter-spacing:.04em;color:var(--ink-2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -510,7 +520,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 
 <div id="mob">
   <div class="mtop"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
-  <div id="pager"></div>
+  <div class="mfocus" id="mFocus"></div>
   <div class="mbot">
     <button class="mbtn mnav" id="mPrev" aria-label="Previous unit"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
     <span class="mcount" id="mCount">1 / 1</span>
@@ -520,7 +530,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
+  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
   <button class="mi" id="mUndo">Undo last added unit</button>
   <button class="mi" id="mReset">Restore baseline</button>
   <button class="mi mclose" id="mClose2">Close</button>
@@ -530,6 +540,7 @@ body.mob #mob{display:flex;flex-direction:column;height:100%}
   <div class="cust"><p>Do you want to update this unit? A sheet of tracing paper will slide over it so you can try a few changes.</p><button class="tb primary" id="iCust">Start tracing</button></div>
   <div class="iters" id="iIters"></div>
   <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button></div>
+  <div class="dels"><button class="tb danger" id="iDel" type="button">Delete this unit</button></div>
   <dl id="iList"></dl>
   <h3 class="sub">Room areas</h3>
   <dl id="iRooms"></dl>
@@ -1294,8 +1305,8 @@ function makeUnit(spec){
   return u;
 }
 const added=()=>units.filter(u=>u.src==='add');
-let PROJ=null,saveT=null;   // the open building: {id,name,role,base}
-function snapshot(){return{base:PROJ?PROJ.base:false,added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
+let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
+function snapshot(){return{base:PROJ?PROJ.base:false,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
   try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom}));}catch(e){}
   if(!PROJ)return;
@@ -1306,9 +1317,9 @@ function flushSave(){
   if(!PROJ||!saveT)return;clearTimeout(saveT);saveT=null;
   BE.saveProject(PROJ.id,snapshot()).catch(er=>toast('Could not save: '+er.message));
 }
-function initial(base){nextIdx=1;units=base?BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b))):[];}
+function initial(base){nextIdx=1;removedBase=[];units=base?BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b))):[];}
 function loadData(d){
-  d=d||{};initial(!!d.base);
+  d=d||{};initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
   (d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{try{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);}catch(e){}});
   (d.custom||[]).forEach(c=>{try{const u=units.find(x=>x.idx===c.idx);if(!u)return;if(c.iters){u.iters=c.iters;u.cur=c.cur;}if(c.d)applyCustom(u,c.d);}catch(e){}});
 }
@@ -1329,7 +1340,10 @@ let S=40,PADL=36,TOP=70;
 function computeScale(){
   const h=scroller.clientHeight;TOP=grouped?88:70;
   const avail=h-TOP-66-12;
-  S=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)))*zoom;TOP+=BM*S;
+  let s=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)));
+  if(isMob)s=Math.max(18,Math.min(s,scroller.clientWidth*0.7/6.5));   // phone: the middle unit takes about 70% of the width
+  S=s*zoom;TOP+=BM*S;
+  const first=ordered()[0];PADL=isMob&&first?Math.max(12,(scroller.clientWidth-first.plan.W*S)/2):36;
 }
 function wallsSVG(ws){let a='',b='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`;a+=`<rect class="wS" ${s}/>`;b+=`<rect class="wF" ${s}/>`;});return a+b;}
 function unitSVG(u,o){
@@ -1355,11 +1369,10 @@ function layout(){
 }
 function render(){
   if(view!=='app')return;
-  if(isMob){renderMobile();return;}
   const {list,runs,total}=layout();
   DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);BM=Math.max(0,...units.map(u=>outTop(u.plan)));
   computeScale();
-  const W=PADL+total*S+12, Hc=TOP+(DM+CORR+0.2)*S, H=Hc+80;
+  const W=PADL+total*S+(isMob&&list.length?Math.max(12,(scroller.clientWidth-list[list.length-1].plan.W*S)/2):12), Hc=TOP+(DM+CORR+0.2)*S, H=Hc+80;
   svg.setAttribute('width',Math.ceil(W));svg.setAttribute('height',Math.ceil(H));svg.setAttribute('viewBox',`0 0 ${Math.ceil(W)} ${Math.ceil(H)}`);
   let o=`<defs>
 <pattern id="wood" width="2.4" height="0.4" patternUnits="userSpaceOnUse"><path class="grain" stroke-width="0.012" d="M0 0.2H2.4M0 0.4H2.4M0.3 0V0.2M1.5 0.2V0.4"/></pattern>
@@ -1416,9 +1429,10 @@ function render(){
   addBtn.classList.toggle('pulse',!added().length);
   drawPeople();
   stats();scalebar();
-  $('undo').disabled=!added().length;$('reset').disabled=!added().length;
+  $('undo').disabled=!added().length;$('reset').disabled=!added().length&&!removedBase.length;
   $('badge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('reset').hidden=!(PROJ&&PROJ.base);$('hint').textContent=units.length?HINT:'No units yet. Press the arrow to create your first unit.';
   $('grp').setAttribute('aria-pressed',String(grouped));
+  if(isMob)mobSync();
 }
 function bindOcc(root){
   root.querySelectorAll('.pp').forEach(el=>{const u=units.find(x=>x.idx==el.dataset.u);const p=u.people[+el.dataset.i];p.el=el;p.fa=el.children[0];p.fb=el.children[1];p.bd=el.querySelector('.bd');p.hd=el.querySelector('.hd');p.hr=el.querySelector('.hr');p.u=u;});
@@ -1482,47 +1496,36 @@ const mq=matchMedia('(max-width: 700px), (pointer: coarse) and (max-height: 520p
 function setMob(){isMob=mq.matches;document.body.classList.toggle('mob',isMob);}
 const mobList=()=>ordered();
 const DEFS=`<defs><pattern id="wood" width="2.4" height="0.4" patternUnits="userSpaceOnUse"><path class="grain" stroke-width="0.012" d="M0 0.2H2.4M0 0.4H2.4M0.3 0V0.2M1.5 0.2V0.4"/></pattern><pattern id="tile" width="0.3" height="0.3" patternUnits="userSpaceOnUse"><path class="tilel" stroke-width="0.01" d="M0 0.3H0.3M0.3 0V0.3"/></pattern><pattern id="dots" width="0.3" height="0.3" patternUnits="userSpaceOnUse"><circle class="dot" cx="0.075" cy="0.075" r="0.02"/><circle class="dot" cx="0.225" cy="0.225" r="0.02"/></pattern><pattern id="hatch" width="0.09" height="0.09" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="0.09" height="0.09" fill="#D9D8D0"/><path d="M0 0.045H0.09" stroke="#7B7A72" stroke-width="0.012"/></pattern></defs>`;
-function pageSVG(u,pw,H,first){
-  const P=u.plan,Wt=P.W+0.2,Dt=P.D+CORR+0.15+outTop(P),M=6,DIM=24;
-  const S1=Math.min((pw-2*M)/Wt,(H-DIM-M)/Dt),S2=Math.min((pw-DIM-M)/Dt,(H-2*M)/Wt);
-  const rot=S2>S1*1.12,Sc=rot?S2:S1;
-  let mat,ts,x0,y0;
-  if(!rot){x0=(pw-P.W*Sc)/2;y0=DIM+((H-DIM-M)-Dt*Sc)/2+outTop(P)*Sc;mat=`matrix(${f(Sc)} 0 0 ${f(Sc)} ${f(x0)} ${f(y0)})`;ts=(x,y)=>[x0+x*Sc,y0+y*Sc];}
-  else{x0=DIM+((pw-DIM-M)-Dt*Sc)/2+outTop(P)*Sc;const yb=(H+P.W*Sc)/2;mat=`matrix(0 ${f(-Sc)} ${f(Sc)} 0 ${f(x0)} ${f(yb)})`;ts=(x,y)=>[x0+y*Sc,yb-x*Sc];}
-  const ws=[...endWall(u,'L',-0.2,0),...endWall(u,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
-  const g=`<rect class="base" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/>`+unitSVG(u)+wallsSVG(ws)+sideWinSVG(P)+occMarkup(u);
-  const fs=Math.max(8.5,Math.min(13,Sc*0.24));
-  let t='';
-  if(!rot&&Sc>=34){const s0=S;S=Sc;t+=openingDims(u,x0,y0);S=s0;}
-  t+=roomLabels(u,0,0,ts,Sc,fs);
-  const cp=ts(P.W/2,P.D+CORR/2);
-  t+=`<text class="cl" x="${f(cp[0])}" y="${f(cp[1]-1)}" font-size="${f(fs*0.92)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${f(cp[0])}" y="${f(cp[1]+fs)}" font-size="${f(fs*0.92)}">${(P.W*CORR).toFixed(1)} m²</text>`;
-  const mm=Math.round(P.W*1000),dl=`${mm} mm · ${ftin(mm)}`;
-  const a=ts(0,0),b=ts(P.W,0);
-  if(!rot){const y=Math.max(DIM-7,a[1]-9);t+=`<path class="dim" d="M${f(a[0])} ${y}H${f(b[0])}M${f(a[0]-4)} ${y+4}l8 -8M${f(b[0]-4)} ${y+4}l8 -8M${f(a[0])} ${y-6}V${f(a[1]-2)}M${f(b[0])} ${y-6}V${f(b[1]-2)}"/><text class="dt" x="${f((a[0]+b[0])/2)}" y="${y-5}" font-size="11.5">${dl}</text>`;}
-  else{const x=Math.max(DIM-7,a[0]-9);t+=`<path class="dim" d="M${x} ${f(a[1])}V${f(b[1])}M${x-4} ${f(a[1]+4)}l8 -8M${x-4} ${f(b[1]+4)}l8 -8M${x-6} ${f(a[1])}H${f(a[0]-2)}M${x-6} ${f(b[1])}H${f(b[0]-2)}"/><text class="dt" transform="translate(${x-5} ${f((a[1]+b[1])/2)}) rotate(-90)" font-size="11.5">${dl}</text>`;}
-  return `<svg viewBox="0 0 ${f(pw)} ${f(H)}" width="${f(pw)}" height="${f(H)}" role="img" aria-label="${tagOf(u)} plan">${first?DEFS:''}<g class="unit" data-idx="${u.idx}"><g transform="${mat}">${g}</g></g>${t}</svg>`;
+/* The phone shows the same continuous strip as the desktop, scaled so the unit in the middle takes about 70% of the width. Its neighbours show on both sides. */
+function mobSync(){
+  $('mStats').innerHTML=$('stats').innerHTML;
+  $('mBadge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);
+  $('mUndo').disabled=!added().length;$('mReset').hidden=!(PROJ&&PROJ.base);$('mReset').disabled=!added().length&&!removedBase.length;
+  mobFocus();
 }
-function renderMobile(){
-  svg.innerHTML='';
-  const list=mobList(),pager=$('pager'),pw=pager.clientWidth,H=Math.max(200,pager.clientHeight-30);
-  list.forEach(u=>{u.ox=0;u.oy=0;});
-  if(!list.length){pager.innerHTML='<section class="pg"><p class="note" style="padding:24px 20px">No units yet. Press New unit to create the first one.</p></section>';mobIdx=0;mobCount();stats();$('mStats').innerHTML=$('stats').innerHTML;$('mBadge').hidden=true;$('mUndo').disabled=true;$('mReset').hidden=!(PROJ&&PROJ.base);return;}
-  pager.innerHTML=list.map((u,i)=>`<section class="pg" data-idx="${u.idx}"><div class="ph"><span class="src${u.src==='base'?'':' a'}" title="${u.src==='base'?'Baseline':'Added'}"></span><b>${tagOf(u)}</b><span class="ty">${TYPEU(u)} · ${netA(u).toFixed(1)} net m²</span><span class="pr">${escapeHtml(priText(u))}</span></div>${pageSVG(u,pw,H,i===0)}</section>`).join('');
-  bindOcc(pager);
-  lastNew=null;
-  mobIdx=Math.max(0,Math.min(mobIdx,list.length-1));
-  pager.scrollLeft=mobIdx*pw;mobCount();
-  stats();$('mStats').innerHTML=$('stats').innerHTML;
-  $('mBadge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('mReset').hidden=!(PROJ&&PROJ.base);
-  $('mUndo').disabled=$('mReset').disabled=!added().length;
-  $('mGrp').setAttribute('aria-pressed',String(grouped));
-  drawPeople();
+function mobFocus(){
+  const list=mobList();
+  if(!list.length){mobIdx=0;$('mCount').textContent='0 / 0';$('mFocus').textContent='No units yet';$('mPrev').disabled=$('mNext').disabled=true;return;}
+  const mid=scroller.scrollLeft+scroller.clientWidth/2;let best=0,bd=1e9;
+  list.forEach((u,i)=>{const dd=Math.abs(PADL+(u.ox+u.plan.W/2)*S-mid);if(dd<bd){bd=dd;best=i;}});
+  mobIdx=best;const u=list[best];
+  $('mCount').textContent=`${best+1} / ${list.length}`;
+  $('mPrev').disabled=best<=0;$('mNext').disabled=best>=list.length-1;
+  $('mFocus').innerHTML=`<b>${tagOf(u)}</b><span>${escapeHtml(TYPEU(u))} · ${netA(u).toFixed(1)} net m²</span><i>${escapeHtml(priText(u))}</i>`;
 }
-function mobCount(){const n=mobList().length;$('mCount').textContent=`${n?mobIdx+1:0} / ${n}`;$('mPrev').disabled=mobIdx<=0;$('mNext').disabled=mobIdx>=n-1;}
-function mobGo(i,smooth){const pager=$('pager');mobIdx=Math.max(0,Math.min(i,mobList().length-1));pager.scrollTo({left:mobIdx*pager.clientWidth,behavior:smooth&&!reduce?'smooth':'auto'});mobCount();}
-let mst;$('pager').addEventListener('scroll',()=>{clearTimeout(mst);mst=setTimeout(()=>{const pg=$('pager');mobIdx=Math.round(pg.scrollLeft/pg.clientWidth);mobCount();},60);},{passive:true});
-$('pager').addEventListener('click',e=>{const sct=e.target.closest('.pg');if(!sct)return;showInfo(units.find(x=>x.idx==sct.dataset.idx));});
+function mobGo(i,smooth){
+  const list=mobList();if(!list.length)return;
+  mobIdx=Math.max(0,Math.min(i,list.length-1));const u=list[mobIdx];
+  scroller.scrollTo({left:Math.max(0,PADL+(u.ox+u.plan.W/2)*S-scroller.clientWidth/2),behavior:smooth&&!reduce?'smooth':'auto'});
+  mobFocus();
+}
+/* After a swipe, settle on the nearest unit (units wider than the screen scroll freely). */
+let snapT=0,snapping=false;
+scroller.addEventListener('scroll',()=>{
+  if(!isMob)return;mobFocus();if(snapping)return;
+  clearTimeout(snapT);
+  snapT=setTimeout(()=>{const u=mobList()[mobIdx];if(!u||u.plan.W*S>scroller.clientWidth*0.95)return;snapping=true;mobGo(mobIdx,true);setTimeout(()=>{snapping=false;},500);},160);
+},{passive:true});
 $('mPrev').onclick=()=>mobGo(mobIdx-1,true);$('mNext').onclick=()=>mobGo(mobIdx+1,true);
 $('mAdd').onclick=()=>openModal(mobIdx===0&&mobList().length>1?'L':'R');
 const mMenu=$('mMenu');
@@ -1535,6 +1538,7 @@ mq.addEventListener('change',()=>{setMob();render();});
 function priText(u){if(u.minimal)return 'minimum';return u.pri==='other'?(Object.keys(u.plan.o).map(k=>KWNAME[k]).join(', ')||(u.other||'other').slice(0,22)):PRI_LABEL[u.pri].toLowerCase();}
 function showInfo(u){
   selected=u;const info=$('info');
+  if(delArm){clearTimeout(delArm);delArm=0;}$('iDel').textContent='Delete this unit';
   if(!u){info.hidden=true;return;}
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=(u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
@@ -1717,7 +1721,7 @@ function petTick(dt){
   const st=snapFree(P,P.nodes.entry||{x:P.W/2,y:P.D-1});
   const kind=Math.random()<0.5?'dog':'cat';
   const q={kind,x:st.x,y:st.y,a:0,path:[],wait:0.6,phase:0,v:kind==='cat'?0.9:0.85,R:rng(Math.floor(Math.random()*1e9)),u,walking:false,life:4+Math.random()*3,age:0};
-  const root=isMob?$('pager').querySelector(`.pg[data-idx="${u.idx}"] .unit > g`):svg.querySelector('#ppl');
+  const root=svg.querySelector('#ppl');
   if(!root)return;
   u.pets=[q];root.insertAdjacentHTML('beforeend',petSVG(q,u,0));bindOcc(root);
 }
@@ -1834,7 +1838,7 @@ $('gen').onclick=()=>{pick.pri='other';pick.other=$('otherTxt').value.trim();toS
 function generate(r){
   const u=makeUnit({n:r.n,pri:r.pri,other:r.other,seed:r.seed,W:r.fit,D:r.D,maxA:r.maxA,Wt:r.Wt,Lt:r.Lt,side:r.side,corner:r.corner});
   if(r.side==='L')units.unshift(u);else units.push(u);lastNew=u;modal.hidden=true;
-  if(isMob){mobIdx=mobList().indexOf(u);render();save();return;}
+  if(isMob){mobIdx=mobList().indexOf(u);render();mobGo(mobIdx,true);save();return;}
   render();save();
   const {list}=layout();const x=PADL+u.ox*S;
   requestAnimationFrame(()=>scroller.scrollTo({left:r.side==='L'?0:Math.max(0,x+u.plan.W*S+120-scroller.clientWidth),behavior:reduce?'auto':'smooth'}));
@@ -2525,6 +2529,30 @@ function applyCustom(u,d){
   seatPeople(u);
 }
 
+/* ---------- delete a unit ---------- */
+let delArm=0;
+function deleteUnit(u){
+  const i=units.indexOf(u);if(i<0)return;
+  units.splice(i,1);lastDel={u,i};
+  if(u.src==='base'&&!removedBase.includes(u.idx))removedBase.push(u.idx);
+  if(isMob)mobIdx=Math.max(0,Math.min(mobIdx,units.length-1));
+  showInfo(null);render();save();
+  if(!$('chat').hidden)chatThreads();
+  toast(`${tagOf(u)} deleted.`,{label:'Undo',fn:undoDelete});
+}
+function undoDelete(){
+  if(!lastDel)return;const{u,i}=lastDel;lastDel=null;
+  units.splice(Math.min(i,units.length),0,u);removedBase=removedBase.filter(x=>x!==u.idx);
+  render();save();if(!$('chat').hidden)chatThreads();
+}
+$('iDel').onclick=()=>{
+  const b=$('iDel');if(!selected)return;
+  if(delArm){clearTimeout(delArm);delArm=0;b.textContent='Delete this unit';deleteUnit(selected);return;}
+  b.textContent='Click again to delete';delArm=setTimeout(()=>{delArm=0;b.textContent='Delete this unit';},3000);
+};
+$('mZin').onclick=()=>{$('mMenu').hidden=true;$('zin').click();};
+$('mZout').onclick=()=>{$('mMenu').hidden=true;$('zout').click();};
+
 /* ---------- tools ---------- */
 $('undo').onclick=()=>{const ad=added();if(ad.length){const last=ad.reduce((m,x)=>x.idx>m.idx?x:m);units=units.filter(u=>u!==last);nextIdx=last.idx;if(selected===last)showInfo(null);render();save();}};
 $('reset').onclick=()=>{showInfo(null);initial(PROJ&&PROJ.base);render();save();scroller.scrollTo({left:0});};
@@ -2547,7 +2575,7 @@ const SOCIAL=BE.mode==='supabase'||/[?&]fulldemo/.test(location.search);   // ac
 document.body.classList.toggle('no-social',!SOCIAL);
 let view='boot',pendingRemote=null,unsub=null;
 function showView(v){view=v;const c=document.body.classList;['boot','land','proj','app'].forEach(x=>c.toggle('view-'+x,x===v));}
-function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true;},4000);}
+function toast(msg,act){const t=$('toast');t.textContent=msg;if(act){const b=document.createElement('button');b.className='tb';b.textContent=act.label;b.onclick=()=>{t.hidden=true;act.fn();};t.appendChild(b);}t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true;},act?7000:4000);}
 function when(iso){const s=(Date.now()-new Date(iso).getTime())/1000;if(!(s>=0))return '';if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric'});}
 const fail=(el,msg,info)=>{el.textContent=msg;el.className='result '+(info?'':'err');el.hidden=false;};
 

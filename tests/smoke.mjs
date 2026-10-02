@@ -276,11 +276,40 @@ try {
   await signUp(m, 'phone@example.com', 'Phone').catch(() => errs.push('phone sign up failed'));
   await newBuilding(m, 'Phone Test', true).catch(() => errs.push('phone could not create a building'));
   await m.click('#mClose').catch(() => {});
-  if (!(await m.isVisible('#pager .pg'))) errs.push('phone pager did not render');
+  if (!(await m.isVisible('#strip'))) errs.push('phone building strip did not render');
+  // The phone shows the building as one strip: the unit in focus is in the middle and its neighbours show at the sides
+  const view = await m.evaluate(() => {
+    const T = window.__pad, sc = document.getElementById('scroller'), us = T.units();
+    const svgR = document.getElementById('strip').getBoundingClientRect(), s = sc.getBoundingClientRect();
+    const hits = [...document.querySelectorAll('#strip .unit .hit')].map(h => h.getBoundingClientRect());
+    return { visible: hits.filter(r => r.right > s.left + 20 && r.left < s.right - 20).length, units: us.length };
+  });
+  if (view.visible < 2) errs.push('phone should show a neighbouring unit beside the focused one');
   await m.click('#mNext');
-  await m.waitForTimeout(400);
+  await m.waitForTimeout(900);
   const count = await m.textContent('#mCount');
   if (!/^2 \//.test(count.trim())) errs.push('phone next arrow did not advance: ' + count);
+  // Delete a unit from its panel, then undo the delete; a deleted sample unit stays deleted after a reload
+  const del = await m.evaluate(async () => {
+    const T = window.__pad, n0 = T.units().length, i = +document.getElementById('mCount').textContent.split(' / ')[0] - 1, idx = T.units()[i].idx;
+    document.querySelector(`#strip .unit[data-idx="${idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.getElementById('iDel').click(); document.getElementById('iDel').click();
+    const gone = T.units().length === n0 - 1 && !T.units().some(u => u.idx === idx);
+    document.querySelector('#toast .tb').click();
+    const back = T.units().length === n0 && T.units().some(u => u.idx === idx);
+    document.querySelector(`#strip .unit[data-idx="${idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    document.getElementById('iDel').click(); document.getElementById('iDel').click();
+    await new Promise(r => setTimeout(r, 700));
+    return { gone, back, n0, idx };
+  });
+  if (!del.gone) errs.push('Delete this unit did not remove the unit');
+  if (!del.back) errs.push('Undo did not bring the deleted unit back');
+  await m.reload();
+  await m.waitForSelector('.pitem', { timeout: 5000 });
+  await m.click('.pitem');
+  await m.waitForSelector('body.view-app', { timeout: 5000 });
+  const kept = await m.evaluate(i => window.__pad.units().length === i.n0 - 1 && !window.__pad.units().some(u => u.idx === i.idx), del);
+  if (!kept) errs.push('a deleted sample unit came back after a reload');
 } finally {
   await browser.close();
   srv.kill();

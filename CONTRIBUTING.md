@@ -46,7 +46,8 @@ node tests/smoke.mjs
 | Furniture drawings and colours | `function piece`, `--mt-` |
 | Occupants, walking and collision grid | `gridOf`, `findPath`, `makeUnit` |
 | Desktop strip | `function render` |
-| Phone pager | `renderMobile`, `pageSVG` |
+| Phone view (the same strip, middle unit in focus, neighbours showing) | `mobSync`, `mobFocus`, `mobGo`, and the phone branch of `computeScale` |
+| Delete a unit and undo it | `deleteUnit`, `undoDelete`, `removedBase` |
 | New-unit dialog | `openModal`, `readSize` |
 | Quick add (one-click standard unit) | `quickAdd` |
 | Building code limits | `BED1_W`, `STUDIO_A`, `solveStudio`, `solveOneBed`, `wcClear` |
