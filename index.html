@@ -370,6 +370,33 @@ body.chat-open .info{right:356px}
 .iter i{font-style:normal;font-size:11px;color:var(--accent)}
 .iter .tb{padding:3px 8px;font-size:11px}
 @media (prefers-reduced-motion:reduce){.ed{transition:none}}
+/* phones: no dimensions and only room names and areas, so the plans stay readable */
+.ed-handle{display:none}
+body.mob :is(#strip,#edSvg) :is(.ht,.htl,.dim2,.wdt,.dim,.dt,.ext,.lb1,.lb2,.lb3,.mark-a,.mark-b,.ra[style]){display:none}
+/* phones: the editor takes the whole screen, a two-line header and the tools in a pull-up sheet */
+body.mob .ed{inset:0}
+body.mob .ed .tape{display:none}
+body.mob .ed-top{display:grid;grid-template-columns:1fr auto;gap:6px 8px;padding:8px 10px 8px}
+body.mob .ed-top .step{display:none}
+body.mob .ed-top h2{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.mob .ed-top>div:first-child{min-width:0}
+body.mob .meter .mlbl{display:none}
+body.mob .meter .pip{width:9px;height:9px;border-width:1.5px}
+body.mob .meter .mcnt{font-size:12px}
+body.mob .ed-act{grid-column:1/-1;flex-wrap:nowrap;gap:5px}
+body.mob .ed-act .tb{flex:1;padding:6px 4px;font-size:11px;letter-spacing:.02em;white-space:nowrap}
+body.mob .ed-act .tb.primary{flex:1.3}
+body.mob .ed-body{flex-direction:column}
+body.mob .ed-handle{display:flex;align-items:center;justify-content:center;gap:6px;flex:none;height:38px;border:0;border-top:1px solid var(--rule);background:rgba(255,255,255,.85);color:var(--draw);font:inherit;font-size:13px;font-weight:600;letter-spacing:.02em;padding:0 12px;padding-bottom:env(safe-area-inset-bottom,0px)}
+body.mob .ed-handle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.mob .ed-handle svg{flex:none;transition:transform .2s}
+body.mob .ed.tools .ed-handle svg{transform:rotate(180deg)}
+body.mob .ed-side{display:none;width:auto;height:auto;max-height:42vh;flex:none;border-left:0;border-top:1px dashed var(--ht);padding:2px 12px 12px}
+body.mob .ed.tools .ed-side{display:block}
+body.mob .bub{width:184px;font-size:12px;padding:8px 10px}
+body.mob .ed-handle{background:#fff}
+.bub.below{transform:translate(-50%,0)}
+.bub.below::after{bottom:auto;top:-8px;transform:translateX(-50%) rotate(225deg)}
 /* demo mode without the shared service: hide everything that needs it */
 #lGuest{display:none}
 #lGuest .demo-note{margin:0 0 16px;font-size:13px}
@@ -653,6 +680,7 @@ body.mob .mfocus{display:flex;align-items:baseline;gap:8px;padding:2px 12px 4px;
   </div>
   <div class="ed-body">
     <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div></div>
+    <button class="ed-handle" id="edHandle" type="button" aria-expanded="false" aria-controls="edSide"><span id="edHandleTxt">Tools</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
     <aside class="ed-side" id="edSide"></aside>
   </div>
   <div class="ed-confirm" id="edConfirm" hidden>
@@ -1338,8 +1366,8 @@ let DM=8.4,BM=0;
 const svg=$('strip'),scroller=$('scroller'),addBtn=$('add');
 let S=40,PADL=36,TOP=70;
 function computeScale(){
-  const h=scroller.clientHeight;TOP=grouped?88:70;
-  const avail=h-TOP-66-12;
+  const h=scroller.clientHeight;TOP=isMob?14:grouped?88:70;
+  const avail=h-TOP-(isMob?8:66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)));
   if(isMob)s=Math.max(18,Math.min(s,scroller.clientWidth*0.7/6.5));   // phone: the middle unit takes about 70% of the width
   S=s*zoom;TOP+=BM*S;
@@ -1372,7 +1400,7 @@ function render(){
   const {list,runs,total}=layout();
   DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);BM=Math.max(0,...units.map(u=>outTop(u.plan)));
   computeScale();
-  const W=PADL+total*S+(isMob&&list.length?Math.max(12,(scroller.clientWidth-list[list.length-1].plan.W*S)/2):12), Hc=TOP+(DM+CORR+0.2)*S, H=Hc+80;
+  const W=PADL+total*S+(isMob&&list.length?Math.max(12,(scroller.clientWidth-list[list.length-1].plan.W*S)/2):12), Hc=TOP+(DM+CORR+0.2)*S, H=Hc+(isMob?10:80);
   svg.setAttribute('width',Math.ceil(W));svg.setAttribute('height',Math.ceil(H));svg.setAttribute('viewBox',`0 0 ${Math.ceil(W)} ${Math.ceil(H)}`);
   let o=`<defs>
 <pattern id="wood" width="2.4" height="0.4" patternUnits="userSpaceOnUse"><path class="grain" stroke-width="0.012" d="M0 0.2H2.4M0 0.4H2.4M0.3 0V0.2M1.5 0.2V0.4"/></pattern>
@@ -2015,7 +2043,7 @@ function edIssues(P,u){
   return o;
 }
 function openEditor(u){
-  showInfo(null);
+  showInfo(null);$('ed').classList.remove('tools');
   const P=edClone(u.plan);let mx=0;P.furn.forEach(p=>{if(p.id>mx)mx=p.id;});P.furn.forEach(p=>{if(p.id===undefined)p.id=++mx;});
   let dm=0;P.doors.forEach(d=>{if(d.id>dm)dm=d.id;});P.doors.forEach(d=>{if(d.id===undefined)d.id=++dm;});
   E={u,P,orig:edClone(P),sel:null,hist:[],drag:null,nid:Math.max(mx,dm),base:null,dirty:false,dis:new Set(),msg:'',used:0,last:null,review:false};E.base=edOverlaps(P);
@@ -2375,7 +2403,7 @@ function restoreIter(u,n){
 }
 
 function edRender(){
-  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=30,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P);
+  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=isMob?10:30,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P);
   const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P))*Sc)/2+outTop(P)*Sc;
   Object.assign(E,{Sc,x0,y0});
   const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
@@ -2396,10 +2424,12 @@ function edBubbles(cw){
   deadEnds(E.P).forEach((de,i)=>{
     const k=deKey(de);if(E.dis.has(k))return;
     const R=de.R,mid=de.end==='L'?(R.x+de.edge)/2:(de.edge+R.x+R.w)/2;
-    const px=Math.max(112,Math.min(cw-112,E.x0+mid*E.Sc)),py=E.y0+(R.y+R.h/2)*E.Sc-10;
-    h+=`<div class="bub" style="left:${f(px)}px;top:${f(py)}px"><button class="bx" data-m="dismiss" data-k="${k}" aria-label="Dismiss">×</button><p>This hall is a dead end, ${de.len.toFixed(1)} m past the last door. Do you want to add a closet here, or close it off with a wall?</p><div class="edbtns"><button class="tb" data-m="closet" data-k="${k}">Add closet</button><button class="tb" data-m="wall" data-k="${k}">Add wall</button></div></div>`;
+    const hw=isMob?96:112,px=Math.max(hw,Math.min(cw-hw,E.x0+mid*E.Sc)),py=E.y0+(R.y+R.h/2)*E.Sc-10;
+    h+=`<div class="bub" data-py="${f(py)}" style="left:${f(px)}px;top:${f(py)}px"><button class="bx" data-m="dismiss" data-k="${k}" aria-label="Dismiss">×</button><p>This hall is a dead end, ${de.len.toFixed(1)} m past the last door. Do you want to add a closet here, or close it off with a wall?</p><div class="edbtns"><button class="tb" data-m="closet" data-k="${k}">Add closet</button><button class="tb" data-m="wall" data-k="${k}">Add wall</button></div></div>`;
   });
   box.innerHTML=h;
+  // not enough room above the hall: show the bubble below it instead of cutting it off
+  box.querySelectorAll('.bub').forEach(b=>{const py=+b.dataset.py;if(py-b.offsetHeight<6){b.classList.add('below');b.style.top=f(py+22)+'px';}});
 }
 function edHit(pt){
   const P=E.P,G=wallGroups(P),wallAt=m=>{for(const gr of G)for(const i of gr.idxs){const w=P.walls[i];if(pt.x>=w.x-m&&pt.x<=w.x+w.w+m&&pt.y>=w.y-m&&pt.y<=w.y+w.h+m)return{t:'w',wi:gr.idxs[0]};}return null;};
@@ -2477,6 +2507,17 @@ function edAct(a,b){
   else if(a==='reset'){EDKEYS.forEach(k=>P[k]=JSON.parse(JSON.stringify(E.orig[k])));E.hist=[];E.used=0;E.last=null;E.dirty=false;E.sel=null;E.base=edOverlaps(P);}
   edRender();edPanel();
 }
+/* phone: the tools sheet handle names what is selected, and the header buttons get short labels */
+function edHandleSync(p,d,gr,usr,bp){
+  const nm=p?(KN[p.k]||p.k):d?'Door':bp?BUMPS[bp.kind].n:gr?(usr?'Added wall':'Wall'):'';
+  const open=$('ed').classList.contains('tools');
+  $('edHandleTxt').textContent=nm?`${nm}: ${open?'hide tools':'tools'}`:(open?'Hide tools':'Tools, layouts and code check');
+  $('edHandle').setAttribute('aria-expanded',String(open));
+  const L=isMob?{edReset:'Reset',edCancel:'Discard',edDone:'Review'}:{edReset:'Start over',edCancel:'Discard',edDone:'Review changes'};
+  Object.entries(L).forEach(([id,t])=>{$(id).textContent=t;});
+}
+function edToggleTools(on){const ed=$('ed');ed.classList.toggle('tools',on===undefined?!ed.classList.contains('tools'):on);edPanel();requestAnimationFrame(()=>{if(E)edRender();});}
+$('edHandle').onclick=()=>edToggleTools();
 function edPanel(){
   const P=E.P,s=E.sel,u=E.u;let h='';
   const p=s&&s.t==='f'?P.furn.find(x=>x.id===s.id):null,d=s&&s.t==='d'?P.doors.find(x=>x.id===s.id):null,gr=s&&s.t==='w'?wallGroups(P).find(q=>q.idxs[0]===s.wi):null,usr=isUser(P,gr),bp=s&&s.t==='b'?bumpsOf(P).find(x=>x.id===s.id):null;
@@ -2495,7 +2536,7 @@ function edPanel(){
   h+=PAL.map((gp,gi)=>`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
   h+=`<h3 class="sub">Code check</h3>`+edIssues(P,u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('');
   h+=edCompare();
-  $('edSide').innerHTML=h;$('edUndo').disabled=!E.hist.length;$('edDone').disabled=!E.dirty;edMeter();
+  $('edSide').innerHTML=h;edHandleSync(p,d,gr,usr,bp);$('edUndo').disabled=!E.hist.length;$('edDone').disabled=!E.dirty;edMeter();
 }
 $('edSide').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E)return;if(b.dataset.act==='add')edAdd(PAL[+b.dataset.g].it[+b.dataset.i]);else edAct(b.dataset.act,b.dataset);});
 $('edBub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E)return;
