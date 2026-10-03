@@ -2792,7 +2792,19 @@ BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLand
 </script>
 
 <script>
-if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
+// Offline cache, plus pick up new deploys in a tab that stays open: check for a new build whenever the
+// page comes back into view, then reload onto it (never while the editor is open, so no edits are lost).
+if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',()=>{
+  const sw=navigator.serviceWorker;let had=!!sw.controller,pending=false;
+  const edOpen=()=>{const ed=document.getElementById('ed');return !!(ed&&!ed.hidden);};
+  const go=()=>{if(edOpen()){pending=true;return;}location.reload();};
+  sw.register('/sw.js',{updateViaCache:'none'}).then(reg=>{
+    const chk=()=>reg.update().catch(()=>{});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(pending&&!edOpen())location.reload();else chk();});
+    setInterval(chk,15*60*1000);
+  }).catch(()=>{});
+  sw.addEventListener('controllerchange',()=>{if(!had){had=true;return;}go();});
+});}
 </script>
 </body>
 </html>
