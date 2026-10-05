@@ -52,8 +52,9 @@ node tests/smoke.mjs
 | Quick add (one-click standard unit) | `quickAdd` |
 | Building code limits | `BED1_W`, `STUDIO_A`, `solveStudio`, `solveOneBed`, `wcClear` |
 | Unit editor (move walls, add or remove furniture and fixtures) | `openEditor`, `wallGroups`, `moveWall`, `moveDoor`, `deadEnds`, `PAL`, `applyCustom` |
+| Room editing (drag a room, others reflow, red rooms, typed sizes; see docs/ROOMS.md) | `rmBuild`, `rmSolve`, `rmApply`, `rmMoveTree`, `rmDown`, `rmTyped`, `rmPanel`, `rmFurnish` |
 | Prompt editing (words change plans; Netlify function holds the key, see docs/PROMPTS.md) | `aiPlan`, `aiOps`, `aiRun`, `aiPanel`, `netlify/functions/revise.mjs` |
-| Baseline layouts from DXF (gallery, sample building; see docs/LAYOUTS.md) | `LAYOUTS`, `useLayout`, `layoutCard`, `tools/dxf-to-layouts.mjs` |
+| The catalog of starting layouts (gallery, sample building, new units; see docs/LAYOUTS.md) | `LAYOUTS`, `useLayout`, `layoutCard`, `tools/dxf-to-layouts.mjs` |
 | Tracing paper session (change budget, ghost layer, review, iterations) | `TRACE_BUDGET`, `edPush`, `edReview`, `edSummary`, `restoreIter` |
 | Kitchen templates (U, L, galley) and kitchen code checks | `kTemplate`, `kitchenIssues`, `kitchenNeed`, `applyKitchen` |
 | Balcony, bump-outs (den, nook) and bump-ins (recessed balcony, entry vestibule) | `BUMPS`, `syncBumps`, `addBump`, `netArea`, `grossArea` |
