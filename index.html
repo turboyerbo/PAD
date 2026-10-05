@@ -232,6 +232,24 @@ body.view-proj #proj{display:block;flex:1;min-height:0;overflow:auto}
 .land-pts{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:15px}
 .land-pts li{padding-left:26px;position:relative}
 .land-pts li::before{content:"";position:absolute;left:0;top:.45em;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px rgba(2,116,190,.3)}
+.land{grid-template-rows:minmax(calc(100dvh - 80px),auto) auto;align-content:start}
+.land-more-link{margin-top:22px;border:0;background:transparent;color:#C9D3DA;font-size:14px;padding:6px 0;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.land-more-link:hover,.land-more-link:focus-visible{color:#fff}
+.land-more{grid-column:1/-1;align-self:start;padding:34px 0 20px;border-top:1px solid rgba(255,255,255,.16)}
+.land-more h2{font-size:clamp(24px,3vw,34px);font-weight:600;margin:0 0 12px;text-wrap:balance}
+.lm-lead{font-size:17px;line-height:1.55;color:#C9D3DA;max-width:46em;margin:0 0 18px}
+.lm-formula{display:inline-block;margin:0 0 26px;padding:12px 18px;background:rgba(2,116,190,.22);border:1px solid rgba(255,255,255,.22);font-size:18px}
+.lm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.lm-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);padding:20px 22px;border-radius:4px}
+.lm-card.lm-wide{grid-column:1/-1}
+.lm-card h3{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600;margin:0 0 10px}
+.lm-card h3 span{flex:none;width:28px;height:28px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.lm-card p,.lm-card dd,.lm-card li{font-size:15px;line-height:1.55;color:#DCE4EA;margin:0}
+.lm-card dl{margin:0;display:grid;gap:4px}
+.lm-card dt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9FB6C6;margin-top:10px}
+.lm-card dt:first-child{margin-top:0}
+.lm-card ul{margin:12px 0 0;padding-left:20px;display:grid;gap:10px}
+.lm-card b{color:#fff;font-weight:600}
 .land-card{background:var(--sheet);color:var(--ink);padding:26px 26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.35);border-radius:4px;max-width:440px;width:100%;justify-self:center;box-sizing:border-box}
 .land-card h2{font-size:22px;font-weight:600;margin:4px 0 16px}
 .gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid var(--ink);background:var(--sheet);border-radius:2px;padding:11px 12px;font-size:15px;font-weight:500}
@@ -282,7 +300,8 @@ body.chat-open .info{right:356px}
 #shForm .field{margin:0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:4px;font-size:13px;z-index:30;max-width:calc(100% - 32px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
 @media (max-width:820px){
-  .land{grid-template-columns:1fr;gap:28px;padding:28px 20px 36px;align-items:start}
+  .land{grid-template-columns:1fr;grid-template-rows:none;gap:28px;padding:28px 20px 36px;align-items:start}
+  .lm-grid{grid-template-columns:1fr}
   .land-logo{height:56px;margin-bottom:14px}
   .projs-body{grid-template-columns:1fr}
 }
@@ -475,6 +494,7 @@ body.no-ai:not(.manual) .cust{display:none}
       <li>Each answer becomes a new version of the unit that you can keep, compare or set aside</li>
       <li class="social-only">Share a building and chat about any unit with your team</li>
     </ul>
+    <button class="land-more-link" id="lMoreLink" type="button">Why PAD tracks area and efficiency <span aria-hidden="true">↓</span></button>
   </div>
   <section class="land-card" aria-labelledby="lTitle">
     <div id="lGuest">
@@ -499,6 +519,52 @@ body.no-ai:not(.manual) .cust{display:none}
       <button class="tb primary wide" id="lGo" type="submit">Sign in</button>
     </form>
     <p class="demo-note" id="lDemo" hidden>Demo mode. Accounts and buildings are kept in this browser only until the shared service is connected.</p>
+  </section>
+  <section class="land-more" id="lMore" aria-labelledby="lmT">
+    <h2 id="lmT">Why PAD measures area and efficiency</h2>
+    <p class="lm-lead">Calculating area and building efficiency is the primary goal of the design team for Patry Group buildings. Every unit in PAD shows its net area, its gross area and its efficiency, and they update as you describe changes.</p>
+    <p class="lm-formula" role="note"><b>Efficiency</b> = Usable Floor Area (UFA) ÷ Gross Floor Area (GFA)</p>
+    <div class="lm-grid">
+      <article class="lm-card">
+        <h3><span>1</span>Optimizing units</h3>
+        <p>Net-to-gross area efficiency is the ratio of Usable Floor Area (UFA) to Gross Floor Area (GFA), expressed as a percentage. It measures the spatial efficiency of a layout. It shows how much of the building's total constructed footprint becomes functional, rentable or livable tenant space, and how much is structural loss.</p>
+      </article>
+      <article class="lm-card">
+        <h3><span>2</span>Usable Floor Area (UFA)</h3>
+        <dl>
+          <dt>Definition</dt><dd>The actual space inside the finished surfaces of individual suites or leasable commercial bays, measured wall to wall.</dd>
+          <dt>Measurement</dt><dd>From the faces of finished walls and the finished faces of interior partitions.</dd>
+          <dt>Inclusions</dt><dd>Habitable rooms, internal partitions, closets, and in-suite mechanical and laundry footprints.</dd>
+          <dt>Exclusions (loss factors)</dt><dd>Vertical service shafts, elevators, fire stairwells, shared public corridors, garbage chutes, main electrical and mechanical rooms, and management offices. These are the core loss of the building.</dd>
+        </dl>
+      </article>
+      <article class="lm-card">
+        <h3><span>3</span>Gross Floor Area (GFA)</h3>
+        <dl>
+          <dt>Definition</dt><dd>In line with standard Ontario municipal zoning bylaws, GFA is measured to the exterior face of the exterior perimeter walls of the building, across all floors.</dd>
+          <dt>Measurement</dt><dd>From the centre line of the demising wall to the centre line of the demising wall. On the exterior wall, to the outside of the framing studs. On the corridor side, to the corridor side of the stud on the interior wall.</dd>
+          <dt>Inclusions</dt><dd>All enclosed levels above grade, including corridors, mechanical penthouses (depending on local zoning exclusions), and shared amenity core spaces.</dd>
+          <dt>Exclusions</dt><dd>Unenclosed exterior balconies, patios, roof terraces, tuck-under garages, and standard parking and below-grade storage structures (unless local zoning specifically counts underground footprints).</dd>
+        </dl>
+      </article>
+      <article class="lm-card">
+        <h3><span>4</span>Optimizing buildings</h3>
+        <dl>
+          <dt>Total Net Rentable Area (NRA)</dt><dd>The sum of UFA multiplied by the number of units. Excludes patios and balconies.</dd>
+          <dt>Residential Gross Area (RGA)</dt><dd>The total building envelope minus all retail spaces. Includes tuck-under parking. Excludes patios and balconies.</dd>
+          <dt>Building efficiency</dt><dd>NRA divided by RGA. An efficiency of 80% or higher is the baseline, unless Patry Group sets other targets during pre-application or feasibility analysis.</dd>
+        </dl>
+      </article>
+      <article class="lm-card lm-wide">
+        <h3><span>5</span>Optimizing for the Ontario framework</h3>
+        <p>To suit a rental development framework, this approach avoids ambiguous terms like "net rentable", which belongs in commercial leasing, and anchors everything on one clear ratio.</p>
+        <ul>
+          <li><b>Zoning compliance alignment.</b> Because the gross measure follows exterior wall measurements, designers work within standard municipal zoning definitions of GFA.</li>
+          <li><b>OBC compatibility.</b> It respects the Ontario Building Code's spatial separation and fire-compartment boundaries, without mixing structural footprint calculations with commercial leasing metrics such as BOMA, or Tarion standards, which do not apply cleanly to multi-family residential rental developments.</li>
+          <li><b>Target benchmarking.</b> A clear formula lets the designer set baseline efficiency expectations. A multi-family residential building should reach a minimum of 80% to 85% UFA-to-GFA ratio. That gives the design team an objective measure for optimizing hallway lengths, core layouts and structural grid placement.</li>
+        </ul>
+      </article>
+    </div>
   </section>
 </main>
 
@@ -2751,6 +2817,7 @@ $('edSide').addEventListener('click',e=>{
   if(b.id==='aiGo')aiRun(($('aiText')||{}).value);
   else if(b.dataset.ex){E.draft=b.dataset.ex;aiPanel();const t=$('aiText');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}}
 });
+$('lMoreLink').onclick=()=>$('lMore').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
 $('iCust').onclick=()=>{if(selected)openEditor(selected);};
 
 /* Apply saved or edited layout data to a unit and put its occupants back at the door. */
