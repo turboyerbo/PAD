@@ -89,12 +89,47 @@ try {
     // Save the same kind of sheet as a new unit instead: the original stays as it was
     const n1 = await ai.evaluate(() => window.__pad.units().length);
     await ai.evaluate(() => { if (document.getElementById('info').hidden) document.querySelector('#strip .unit .hit').dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    await ai.click('#iCust'); await ai.fill('#aiText', 'Another plant'); await ai.click('#aiGo');
+    await ai.evaluate(() => document.getElementById('iCust').click()); await ai.fill('#aiText', 'Another plant'); await ai.click('#aiGo');
     await ai.waitForFunction(() => window.__pad.edState().used === 1 && !window.__pad.edState().busy, null, { timeout: 5000 }).catch(() => errs.push('third prompt did not finish'));
     await ai.click('#edDone'); await ai.click('#ecNew'); await ai.waitForTimeout(300);
     const nv = await ai.evaluate(() => { const L = window.__pad.units(); return { n: L.length, first: L[0].iters.length, last: L[L.length - 1].iters && L[L.length - 1].iters.length, custom: !!L[L.length - 1].custom }; });
     if (nv.n !== n1 + 1 || nv.first !== 2 || nv.last !== 1 || !nv.custom) errs.push('Save as new unit did not add a variation beside the original: ' + JSON.stringify(nv));
+    // Room editing: drag a room onto another, the rooms reflow, a typed size is kept, undo puts it all back, and confirming keeps the new size
+    await ai.evaluate(() => window.__pad.openEditor(window.__pad.units()[0]));
+    await ai.waitForSelector('#rmGo, .rmcard, #edSide .note', { timeout: 3000 }).catch(() => {});
+    await ai.waitForTimeout(900);
+    // a point inside the named room that is not inside one of its small rooms
+    const at = name => ai.evaluate(name => { const E = window.__pad.edState(), rm = window.__pad.rm.rmEnsure(); const o = Object.values(rm.rooms).find(x => x.n === name && !x.minor); if (!o) return null; const r = rm.cur[o.k], svg = document.getElementById('edSvg').getBoundingClientRect(), mins = Object.values(rm.rooms).filter(m => m.minor).map(m => (rm.minorCur && rm.minorCur[m.k]) || m.r0);
+      let best = [(r[0] + r[2]) / 2, (r[1] + r[3]) / 2], bd = -1; for (let x = r[0] + 0.2; x < r[2] - 0.2; x += 0.2) for (let y = r[1] + 0.2; y < r[3] - 0.2; y += 0.2) { const d = Math.min(1e9, ...mins.map(m => Math.max(m[0] - x, 0, x - m[2], m[1] - y, 0, y - m[3]) + (x >= m[0] && x <= m[2] && y >= m[1] && y <= m[3] ? -9 : 0))); if (d > bd) { bd = d; best = [x, y]; } }
+      return [svg.left + E.x0 + best[0] * E.Sc, svg.top + E.y0 + best[1] * E.Sc]; }, name);
+    const a = await at('Bedroom'), b2 = await at('Kitchen');
+    if (!a || !b2) errs.push('room editing: the unit has no bedroom or kitchen to drag');
+    else {
+      const before = await ai.evaluate(() => { const E = window.__pad.edState(); return { W: E.P.W, D: E.P.D, r: E.P.rooms.map(q => q.n + q.x.toFixed(1) + q.y.toFixed(1)).join() }; });
+      await ai.mouse.move(a[0], a[1]); await ai.mouse.down(); await ai.mouse.move((a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2, { steps: 5 }); await ai.mouse.move(b2[0], b2[1], { steps: 5 });
+      if (!(await ai.locator('#rmOv .rmghost').count())) errs.push('dragging a room should show the room being moved');
+      await ai.mouse.up(); await ai.waitForTimeout(300);
+      const after = await ai.evaluate(() => { const E = window.__pad.edState(); return { used: E.used, log: E.log.length, W: E.P.W, D: E.P.D, r: E.P.rooms.map(q => q.n + q.x.toFixed(1) + q.y.toFixed(1)).join(), doors: E.P.doors.length, entry: E.P.doors.some(d => d.hy > E.P.D - 0.3), bad: E.P.rooms.some(q => q.red && !q.red.length) }; });
+      if (after.used !== 1 || after.log !== 1 || after.r === before.r) errs.push('dragging a room did not reflow the unit as one change: ' + JSON.stringify({ before: before.r, after: after.r, used: after.used }));
+      const noDoor = await ai.evaluate(() => window.__pad.edState().P.rooms.filter(q => (q.red || []).some(m => /has no door/.test(m))).map(q => q.n));
+      if (!after.entry || after.doors < 2 || noDoor.length) errs.push('after a room move the unit lost doors or left rooms with no way in: ' + JSON.stringify({ doors: after.doors, noDoor }));
+      // typed size: a bigger bedroom, kept as asked
+      const c = await at('Den'); await ai.mouse.click(c[0], c[1]); await ai.waitForTimeout(150);
+      await ai.fill('#rmA', '14'); await ai.click('#rmGo'); await ai.waitForTimeout(300);
+      const den = await ai.evaluate(() => { const E = window.__pad.edState(), q = E.P.rooms.find(x => x.n === 'Den'); return { a: q && q.a, used: E.used, W: E.P.W, D: E.P.D }; });
+      if (!den.a || Math.abs(den.a - 14) > 0.6 || den.used !== 2) errs.push('a typed room area was not kept: ' + JSON.stringify(den));
+      if (den.D < after.D - 1e-6 || den.D - before.D > 1.05 || den.W - before.W > 0.45) errs.push('the footprint should change only a little: ' + JSON.stringify({ den, before }));
+      await ai.click('#edUndo'); await ai.click('#edUndo'); await ai.waitForTimeout(200);
+      const back = await ai.evaluate(() => { const E = window.__pad.edState(); return { used: E.used, W: E.P.W, D: E.P.D, r: E.P.rooms.map(q => q.n + q.x.toFixed(1) + q.y.toFixed(1)).join(), reds: E.P.rooms.filter(q => q.red).length }; });
+      if (back.used !== 0 || back.r !== before.r || back.W !== before.W || back.D !== before.D || back.reds) errs.push('undo did not put the unit back after room edits: ' + JSON.stringify(back));
+      // do it again and keep it
+      await ai.mouse.move(a[0], a[1]); await ai.mouse.down(); await ai.mouse.move(b2[0], b2[1], { steps: 8 }); await ai.mouse.up(); await ai.waitForTimeout(300);
+      await ai.click('#edDone'); await ai.click('#ecOk'); await ai.waitForTimeout(400);
+      const kept = await ai.evaluate(() => { const u = window.__pad.units()[0]; return { W: u.plan.W, D: u.plan.D, dim: u.custom && u.custom.dim && u.custom.dim[0], people: u.people.length, nodes: Object.keys(u.plan.nodes).length }; });
+      if (!kept.dim || kept.dim.W !== kept.W || kept.dim.D !== kept.D) errs.push('a saved room edit did not keep the unit size: ' + JSON.stringify(kept));
+    }
     // Baseline layouts gallery
+    await ai.evaluate(() => document.getElementById('iClose').click());
     await ai.click('#add'); await ai.click('#browseLay');
     const cards = await ai.locator('.lcard').count();
     if (cards !== 9) errs.push('the catalog gallery should show the 9 catalog layouts, it shows ' + cards);
@@ -244,6 +279,7 @@ try {
   const kit = await p.evaluate(() => {
     const T = window.__pad, out = { tried: [] }, units = T.units().filter(x => x.src === 'add' || x.src === 'base');
     for (const u of T.units()) {
+      if (u.layout) continue;   // catalog layouts keep the kitchen they were drawn with
       if (document.getElementById('info').hidden) document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
       document.getElementById('iCust').click();
       const P = T.edState().P, avail = ['u', 'l', 'gal2', 'gal1'].filter(k => T.kTemplate(P, k).ok);
