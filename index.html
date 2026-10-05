@@ -467,6 +467,13 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .mi[aria-pressed="true"]{border-color:var(--accent);background:var(--furn-fill)}
 .mi:disabled{opacity:.4}
 .mi.mclose{text-align:center;border-color:var(--ink)}
+/* home */
+.homelink{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
+.homelink:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.projs-top .homelink b{color:inherit}
+#lBack{display:none}
+.land-card.signed>:not(#lBack){display:none!important}
+.land-card.signed #lBack{display:block}
 /* baseline layouts gallery */
 .lays{width:min(940px,100%)}
 .lays .lead{margin:0 0 10px;font-size:14px}
@@ -526,7 +533,8 @@ body.no-ai:not(.manual) .cust{display:none}
     </ul>
     <button class="land-more-link" id="lMoreLink" type="button">Why PAD tracks area and efficiency <span aria-hidden="true">↓</span></button>
   </div>
-  <section class="land-card" aria-labelledby="lTitle">
+  <section class="land-card" id="lCard" aria-labelledby="lTitle">
+    <div id="lBack"><h2>Welcome back</h2><p class="demo-note" id="lWho"></p><button class="tb primary wide" id="lContinue" type="button">Go to my buildings</button></div>
     <div id="lGuest">
       <h2>Start designing</h2>
       <p class="demo-note">Sign-in and sharing switch on once the shared service is connected. Until then your buildings are saved in this browser only.</p>
@@ -599,7 +607,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </main>
 
 <main class="projs" id="proj">
-  <header class="projs-top"><img src="/patry-logo.png" alt="Patry Group" width="38" height="31"><b>Patry Analysis &amp; Design</b><span class="grow"></span><span class="who" id="pUser"></span><button class="tb" id="pOut" type="button">Sign out</button></header>
+  <header class="projs-top"><button class="homelink" id="pHome" type="button" aria-label="Home"><img src="/patry-logo.png" alt="Patry Group" width="38" height="31"><b>Patry Analysis &amp; Design</b></button><span class="grow"></span><span class="who" id="pUser"></span><button class="tb" id="pHomeBtn" type="button">Home</button><button class="tb" id="pOut" type="button">Sign out</button></header>
   <div class="projs-body">
     <section class="pcard">
       <h2>New building</h2>
@@ -617,10 +625,10 @@ body.no-ai:not(.manual) .cust{display:none}
 </main>
 
 <header class="bar">
-  <img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52">
+  <button class="homelink" id="hHome" type="button" aria-label="Home"><img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52"></button>
   <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p><b id="hProj">Building</b> <span id="hRole"></span> <span class="badge" id="badge">Placeholder baseline</span></p></div>
   <div class="stats" id="stats"></div>
-  <div class="tools"><button class="tb" id="hBuildings" type="button">Buildings</button><button class="tb" id="hShare" type="button">Share</button><button class="tb" id="hChat" type="button">Chat<span class="cbadge" id="hCnt" hidden>0</span></button>
+  <div class="tools"><button class="tb" id="hHomeBtn" type="button">Home</button><button class="tb" id="hBuildings" type="button">Buildings</button><button class="tb" id="hShare" type="button">Share</button><button class="tb" id="hChat" type="button">Chat<span class="cbadge" id="hCnt" hidden>0</span></button>
     <button class="tb" id="grp" aria-pressed="false">Group by bedrooms</button>
     <button class="tb" id="undo">Undo</button>
     <button class="tb" id="reset">Restore baseline</button>
@@ -652,7 +660,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </footer>
 
 <div id="mob">
-  <div class="mtop"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+  <div class="mtop"><button class="homelink" id="mHome" type="button" aria-label="Home"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"></button><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
   <div class="mbot">
     <button class="mbtn mnav" id="mPrev" aria-label="Previous unit"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
     <div class="mmid"><span class="mfocus" id="mFocus"></span><span class="mcount" id="mCount">1 / 1</span></div>
@@ -662,7 +670,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mDetail" aria-pressed="false">Show dimensions</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
+  <button class="mi" id="mHome2">Home</button><button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mDetail" aria-pressed="false">Show dimensions</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
   <button class="mi" id="mUndo">Undo last added unit</button>
   <button class="mi" id="mReset">Restore baseline</button>
   <button class="mi mclose" id="mClose2">Close</button>
@@ -2942,7 +2950,19 @@ function setLMode(m){
   $('lNameF').hidden=m==='in';$('lGo').textContent=m==='in'?'Sign in':'Create account';
   $('lPass').autocomplete=m==='in'?'current-password':'new-password';$('lHint').textContent=m==='up'?'At least 8 characters.':'';$('lMsg').hidden=true;
 }
-function showLanding(){closeProject();showView('land');setLMode('in');$('lDemo').hidden=BE.mode!=='demo';$('lDemoG').hidden=true;$('lPass').value='';setTimeout(()=>$('lEmail').focus(),30);}
+let homeHold=false;   // true while a signed-in person is looking at the home screen on purpose
+function updateLanding(){
+  const me=BE.user(),on=!!me&&homeHold;$('lCard').classList.toggle('signed',on);
+  if(on)$('lWho').textContent=SOCIAL&&me.email?('Signed in as '+me.name+' ('+me.email+').'):'Your buildings are saved in this browser.';
+}
+/* The home screen is one click away from anywhere. Unsaved tracing paper asks first. */
+function goHome(){
+  if(E&&E.dirty&&!confirm('Leave without saving the changes on the tracing paper?'))return;
+  homeHold=true;closeProject();showView('land');updateLanding();$('land').scrollTop=0;
+}
+['hHome','hHomeBtn','pHome','pHomeBtn','mHome','mHome2'].forEach(id=>{$(id).onclick=goHome;});
+$('lContinue').onclick=()=>{homeHold=false;showProjects();};
+function showLanding(){homeHold=false;$('lCard').classList.remove('signed');closeProject();showView('land');setLMode('in');$('lDemo').hidden=BE.mode!=='demo';$('lDemoG').hidden=true;$('lPass').value='';setTimeout(()=>$('lEmail').focus(),30);}
 $('lTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLMode(b.dataset.m);});
 $('lForm').addEventListener('submit',async e=>{
   e.preventDefault();const email=$('lEmail').value.trim(),pw=$('lPass').value,msg=$('lMsg');msg.hidden=true;
@@ -2960,11 +2980,11 @@ $('lGoogle').onclick=async()=>{
 };
 $('lStart').onclick=async()=>{try{await BE.signInGuest();}catch(er){toast(er.message);}};
 $('lGoDemo').onclick=async()=>{try{await BE.signInGoogle({email:$('lGEmail').value,name:$('lGName').value});}catch(er){fail($('lMsg'),er.message);}};
-BE.onAuth(u=>{if(u){if(view==='land'||view==='boot')showProjects();}else showLanding();});
+BE.onAuth(u=>{if(u){if(view==='boot'||(view==='land'&&!homeHold))showProjects();}else showLanding();});
 
 /* building list */
 async function showProjects(){
-  closeProject();showView('proj');
+  homeHold=false;closeProject();showView('proj');
   const me=BE.user();$('pUser').textContent=!SOCIAL?'Saved in this browser':me?(me.name+' · '+me.email):'';$('pMsg').hidden=true;
   $('pList').innerHTML='<p class="note">Loading.</p>';
   try{

@@ -33,6 +33,13 @@ try {
   await g.reload();
   await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('guest reload did not return to the building list'));
   if (!/Guest Building/.test((await g.textContent('#pList')) || '')) errs.push('guest building was not kept');
+  // Home is one click away from the building list and from a building, and the landing page then offers a way back in
+  await g.click('#pHomeBtn');
+  if (!(await g.isVisible('#land')) || !(await g.isVisible('#lContinue')) || (await g.isVisible('#lStart'))) errs.push('Home from the building list did not show the landing page with Go to my buildings');
+  await g.click('#lContinue'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 }).catch(() => errs.push('Go to my buildings did not return to the list'));
+  await g.click('.pitem'); await g.waitForSelector('body.view-app', { timeout: 5000 });
+  await g.click('#hHomeBtn');
+  if (!(await g.isVisible('#lContinue'))) errs.push('Home from a building did not show the landing page');
   await g.close();
 
   // Prompt editing: the assistant is mocked, so this checks the page side only (apply, check, undo, confirm as an iteration)
