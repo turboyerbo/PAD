@@ -474,45 +474,6 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .mi[aria-pressed="true"]{border-color:var(--accent);background:var(--furn-fill)}
 .mi:disabled{opacity:.4}
 .mi.mclose{text-align:center;border-color:var(--ink)}
-/* keyplan */
-.keyplan{position:absolute;top:10px;right:14px;z-index:6;width:236px;box-sizing:border-box;background:rgba(255,255,255,.93);border:1px solid var(--ink);padding:6px 8px 7px;font-size:11px;line-height:1.35;box-shadow:0 6px 18px rgba(38,38,31,.18)}
-.kp-h{display:flex;align-items:center;gap:6px}
-.kp-h b{letter-spacing:.1em;text-transform:uppercase;font-size:10px}
-.kp-h span{flex:1;color:var(--ink-2);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kp-h button{border:0;background:none;padding:0 3px;font-size:14px;line-height:1;color:var(--ink)}
-#kpSvg{width:100%;display:block;margin-top:5px}
-#kpSvg *{vector-effect:non-scaling-stroke}
-.kp-u{fill:var(--fx-fill);stroke:var(--ink);stroke-width:.8;cursor:pointer}
-.kp-m{fill:var(--furn-fill);stroke:var(--ink-2);stroke-width:.6}
-.kp-c{fill:var(--rule);stroke:none}
-.kp-t{fill:none;stroke:var(--ink-2);stroke-width:.8;stroke-dasharray:3 2}
-.kp-u.sel{stroke:var(--accent);stroke-width:2}
-.kp-st{margin-top:4px;color:var(--ink-2)}
-.kp-st b{color:var(--ink)}
-#kpForm{display:flex;gap:6px;align-items:end;margin-top:6px}
-#kpForm label{display:grid;gap:2px;flex:1;font-size:11px;color:var(--ink-2)}
-#kpForm input{width:100%;box-sizing:border-box;border:1px solid var(--ink);background:var(--fx-fill);padding:4px 6px;font:inherit;font-size:13px}
-.keyplan{display:none}
-.keyplan.open{display:block}
-.kp-h button .ic{width:14px;height:14px}
-body.mob .keyplan{top:40px;right:6px;width:172px}
-/* home */
-.homelink{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
-.homelink:focus-visible{outline:2px solid #fff;outline-offset:3px}
-.projs-top .homelink b{color:inherit}
-#lBack{display:none}
-.land-card.signed>:not(#lBack){display:none!important}
-.land-card.signed #lBack{display:block}
-/* baseline layouts gallery */
-.lays{width:min(940px,100%)}
-.lays .lead{margin:0 0 10px;font-size:14px}
-.lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0 10px}
-.lcard{display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid var(--rule);background:var(--paper);padding:8px;border-radius:2px;font-size:13px}
-.lcard:hover,.lcard:focus-visible{border-color:var(--accent)}
-.lcard svg{width:100%;height:190px;display:block}
-.lcard svg *{vector-effect:non-scaling-stroke}
-.lcard svg pattern *{vector-effect:none}
-.lcard b{font-weight:600}.lcard span{color:var(--ink-2);font-size:12px}
 /* phone: less chrome and less text */
 .mmid{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;line-height:1.2}
 .mmid .mfocus{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -527,38 +488,7 @@ body.mob .msheet{grid-template-columns:1fr 1fr;gap:6px;padding:10px 10px calc(10
 body.mob .msheet .mstats,body.mob .msheet .mclose{grid-column:1/-1}
 body.mob .mi{padding:10px 12px;font-size:14px}
 .mstats{padding:0 2px 4px}
-body.mob #track{min-height:100%;align-items:center}/* room editing */
-.rmred{fill:rgba(198,40,40,.2);stroke:#C62828;stroke-width:2;stroke-dasharray:7 4;pointer-events:none}
-.rmsel{fill:rgba(31,42,122,.07);stroke:var(--draw);stroke-width:2.5;pointer-events:none}
-.rmprev{fill:none;stroke:var(--draw);stroke-width:1.5;stroke-dasharray:5 4;pointer-events:none}
-.rmghost{fill:rgba(31,42,122,.14);stroke:var(--draw);stroke-width:2;pointer-events:none}
-.rmzone{fill:rgba(2,116,190,.26);pointer-events:none}
-#edSvg{cursor:grab}
-.rmcard{border:1px solid var(--rule);background:#fff;padding:8px 10px;margin:6px 0 4px;font-size:13px}
-.rmcard.red{border-color:#C62828}
-.rmcard b{display:block;font-size:15px}
-.rmcard>span{color:var(--ink-2);font-size:12px}
-.rmf{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 6px}
-.rmf label{display:grid;gap:2px;font-size:11px;color:var(--ink-2)}
-.rmf input{width:100%;box-sizing:border-box;border:1px solid var(--ink);background:var(--fx-fill);padding:5px 6px;font:inherit;font-size:13px}
-/* prompt editing */
-body.no-ai:not(.manual) .cust{display:none}
-.aip textarea{min-height:92px}
-.aip .go{margin-top:8px;width:100%;padding:9px 10px}
-.aip .go[disabled]{opacity:.55}
-.aip .ex{margin-top:8px}
-.aip .say{margin:8px 0 0;font-size:13px;line-height:1.45}
-.aip .say.err{color:#B3261E}
-.aip .you{margin:14px 0 2px;font-size:12px;color:var(--ink-2)}
-.aip .you.undone,.aip .undone .say,.aip .undone .eclist{opacity:.5;text-decoration:line-through}
-.aip .eclist{font-size:13px;margin:4px 0}
-.aip .dots{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}
-.aip .dots i{width:5px;height:5px;border-radius:50%;background:var(--draw);animation:aipd 1s infinite ease-in-out}
-.aip .dots i:nth-child(2){animation-delay:.15s}.aip .dots i:nth-child(3){animation-delay:.3s}
-@keyframes aipd{0%,80%,100%{opacity:.25}40%{opacity:1}}
-.ed.ai-busy .ed-cv{opacity:.65;transition:opacity .2s}
-@media (prefers-reduced-motion:reduce){.aip .dots i{animation:none;opacity:.7}}
-@media (prefers-reduced-motion:reduce){.unit.new,.add.pulse::after{animation:none}}
+body.mob #track{min-height:100%;align-items:center}@media (prefers-reduced-motion:reduce){.unit.new,.add.pulse::after{animation:none}}
 </style>
 
 </head>
@@ -673,13 +603,12 @@ body.no-ai:not(.manual) .cust{display:none}
   <button class="homelink" id="hHome" type="button" aria-label="Home"><img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52"></button>
   <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p><b id="hProj">Building</b> <span id="hRole"></span> <span class="badge" id="badge">Placeholder baseline</span></p></div>
   <div class="stats" id="stats"></div>
-  <div class="tools"><button class="tb" id="hHomeBtn" type="button" title="Home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span class="lb">Home</span></button><button class="tb" id="hBuildings" type="button" title="Buildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span class="lb">Buildings</span></button><button class="tb" id="hShare" type="button" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span class="lb">Share</span></button><button class="tb" id="hChat" type="button" title="Chat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lb">Chat</span><span class="cbadge" id="hCnt" hidden>0</span></button>
-    <button class="tb" id="hKeyplan" type="button" title="Keyplan: how much of the building is designed" aria-expanded="false" aria-controls="keyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span class="lb">Keyplan</span><span class="kpn" id="hKpTxt"></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-    <button class="tb" id="grp" aria-pressed="false" title="Group by bedrooms"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span class="lb">Group by bedrooms</span></button>
-    <button class="tb" id="undo" title="Undo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg><span class="lb">Undo</span></button>
-    <button class="tb" id="reset" title="Restore baseline"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg><span class="lb">Restore baseline</span></button>
-    <button class="tb sq" id="zout" aria-label="Zoom out" title="Zoom out"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/></svg></button>
-    <button class="tb sq" id="zin" aria-label="Zoom in" title="Zoom in"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6M11 8v6"/></svg></button>
+  <div class="tools"><button class="tb" id="hHomeBtn" type="button">Home</button><button class="tb" id="hBuildings" type="button">Buildings</button><button class="tb" id="hShare" type="button">Share</button><button class="tb" id="hChat" type="button">Chat<span class="cbadge" id="hCnt" hidden>0</span></button>
+    <button class="tb" id="grp" aria-pressed="false">Group by bedrooms</button>
+    <button class="tb" id="undo">Undo</button>
+    <button class="tb" id="reset">Restore baseline</button>
+    <button class="tb sq" id="zout" aria-label="Zoom out">−</button>
+    <button class="tb sq" id="zin" aria-label="Zoom in">+</button>
   </div>
 </header>
 
@@ -711,7 +640,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </footer>
 
 <div id="mob">
-  <div class="mtop"><button class="homelink" id="mHome" type="button" aria-label="Home"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"></button><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+  <div class="mtop"><img class="mlogo" src="/patry-logo.png" alt="Patry Group" width="30" height="24"><span class="mt"><b>PAD</b> <span id="mProj"></span></span><span class="mph" id="mBadge">placeholder</span><button class="mbtn" id="mMenuBtn" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
   <div class="mbot">
     <button class="mbtn mnav" id="mPrev" aria-label="Previous unit"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
     <div class="mmid"><span class="mfocus" id="mFocus"></span><span class="mcount" id="mCount">1 / 1</span></div>
@@ -721,9 +650,9 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mHome2"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Home</span></button><button class="mi" id="mBuildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span>Buildings</span></button><button class="mi" id="mShare"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span>Share building</span></button><button class="mi" id="mChat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Chat</span><span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mKeyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span>Keyplan</span></button><button class="mi" id="mZin"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6M11 8v6"/></svg><span>Zoom in</span></button><button class="mi" id="mZout"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/></svg><span>Zoom out</span></button><button class="mi" id="mDetail" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v10M21 7v10M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span id="mDetailTxt">Show dimensions</span></button><button class="mi" id="mGrp" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span>Group by bedrooms</span></button>
-  <button class="mi" id="mUndo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg><span>Undo last added unit</span></button>
-  <button class="mi" id="mReset"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg><span>Restore baseline</span></button>
+  <button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mDetail" aria-pressed="false">Show dimensions</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
+  <button class="mi" id="mUndo">Undo last added unit</button>
+  <button class="mi" id="mReset">Restore baseline</button>
   <button class="mi mclose" id="mClose2">Close</button>
 </aside>
 <aside class="info" id="info" hidden aria-labelledby="iTitle">
@@ -1530,7 +1459,7 @@ const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
 function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
-  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpOpen}));}catch(e){}
+  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail}));}catch(e){}
   if(!PROJ)return;
   try{localStorage.setItem('pad.proj.'+PROJ.id,JSON.stringify(snapshot()));}catch(e){}
   clearTimeout(saveT);saveT=setTimeout(flushSave,500);
@@ -1593,18 +1522,17 @@ const corrShare=P=>P.W*KEYCORR/2;
 const grossAll=P=>grossArea(P)+corrShare(P);
 const netA=u=>netArea(u.plan);
 const eff=u=>netA(u)/gross(u)*100;
-let DM=8.4,BM=0,detail=false,bldgLen=100,kpOpen=false;   // bldgLen: the building length the keyplan measures against, m
+let DM=8.4,BM=0,detail=false;
 const lite=()=>isMob&&!detail;   // phones show room names and areas only, until Show dimensions is on
 
 /* ---------- render ---------- */
 const svg=$('strip'),scroller=$('scroller'),addBtn=$('add');
 let S=40,PADL=36,TOP=70;
 function computeScale(){
-  document.body.classList.toggle('detail',detail);
-  const h=scroller.clientHeight;TOP=isMob?(lite()?14:60):(grouped?88:70);
-  const avail=h-TOP-(isMob?(lite()?8:66):66)-12;
+  const h=scroller.clientHeight;TOP=isMob?(lite()?36:60):(grouped?88:70);
+  const avail=h-TOP-(isMob&&lite()?42:66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)));
-  if(isMob)s=Math.max(12,Math.min(s,scroller.clientWidth*0.82/6.5,scroller.clientWidth*0.94/Math.max(1,...units.map(u=>u.plan.W+0.4))));   // phone: the middle unit takes about 80% of the width, and the widest unit always fits
+  if(isMob)s=Math.max(18,Math.min(s,scroller.clientWidth*0.82/6.5));   // phone: the middle unit takes about 70% of the width
   S=s*zoom;TOP+=BM*S;
   const first=ordered()[0];PADL=isMob&&first?Math.max(12,(scroller.clientWidth-first.plan.W*S)/2):36;
 }
@@ -1711,13 +1639,9 @@ function occMarkup(u){let pp='';u.people.forEach((p,i)=>{pp+=`<path class="trail
   return pp;}
 function roomLabels(u,X,uy,map,sc,fsz,plain){   // plain: room names and areas only, no dimensions
   const SS=sc||S,fs=fsz||Math.max(6.5,Math.min(10.5,SS*0.21)),df=Math.max(5.8,fs*0.82);let t='';
-  const placed=[];
-  u.plan.rooms.forEach(q=>{const pt=map?map(q.lx,q.ly):[X+q.lx*SS,uy+q.ly*SS];
-    // phones: label only the main rooms, and drop any label that would overlap one already placed
-    if(isMob){if(/^(Closet|Hall|Entry)$/.test(q.n)||q.a<3)return;const w=Math.max(q.n.length,7)*fs*0.36,b=[pt[0]-w,pt[1]-fs,pt[0]+w,pt[1]+fs*1.3];if(placed.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))return;placed.push(b);}
-    const x=f(pt[0]),y=pt[1],nm=escapeHtml(q.n.toUpperCase()),ar=q.a.toFixed(1)+' m²',dm=Math.round(q.w*1000)+' × '+Math.round(q.h*1000);
-    if(q.h*SS<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text>${lite()||plain?``:`<text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`}`;
-    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text>${lite()||plain?``:`<text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`}`;});
+  u.plan.rooms.forEach(q=>{const pt=map?map(q.lx,q.ly):[X+q.lx*SS,uy+q.ly*SS];const x=f(pt[0]),y=pt[1],nm=escapeHtml(q.n.toUpperCase()),ar=q.a.toFixed(1)+' m²',dm=Math.round(q.w*1000)+' × '+Math.round(q.h*1000);
+    if(q.h*SS<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text>${lite()?``:`<text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`}`;
+    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text>${lite()?``:`<text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`}`;});
   return t;
 }
 function openingDims(u,X,uy){
@@ -1771,7 +1695,7 @@ function mobSync(){
   $('mStats').innerHTML=$('stats').innerHTML;
   $('mBadge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);
   $('mUndo').disabled=!added().length;$('mReset').hidden=!(PROJ&&PROJ.base);$('mReset').disabled=!added().length&&!removedBase.length;
-  $('mDetail').setAttribute('aria-pressed',String(detail));$('mDetailTxt').textContent=detail?'Hide dimensions':'Show dimensions';
+  $('mDetail').setAttribute('aria-pressed',String(detail));$('mDetail').textContent=detail?'Hide dimensions':'Show dimensions';
   mobFocus();
 }
 function mobFocus(){
@@ -3645,7 +3569,7 @@ $('iDel').onclick=()=>{
 };
 $('mZin').onclick=()=>{$('mMenu').hidden=true;$('zin').click();};
 $('mZout').onclick=()=>{$('mMenu').hidden=true;$('zout').click();};
-$('mDetail').onclick=()=>{detail=!detail;document.body.classList.toggle('detail',detail);$('mMenu').hidden=true;render();save();};
+$('mDetail').onclick=()=>{detail=!detail;$('mMenu').hidden=true;render();save();};
 
 /* ---------- tools ---------- */
 $('undo').onclick=()=>{const ad=added();if(ad.length){const last=ad.reduce((m,x)=>x.idx>m.idx?x:m);units=units.filter(u=>u!==last);nextIdx=last.idx;if(selected===last)showInfo(null);render();save();}};
@@ -3742,7 +3666,7 @@ async function openProject(id){
     closeProject();
     PROJ={id:p.id,name:p.name,role:p.role,base:!!(p.data&&p.data.base)};
     loadData(p.data);
-    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
+    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;}}catch(e){}
     showView('app');setMob();selected=null;
     $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
     chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
@@ -3840,7 +3764,7 @@ addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
 if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,rm:{rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
-try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
+try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
 showView('boot');
 BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
