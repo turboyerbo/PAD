@@ -16,8 +16,9 @@ The assistant needs an Anthropic API key. Until it is set, the Describe a change
 
 1. Create a key in the Anthropic Console (console.anthropic.com), under API keys. In the Console, also set a monthly spend limit for the workspace.
 2. In Netlify, open the site, then Site configuration, Environment variables. Add `ANTHROPIC_API_KEY` with the key. Keep "Contains secret values" on.
-3. Optional: add `PAD_MODEL` to choose a different model. The default is `claude-sonnet-5-5`.
-4. Trigger a deploy (Deploys, Trigger deploy). Netlify builds the function automatically.
+3. If the Console says the key is not scoped to a workspace, either create the key inside a workspace (Console, Settings, Workspaces, then API keys), or add `ANTHROPIC_WORKSPACE_ID` in Netlify with that workspace's ID. PAD sends it with each request.
+4. Optional: add `PAD_MODEL` to choose a different model. The default is `claude-sonnet-5-5`.
+5. Trigger a deploy (Deploys, Trigger deploy). Netlify builds the function automatically.
 
 The key lives only in Netlify. It is never in `index.html` or in this repository.
 
