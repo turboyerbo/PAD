@@ -57,7 +57,9 @@ const bboxOf = pts => pts.length ? [Math.min(...pts.map(p => p[0])), Math.min(..
 
 const NAMEMAP = { BEDROOM: 'Bedroom', DEN: 'Den', 'WALK-IN': 'Closet', CLOSET: 'Closet', 'W/C': 'Bath', KITCHEN: 'Kitchen', HALL: 'Hall', LAUNDRY: 'Laundry', LIVING: 'Living', HVAC: 'Mech', DINING: 'Dining', ENTRY: 'Entry', PANTRY: 'Closet', STORAGE: 'Closet' };
 
-function convert(id, cl, ents, blocks, nBeds) {
+/* opts.ext: metres the front of the unit is moved out (a bedroom that projects past the rest of the front).
+   opts.recess: [x0, x1] across the unit, where the recess in front of the living room is (found on the first pass). */
+function convert(id, cl, ents, blocks, nBeds, opts = {}) {
   const box = cl.box, pad = 800;
   const inBox = (x, y) => x >= box[0] - pad && x <= box[2] + pad && y >= box[1] - pad && y <= box[3] + pad;
   const notes = [];
@@ -87,6 +89,7 @@ function convert(id, cl, ents, blocks, nBeds) {
   const a0 = Math.min(...acr), a1 = Math.max(...acr);
   let ex0, ex1, ey0, ey1;
   if (depthX) { ex0 = d0; ex1 = d1; ey0 = a0; ey1 = a1; } else { ey0 = d0; ey1 = d1; ex0 = a0; ex1 = a1; }
+  if (opts.ext) { const e = opts.ext * 1000; if (side === 'R') ex0 -= e; else if (side === 'L') ex1 += e; else if (side === 'T') ey0 -= e; else ey1 += e; }
   // world (mm, y up) -> PAD (m, y down, corridor at the bottom)
   const T = side === 'R' ? (x, y) => [(y - ey0) / 1000, (x - ex0) / 1000]
     : side === 'L' ? (x, y) => [(y - ey0) / 1000, (ex1 - x) / 1000]
@@ -127,6 +130,16 @@ function convert(id, cl, ents, blocks, nBeds) {
   });
   // drop exact duplicates and rects swallowed by a bigger one
   walls = walls.filter((a, i) => !walls.some((b, j) => j !== i && b.x <= a.x + 0.01 && b.y <= a.y + 0.01 && b.x + b.w >= a.x + a.w - 0.01 && b.y + b.h >= a.y + a.h - 0.01 && (b.w * b.h > a.w * a.h + 1e-6 || (b.w * b.h === a.w * a.h && j < i))));
+
+  // the recess in front of the living room: its walls (balcony outline, the back wall) give way to a loggia, which draws its own
+  let recessBox = null, recessBump = null;
+  if (opts.ext && opts.recess) {
+    const rx0 = opts.recess[0], rx1 = opts.recess[1];
+    recessBox = [rx0, 0, rx1, opts.ext + 0.35];
+    walls = walls.filter(w => { const cx = w.x + w.w / 2, cy = w.y + w.h / 2; return !(cx > rx0 + 0.15 && cx < rx1 - 0.15 && cy < opts.ext + 0.45); });
+    const bx = Math.max(0.3, rx0 + 0.1), bw = Math.min(3.6, Math.max(1.5, Math.min(rx1, W - 0.3) - bx));
+    recessBump = { id: 1, kind: 'loggia', x: f2(bx), w: f2(bw), d: f2(Math.max(0.9, Math.min(1.6, opts.ext - 0.2))) };
+  }
 
   // ---- doors (swing arc: centre = hinge)
   const doors = [];
@@ -170,11 +183,15 @@ function convert(id, cl, ents, blocks, nBeds) {
   // ---- balcony: wall lines outside the front wall
   const bumps = [];
   const out = segs.map(s => [Tp(s[0], s[1]), Tp(s[2], s[3])]).filter(([p, q]) => p[1] < -0.2 && q[1] < -0.2);
+  let balcX = null;
   if (out.length > 2) {
     const xs = out.flatMap(([p, q]) => [p[0], q[0]]), ys = out.flatMap(([p, q]) => [p[1], q[1]]);
     const bx0 = Math.min(...xs), bx1 = Math.max(...xs), by = -Math.min(...ys);
-    if (bx1 - bx0 >= 1.2 && by >= 0.8 && by <= 3) bumps.push({ id: 1, kind: 'balcony', x: f2(Math.max(0.3, Math.min(W - 0.3 - Math.min(4, bx1 - bx0), bx0))), w: f2(Math.max(1.8, Math.min(4, bx1 - bx0))), d: f2(Math.max(1.2, Math.min(2.2, by))) });
+    if (bx1 - bx0 >= 1.2 && by >= 0.8 && by <= 3) balcX = [bx0, bx1];
+    if (!opts.ext && bx1 - bx0 >= 1.2 && by >= 0.8 && by <= 3) bumps.push({ id: 1, kind: 'balcony', x: f2(Math.max(0.3, Math.min(W - 0.3 - Math.min(4, bx1 - bx0), bx0))), w: f2(Math.max(1.8, Math.min(4, bx1 - bx0))), d: f2(Math.max(1.2, Math.min(2.2, by))) });
   }
+
+  if (recessBump) bumps.push(recessBump);
 
   // outer walls
   const front0 = cutGaps(0, W, winList.map(w => [w.x1, w.x2]));
@@ -278,7 +295,28 @@ function convert(id, cl, ents, blocks, nBeds) {
   have(R.wd).forEach(e => { const o = place(e, 'wd', {}); if (o) pushItem('wd', { x: o.x, y: o.y, rot: 0 }); });
   have(R.wc).forEach(e => { const o = place(e, 'wc', { back: 'near' }); if (o) pushItem('wc', { x: o.x, y: o.y, rot: o.rot }); });
   // keep only what is inside the unit
-  const inside = furn.filter(p => p.x > 0.1 && p.x < W - 0.1 && p.y > 0.2 && p.y < D - 0.1);
+  const FIXD = { ns: [.44, .44], arm: [.8, .8], sink: [.7, .44], cook: [.6, .54], fridge: [.74, .7], wc: [.4, .7], wd: [.66, .66] };
+  const bbOf = p => { let w, d; if (p.k === 'rtable') w = d = 2 * ((p.r || 0.45) + 0.45); else if (p.k === 'plant') w = d = (p.s || 0.45) * 0.9; else if (p.w !== undefined) { w = p.w; d = p.d; } else [w, d] = FIXD[p.k] || [0.6, 0.6]; if (((p.rot % 180) + 180) % 180 === 90) [w, d] = [d, w]; return [p.x - w / 2, p.y - d / 2, p.x + w / 2, p.y + d / 2]; };
+  const contentMinY = furn.length ? Math.min(...furn.filter(p => p.k !== 'rug').map(p => bbOf(p)[1])) : 1;
+  // Every piece must sit inside the unit. The outer walls were redrawn to PAD's thicknesses, so a piece drawn against a thinner
+  // wall is nudged in (up to 0.25 m), a piece that overlaps a wall is slid off it, and one that still does not fit is left out.
+  const IB = [0.1, 0.3, W - 0.1, D - 0.2];
+  let dropped = 0;
+  const inside = furn.map(p => {
+    if (p.k === 'rug') return p;
+    const bb = bbOf(p), dx = Math.max(0, IB[0] - bb[0]) - Math.max(0, bb[2] - IB[2]), dy = Math.max(0, IB[1] - bb[1]) - Math.max(0, bb[3] - IB[3]);
+    const q = Object.assign({}, p, { x: f2(p.x + dx), y: f2(p.y + dy) });
+    const lw = recessBump ? [{ x: recessBump.x - 0.15, y: 0.3, w: 0.15, h: recessBump.d + 0.15 }, { x: recessBump.x + recessBump.w, y: 0.3, w: 0.15, h: recessBump.d + 0.15 }, { x: recessBump.x, y: 0.3 + recessBump.d, w: recessBump.w, h: 0.15 }] : [];   // the loggia's own walls
+    const hit = nb => [...walls, ...lw].find(w => Math.min(nb[2], w.x + w.w) - Math.max(nb[0], w.x) > 0.06 && Math.min(nb[3], w.y + w.h) - Math.max(nb[1], w.y) > 0.06);
+    for (let i = 0; i < 4 && hit(bbOf(q)); i++) {
+      const w = hit(bbOf(q)), nb = bbOf(q), ox = Math.min(nb[2], w.x + w.w) - Math.max(nb[0], w.x), oy = Math.min(nb[3], w.y + w.h) - Math.max(nb[1], w.y);
+      if (ox <= oy) q.x = f2(q.x + (q.x < w.x + w.w / 2 ? -ox : ox)); else q.y = f2(q.y + (q.y < w.y + w.h / 2 ? -oy : oy));
+    }
+    const nb2 = bbOf(q);
+    if (Math.hypot(q.x - p.x, q.y - p.y) > 0.4 || hit(nb2) || nb2[0] < IB[0] - 0.01 || nb2[1] < IB[1] - 0.01 || nb2[2] > IB[2] + 0.01 || nb2[3] > IB[3] + 0.01) { dropped++; return null; }
+    return q;
+  }).filter(Boolean);
+  if (dropped) notes.push(dropped + ' piece(s) of furniture did not fit and were left out');
 
   // ---- rooms from the labels
   const texts = ents.filter(e => e.layer === 'A-AREA-IDEN' && e.type === 'MTEXT' && inBox(e.x, e.y)).map(t => ({ p: Tp(t.x, t.y), text: t.text.replace(/\\P/g, ' ').trim() }));
@@ -327,7 +365,9 @@ function convert(id, cl, ents, blocks, nBeds) {
   // the drawing's own title text: type line (such as 1 BED + DEN, 1 BATH) and the printed net area in ft2
   const idt = ents.filter(e => (e.type === 'MTEXT' || e.type === 'TEXT') && e.layer === 'A-DETL-IDEN' && inBox(e.x, e.y)).map(e => (e.text || '').replace(/\\P/g, ' ').trim());
   const netM = idt.map(t => /^(\d+)\s*ft.*\(NET\)/i.exec(t)).find(Boolean), typeT = idt.find(t => /BED/i.test(t) && /BATH/i.test(t));
-  return { n: nBeds, label: typeT || undefined, netSF: netM ? +netM[1] : undefined, W, D, side, notes, d: { walls: [...finalOuter, ...walls], doors: doors.map(d => ({ hx: f2(d.hx), hy: f2(d.hy), cx: d.cx, cy: d.cy, ox: d.ox, oy: d.oy, w: d.w })), wins: winList, furn: inside, floors, rooms, marks: [], bumps }, nodes, edges };
+  // lines running across the unit near the front: each group is a stretch of front wall (or balcony edge), at its own depth
+  const fronts = H.filter(h => h.c > -2.2 && h.c < 0.6 && h.b - h.a >= 0.8).map(h => ({ y: h.c, lo: h.a, hi: h.b }));
+  return { W, fronts, outsideX: furn.filter(p => !/^(rug|arm|plant|ctable|rtable)$/.test(p.k) && bbOf(p)[1] < 0.1).map(p => p.x), wallExt: (d0 - Math.min(...starts)) / 1000, contentMinY, balcX, ext: opts.ext || 0, n: nBeds, label: typeT || undefined, netSF: netM ? +netM[1] : undefined, W, D, side, notes, d: { walls: [...finalOuter, ...walls], doors: doors.map(d => ({ hx: f2(d.hx), hy: f2(d.hy), cx: d.cx, cy: d.cy, ox: d.ox, oy: d.oy, w: d.w })), wins: winList, furn: inside, floors, rooms, marks: [], bumps }, nodes, edges };
 }
 
 const out = {}, report = [];
@@ -340,7 +380,15 @@ for (const file of fs.readdirSync(DIR).filter(x => /\.dxf$/i.test(x)).sort()) {
   clusters(Wl).forEach((cl, ci) => {
     const id = file.replace(/\.dxf$/i, '').replace(/\s+/g, '') + '_' + (ci + 1);
     if (ONLY && !id.startsWith(ONLY)) return;
-    const res = convert(id, cl, ents, blocks, nBeds);
+    let res = convert(id, cl, ents, blocks, nBeds);
+    if (!res.skip && res.contentMinY < -0.1) {
+      const ext = res.wallExt >= 0.8 ? Math.round(res.wallExt * 20) / 20 : Math.round((0.3 - res.contentMinY + 0.03) * 20) / 20;   // the walls say how far the bedroom projects; failing that, the furniture does
+      // the recess is the stretch of front that sits well behind the rest: front lines at the shallow end, with others at least 0.8 m further out
+      const fr = res.fronts, deepY = Math.min(...fr.map(f => f.y)), shallowY = Math.max(...fr.map(f => f.y));
+      let recess = null;
+      if (fr.length && shallowY - deepY >= 0.8) { const sh = fr.filter(f => f.y > shallowY - 0.4); recess = [Math.max(0.1, Math.min(...sh.map(f => f.lo))), Math.min(res.W - 0.1, Math.max(...sh.map(f => f.hi)))]; if (recess[1] - recess[0] < 1.5) recess = null; }
+      if (ext >= 0.5 && ext <= 2.2) { const r2 = convert(id, cl, ents, blocks, nBeds, { ext, recess }); if (!r2.skip) res = r2; }
+    }
     if (res.skip) { report.push(`${id}: skipped, ${res.skip}`); return; }
     out[id] = res; report.push(`${id}: ${res.W} x ${res.D} m, ${res.d.walls.length} walls, ${res.d.doors.length} doors, ${res.d.furn.length} items, ${res.d.rooms.length} rooms, ${res.d.wins.length} windows${res.d.bumps.length ? ', balcony' : ''}${res.notes.length ? ' [' + res.notes.join('; ') + ']' : ''}`);
   });

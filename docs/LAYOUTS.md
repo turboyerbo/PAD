@@ -37,6 +37,8 @@ To change what the sample building shows, edit `BASELINE` in `index.html`.
 
 ## What the converter handles
 
+- **Stepped fronts.** Most plans have a bedroom that projects about 1.4 m past the living room, with a balcony in the recess beside it. The converter measures the unit to the projecting face, so the bedroom is complete, and turns the recess into a recessed balcony (loggia) in front of the living room. A piece of furniture that does not fit inside the unit is slid off the wall it overlaps, or left out.
+
 - Rectangular plans: walls, doors with their swings, furniture and fixtures, room names and areas, the balcony, and the entry door on the corridor wall.
 - Each plan is turned so the windows are at the top and the corridor at the bottom.
 - The outer walls are redrawn to PAD's standard thicknesses (0.3 m front, 0.2 m corridor, 0.1 m sides). Inside the unit the plan follows the DXF.
