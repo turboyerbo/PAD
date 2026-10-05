@@ -324,7 +324,10 @@ function convert(id, cl, ents, blocks, nBeds) {
   const sofa = inside.find(p => p.k === 'sofa'); if (sofa) nodes.sofa = { x: sofa.x, y: f2(sofa.y + (sofa.rot === 270 || sofa.rot === 90 ? 0 : 0.6)), spot: true };
   const edges = Object.keys(nodes).filter(k => k !== 'entry').map(k => ['entry', k]);
 
-  return { n: nBeds, W, D, side, notes, d: { walls: [...finalOuter, ...walls], doors: doors.map(d => ({ hx: f2(d.hx), hy: f2(d.hy), cx: d.cx, cy: d.cy, ox: d.ox, oy: d.oy, w: d.w })), wins: winList, furn: inside, floors, rooms, marks: [], bumps }, nodes, edges };
+  // the drawing's own title text: type line (such as 1 BED + DEN, 1 BATH) and the printed net area in ft2
+  const idt = ents.filter(e => (e.type === 'MTEXT' || e.type === 'TEXT') && e.layer === 'A-DETL-IDEN' && inBox(e.x, e.y)).map(e => (e.text || '').replace(/\\P/g, ' ').trim());
+  const netM = idt.map(t => /^(\d+)\s*ft.*\(NET\)/i.exec(t)).find(Boolean), typeT = idt.find(t => /BED/i.test(t) && /BATH/i.test(t));
+  return { n: nBeds, label: typeT || undefined, netSF: netM ? +netM[1] : undefined, W, D, side, notes, d: { walls: [...finalOuter, ...walls], doors: doors.map(d => ({ hx: f2(d.hx), hy: f2(d.hy), cx: d.cx, cy: d.cy, ox: d.ox, oy: d.oy, w: d.w })), wins: winList, furn: inside, floors, rooms, marks: [], bumps }, nodes, edges };
 }
 
 const out = {}, report = [];
@@ -335,12 +338,16 @@ for (const file of fs.readdirSync(DIR).filter(x => /\.dxf$/i.test(x)).sort()) {
   if (!Wl.length) { report.push(`${file}: title sheet only`); continue; }
   const nBeds = +(file.match(/^A(\d)/) || [0, 1])[1];
   clusters(Wl).forEach((cl, ci) => {
-    const id = file.replace(/\.dxf$/i, '') + '_' + (ci + 1);
+    const id = file.replace(/\.dxf$/i, '').replace(/\s+/g, '') + '_' + (ci + 1);
     if (ONLY && !id.startsWith(ONLY)) return;
     const res = convert(id, cl, ents, blocks, nBeds);
     if (res.skip) { report.push(`${id}: skipped, ${res.skip}`); return; }
     out[id] = res; report.push(`${id}: ${res.W} x ${res.D} m, ${res.d.walls.length} walls, ${res.d.doors.length} doors, ${res.d.furn.length} items, ${res.d.rooms.length} rooms, ${res.d.wins.length} windows${res.d.bumps.length ? ', balcony' : ''}${res.notes.length ? ' [' + res.notes.join('; ') + ']' : ''}`);
   });
 }
-fs.writeFileSync(new URL('./layouts.json', import.meta.url), JSON.stringify(out, (k, v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v));
+const target = new URL('./layouts.json', import.meta.url);
+let merged = {};
+try { merged = JSON.parse(fs.readFileSync(target, 'utf8')); } catch (e) {}   // keep plans converted from other folders
+Object.assign(merged, out);
+fs.writeFileSync(target, JSON.stringify(merged, (k, v) => typeof v === 'number' ? Math.round(v * 100) / 100 : v));
 console.log(report.join('\n'));
