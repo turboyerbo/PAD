@@ -7,13 +7,19 @@ Asking for a specific size or area, or a corner unit, also builds from scratch.
 
 ## What is in it now
 
-Three layouts, each a 1 bed + den plan counted as a 2 bedroom unit:
+Nine layouts. Every one is a 1 bed + den plan; the printed net area comes from the drawing's own title text.
 
-| Id | Name | Printed net area |
-| --- | --- | --- |
-| A1-1_5 | 1 bed + den, type A | 668 ft2 |
-| A1-1_7 | 1 bed + den, type B | 678 ft2 |
-| A1-1_9 | 1 bed + den, type C | 670 ft2 |
+| Id | Counts as | Type line | Printed net area |
+| --- | --- | --- | --- |
+| 1B-01 | 1 bedroom | 1 bed + den, 1 bath | 668 ft2 |
+| 1B-02 | 1 bedroom | 1 bed + den, 1 bath | 668 ft2 |
+| 1B-03 | 1 bedroom | 1 bed + den, 2 bath | 668 ft2 |
+| 1B-04 | 1 bedroom | 1 bed + den, 1 bath | 668 ft2 |
+| 1B-05 | 1 bedroom | 1 bed + den, 1 bath | 670 ft2 |
+| 1B-06 | 1 bedroom | 1 bed + den, 1 bath | 678 ft2 |
+| 1B-07 | 1 bedroom | 1 bed + den, 1 bath | 670 ft2 |
+| 1B-08 | 1 bedroom | 1 bed + den, 1 bath | 670 ft2 |
+| A1-1_5 | 2 bedroom (example) | 1 bed + den, 1 bath | 668 ft2 |
 
 The printed net area counts the partitions inside the unit, so it is larger than the sum of the room areas. Each layout carries
 the difference, so PAD shows the same net area as the drawing and keeps it correct as walls move.
@@ -23,8 +29,8 @@ the difference, so PAD shows the same net area as the drawing and keeps it corre
 1. Put the DXF in the Digital Toolkit folder. Convert the folder:
    `node tools/dxf-to-layouts.mjs "<folder with the DXF files>"`
    This writes `tools/layouts.json` with every plan it could convert.
-2. Add the plan to `tools/catalog.json`: its id (file name and plan number, such as `A2-1_3`), a name, the bedroom count it counts as
-   (`n`), and the printed net area in ft2 (`netSF`).
+2. Add the plan to `tools/catalog.json`: its id (the file name without spaces and the plan number, such as `1B-03_1`), a name, and the bedroom count it counts as
+   (`n`). The printed net area is read from the drawing; add `netSF` only to override it.
 3. `node tools/inject-layouts.mjs` puts the catalog into `index.html`. Bump `VERSION` in `sw.js`, run `node tests/smoke.mjs`, and open a pull request.
 
 To change what the sample building shows, edit `BASELINE` in `index.html`.

@@ -13,7 +13,7 @@ const out = {};
 for (const c of catalog) {
   const L = all[c.id];
   if (!L) throw new Error('catalog entry not found in layouts.json: ' + c.id);
-  out[c.id] = Object.assign({ name: c.name }, L, { n: c.n }, c.netSF ? { net: Math.round(c.netSF * 0.092903 * 100) / 100 } : {});
+  out[c.id] = Object.assign({ name: c.name }, L, { n: c.n }, (c.netSF || L.netSF) ? { net: Math.round((c.netSF || L.netSF) * 0.092903 * 100) / 100 } : {});
 }
 const L = JSON.stringify(out);
 const file = path.join(here, '..', 'index.html');
