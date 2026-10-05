@@ -467,6 +467,7 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .mi[aria-pressed="true"]{border-color:var(--accent);background:var(--furn-fill)}
 .mi:disabled{opacity:.4}
 .mi.mclose{text-align:center;border-color:var(--ink)}
+
 /* home */
 .homelink{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
 .homelink:focus-visible{outline:2px solid #fff;outline-offset:3px}
@@ -577,6 +578,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <h2 id="lmT">Why PAD measures area and efficiency</h2>
     <p class="lm-lead">Calculating area and building efficiency is the primary goal of the design team for Patry Group buildings. Every unit in PAD shows its net area, its gross area and its efficiency, and they update as you describe changes.</p>
     <p class="lm-formula" role="note"><b>Efficiency</b> = Usable Floor Area (UFA) ÷ Gross Floor Area (GFA)</p>
+    <p class="lm-lead">In PAD, the keyplan shows the units on both sides of a 1.6 m corridor, each unit's gross area includes half of that corridor, and a building's efficiency is its total net area divided by its total gross area. Stairs, elevators and shafts are not drawn yet, so a finished building will come in lower than the figure shown.</p>
     <div class="lm-grid">
       <article class="lm-card">
         <h3><span>1</span>Optimizing units</h3>
@@ -653,6 +655,11 @@ body.no-ai:not(.manual) .cust{display:none}
 </header>
 
 <div class="stage">
+<aside class="keyplan" id="keyplan" aria-label="Keyplan: how much of the building is designed">
+  <div class="kp-h"><b>Keyplan</b><span id="kpPct"></span><button id="kpEdit" type="button" aria-label="Set the building length" title="Set the building length">✎</button><button id="kpMin" type="button" aria-label="Show or hide the keyplan" aria-expanded="true">–</button></div>
+  <div class="kp-body"><svg id="kpSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Both sides of the corridor"></svg><div class="kp-st" id="kpStats"></div>
+    <form id="kpForm" hidden><label>Building length, m <input id="kpLen" type="number" min="10" max="300" step="1" inputmode="numeric"></label><button class="tb" type="submit">Set</button></form></div>
+</aside>
 <button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
 <button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button>
 <main id="scroller">
@@ -1492,9 +1499,9 @@ function makeUnit(spec){
 }
 const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
-function snapshot(){return{base:PROJ?PROJ.base:false,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
+function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
-  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail}));}catch(e){}
+  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpMin}));}catch(e){}
   if(!PROJ)return;
   try{localStorage.setItem('pad.proj.'+PROJ.id,JSON.stringify(snapshot()));}catch(e){}
   clearTimeout(saveT);saveT=setTimeout(flushSave,500);
@@ -1505,20 +1512,54 @@ function flushSave(){
 }
 function initial(base){nextIdx=1;removedBase=[];units=base?BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b))):[];}
 function loadData(d){
-  d=d||{};initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
+  d=d||{};bldgLen=+d.plate>=10?+d.plate:100;initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
   (d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{try{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);}catch(e){}});
   (d.custom||[]).forEach(c=>{try{const u=units.find(x=>x.idx===c.idx);if(!u)return;if(c.iters){u.iters=c.iters;u.cur=c.cur;}if(c.d)applyCustom(u,c.d);}catch(e){}});
 }
+/* ---------- keyplan ----------
+   The designed units on one side of a 1.6 m corridor, mirrored on the other side. The corridor is drawn only here.
+   It sets how much of the building is designed and the efficiency: both rows' net area over both rows' gross area plus the corridor. */
+function keyplanFigures(){
+  const L=ordered(),row=L.reduce((s,u)=>s+u.plan.W,0),net=L.reduce((s,u)=>s+netA(u),0),gu=L.reduce((s,u)=>s+grossArea(u.plan),0);
+  const g2=2*gu+KEYCORR*row,n2=2*net;
+  return{L,row,net2:n2,gross2:g2,eff:g2?n2/g2*100:0,units:L.length*2};
+}
+function drawKeyplan(){
+  const el=$('keyplan');if(!el)return;
+  el.classList.toggle('min',kpMin);$('kpMin').setAttribute('aria-expanded',String(!kpMin));$('kpMin').textContent=kpMin?'+':'\u2013';
+  const k=keyplanFigures(),tot=Math.max(bldgLen,k.row),dep=k.L.length?Math.max(...k.L.map(u=>u.plan.D)):8.4,pad=0.6;
+  const vw=tot+2*pad,vh=2*dep+KEYCORR+2*pad,cy=pad+dep;
+  const pct=Math.min(100,k.row/bldgLen*100);
+  $('kpPct').textContent=k.L.length?`${k.row.toFixed(0)} of ${bldgLen} m`:`0 of ${bldgLen} m`;
+  let s=`<rect class="kp-t" x="${pad}" y="${pad}" width="${f(tot)}" height="${f(2*dep+KEYCORR)}"/><rect class="kp-c" x="${pad}" y="${cy}" width="${f(Math.max(0,k.row))}" height="${KEYCORR}"/>`;
+  let x=pad;
+  k.L.forEach(u=>{const W=u.plan.W,D=u.plan.D,sel=selected===u?' sel':'';
+    s+=`<rect class="kp-m" x="${f(x)}" y="${f(cy-D)}" width="${f(W)}" height="${f(D)}"/><rect class="kp-u${sel}" data-idx="${u.idx}" x="${f(x)}" y="${f(cy+KEYCORR)}" width="${f(W)}" height="${f(D)}"><title>${tagOf(u)}</title></rect>`;x+=W;});
+  $('kpSvg').setAttribute('viewBox',`0 0 ${f(vw)} ${f(vh)}`);$('kpSvg').innerHTML=s;
+  $('kpStats').innerHTML=k.L.length?`<b>${k.eff.toFixed(1)}%</b> efficient \u00B7 ${k.units} units both sides<br>${k.net2.toFixed(0)} m\u00B2 net of ${k.gross2.toFixed(0)} m\u00B2 gross, corridor included<br>${pct.toFixed(0)}% of the building${k.row>bldgLen+0.01?' (over the length set)':''}`:'Add a unit to start the keyplan.';
+}
+$('kpMin').onclick=()=>{kpMin=!kpMin;drawKeyplan();save();};
+$('kpEdit').onclick=()=>{const f2=$('kpForm');f2.hidden=!f2.hidden;if(!f2.hidden){$('kpLen').value=bldgLen;setTimeout(()=>$('kpLen').select(),20);}};
+$('kpForm').addEventListener('submit',e=>{e.preventDefault();const v=Math.round(+$('kpLen').value);if(!(v>=10&&v<=300)){toast('Use a building length between 10 and 300 m.');return;}bldgLen=v;$('kpForm').hidden=true;drawKeyplan();save();});
+$('kpSvg').addEventListener('click',e=>{
+  const r=e.target.closest('[data-idx]');if(!r)return;const u=units.find(x=>x.idx===+r.dataset.idx);if(!u)return;
+  showInfo(u);
+  if(isMob){mobIdx=mobList().indexOf(u);mobGo(mobIdx,true);}else{const {list}=layout();scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120),behavior:reduce?'auto':'smooth'});}
+  drawKeyplan();
+});
 const tagOf=u=>'PAD-'+String(u.idx).padStart(2,'0');
 
 /* ---------- formatting ---------- */
 function ftin(mm){const half=Math.round(mm/25.4*2)/2;const ft=Math.floor(half/12);const i=half-ft*12;const w=Math.floor(i);return `${ft}' - ${w}${i-w>0?' 1/2':''}"`;}
 const area=u=>u.plan.W*u.plan.D;
 // Gross: to centreline of perimeter walls. Exterior wall is 0.30 m (centre 0.15 in), corridor wall 0.20 m (centre 0.10 in); party walls are shared, so width is unchanged.
-const gross=u=>grossArea(u.plan);
+const gross=u=>grossAll(u.plan);   // the unit to its wall centrelines plus its share of the corridor in front of it
+const KEYCORR=1.6;   // the keyplan corridor, m. Units face each other across it, so each unit carries half
+const corrShare=P=>P.W*KEYCORR/2;
+const grossAll=P=>grossArea(P)+corrShare(P);
 const netA=u=>netArea(u.plan);
 const eff=u=>netA(u)/gross(u)*100;
-let DM=8.4,BM=0,detail=false;
+let DM=8.4,BM=0,detail=false,bldgLen=100,kpMin=false;   // bldgLen: the building length the keyplan measures against, m
 const lite=()=>isMob&&!detail;   // phones show room names and areas only, until Show dimensions is on
 
 /* ---------- render ---------- */
@@ -1558,6 +1599,7 @@ function layout(){
 }
 function render(){
   if(view!=='app')return;
+  drawKeyplan();
   const {list,runs,total}=layout();
   DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);BM=Math.max(0,...units.map(u=>outTop(u.plan)));
   computeScale();
@@ -1732,13 +1774,13 @@ $('mReset').onclick=()=>{mMenu.hidden=true;mobIdx=0;$('reset').click();};
 mq.addEventListener('change',()=>{setMob();render();});
 function priText(u){if(u.layout)return layoutName(u.layout);if(u.minimal)return 'minimum';return u.pri==='other'?(Object.keys(u.plan.o).map(k=>KWNAME[k]).join(', ')||(u.other||'other').slice(0,22)):PRI_LABEL[u.pri].toLowerCase();}
 function showInfo(u){
-  selected=u;const info=$('info');
+  selected=u;drawKeyplan();const info=$('info');
   if(delArm){clearTimeout(delArm);delArm=0;}$('iDel').textContent='Delete this unit';
   if(!u){info.hidden=true;return;}
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=(u.layout?'Baseline layout · '+layoutName(u.layout):u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
   $('iTitle').textContent=tagOf(u)+' · '+(u.minimal?'Minimum studio':u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
-  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Gross area (to wall centrelines)',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(balconyArea(u.plan)?[['Balcony',balconyArea(u.plan).toFixed(1)+' m\u00B2 (not in net area)']]:[]),...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
+  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Unit gross (to wall centrelines)',`${grossArea(u.plan).toFixed(1)} m²`],['Half the 1.6 m corridor',`${corrShare(u.plan).toFixed(1)} m²`],['Gross with corridor',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency (corridor in)',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(balconyArea(u.plan)?[['Balcony',balconyArea(u.plan).toFixed(1)+' m\u00B2 (not in net area)']]:[]),...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
   if(m.storeRooms)rows.push(['Storage rooms',m.storeRooms]);
   rows.push(['Occupants shown',u.people.length]);
   $('iList').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
@@ -1752,7 +1794,7 @@ function stats(){
   const c=[0,0,0,0,0];let a=0;let nt=0;units.forEach(u=>{c[u.n]++;a+=gross(u);nt+=netA(u);});
   const lab=['Studio','1B','2B','3B','4B'];
   const ad=added().length;
-  $('stats').innerHTML=`<span><b>${units.length}</b> unit${units.length>1?'s':''}${ad?` (${ad} added)`:''}</span><span><b>${a.toFixed(1)}</b> m² gross</span><span><b>${nt.toFixed(1)}</b> m² net</span><span><b>${(a?nt/a*100:0).toFixed(0)}%</b> efficient</span><span>${c.map((v,i)=>v?`${lab[i]} <b>${v}</b>`:'').filter(Boolean).join(' · ')}</span>`;
+  $('stats').innerHTML=`<span><b>${units.length}</b> unit${units.length>1?'s':''}${ad?` (${ad} added)`:''}</span><span title="Gross area includes the corridor in front of the units"><b>${a.toFixed(1)}</b> m² gross</span><span><b>${nt.toFixed(1)}</b> m² net</span><span title="Total net area divided by total gross area, corridor included"><b>${(a?nt/a*100:0).toFixed(0)}%</b> efficient</span><span>${c.map((v,i)=>v?`${lab[i]} <b>${v}</b>`:'').filter(Boolean).join(' · ')}</span>`;
 }
 function scalebar(){
   const sb=$('scalebar');const w=5*S+40;sb.setAttribute('width',Math.ceil(w));
@@ -2512,7 +2554,7 @@ function kitchenIssues(P,u){
 }
 /* ---------- tracing paper: a short design session with a limited number of changes ---------- */
 const TRACE_BUDGET=5;   // new things you may touch on one sheet. Keep adjusting the thing you are on for free.
-const netOf=P=>netArea(P),grossOf=P=>grossArea(P);
+const netOf=P=>netArea(P),grossOf=P=>grossAll(P);
 const nextIter=u=>(u.iters?Math.max(...u.iters.map(i=>i.n)):1)+1;
 function ensureIters(u){if(!u.iters){u.iters=[{n:1,note:u.custom?'Earlier edits':'Original layout',at:null,d:u.custom||null}];u.cur=1;}}
 function edKey(){const s=E.sel;return s?s.t+':'+(s.id!==undefined?s.id:s.wi):'x'+(++E.nid);}
@@ -3503,7 +3545,7 @@ async function openProject(id){
     closeProject();
     PROJ={id:p.id,name:p.name,role:p.role,base:!!(p.data&&p.data.base)};
     loadData(p.data);
-    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;}}catch(e){}
+    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpMin=!!pr.kpMin;}}catch(e){}
     showView('app');setMob();selected=null;
     $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
     chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
@@ -3601,7 +3643,7 @@ addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
 if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,rm:{rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
-try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;}}catch(e){}
+try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpMin=!!pr.kpMin;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
 showView('boot');
 BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
