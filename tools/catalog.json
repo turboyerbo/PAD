@@ -1,11 +1,63 @@
 [
-  { "id": "1B-01_1", "name": "1B-01 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "1B-02_1", "name": "1B-02 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "1B-03_1", "name": "1B-03 \u00B7 1 bed + den, 2 bath", "n": 1 },
-  { "id": "1B-04_1", "name": "1B-04 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "1B-05_1", "name": "1B-05 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "1B-06_1", "name": "1B-06 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "1B-07_1", "name": "1B-07 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "1B-08_1", "name": "1B-08 \u00B7 1 bed + den, 1 bath", "n": 1 },
-  { "id": "A1-1_5", "name": "2B example \u00B7 1 bed + den, 1 bath", "n": 2, "netSF": 668 }
+  {
+    "id": "1B-01_1",
+    "name": "1B-01 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-02_1",
+    "name": "1B-02 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-03_1",
+    "name": "1B-03 · 1 bed + den, 2 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-04_1",
+    "name": "1B-04 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-05_1",
+    "name": "1B-05 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-06_1",
+    "name": "1B-06 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-07_1",
+    "name": "1B-07 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "1B-08_1",
+    "name": "1B-08 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "A1-4.1_1",
+    "name": "A1-4.1 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "A1-4.2_1",
+    "name": "A1-4.2 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "A1-4.3_1",
+    "name": "A1-4.3 · 1 bed + den, 1 bath",
+    "n": 1
+  },
+  {
+    "id": "A1-1_5",
+    "name": "2B example · 1 bed + den, 1 bath",
+    "n": 2,
+    "netSF": 668
+  }
 ]
