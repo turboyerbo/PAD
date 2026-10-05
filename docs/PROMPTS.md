@@ -25,7 +25,7 @@ The key lives only in Netlify. It is never in `index.html` or in this repository
 ## Limits and safety
 
 - A request is at most 600 characters. The function allows 20 requests per hour per visitor (best effort) and 8 steps per request.
-- The assistant can only name steps from a fixed list (move, rotate, add or remove an item, move a wall, add or remove a door, balconies and bump-outs, kitchen layouts). The page ignores anything else and never runs text from the assistant as code.
+- The assistant can only name steps from a fixed list (move a wall, add or remove a door, slide or flip a door, balconies and bump-outs, a preferred kitchen layout). It works on the layout only. Furniture is not shown while tracing and is placed afresh when the layout is accepted. The page ignores anything else and never runs text from the assistant as code.
 - The toilet, kitchen sink and entry door cannot be removed. Outer walls and windows cannot be moved.
 - Steps that cannot be done (an id that does not exist, a wall that cannot move that far) are listed under the answer, and the rest still apply.
 

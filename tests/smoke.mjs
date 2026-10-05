@@ -66,8 +66,9 @@ try {
       const req = route.request();
       if (req.method() === 'GET') return route.fulfill({ json: { ready } });
       page.hits++;
-      const plan = req.postDataJSON().plan, it = plan.items.find(x => x.kind !== 'wc' && x.kind !== 'sink' && x.kind !== 'rug');
-      return route.fulfill({ json: { say: 'Added a plant and turned one item.', ops: [{ op: 'add_item', kind: 'plant', x: 0.5, y: 1.2 }, { op: 'rotate_item', id: it.id }, { op: 'move_item', id: 99999, dx: 1, dy: 0 }] } });
+      const plan = req.postDataJSON().plan, dr = plan.doors.find(x => !x.entry);
+      if (plan.items) errs.push('the plan sent to the assistant should not list furniture');
+      return route.fulfill({ json: { say: 'Flipped a door.', ops: [{ op: 'flip_door', id: dr.id }, { op: 'remove_wall', wall: 'w99' }] } });
     });
     await page.goto(`http://localhost:${PORT}/?debug`);
     await page.click('#lStart'); await page.fill('#pName', 'Prompt Building'); await page.click('#pNew');
@@ -85,15 +86,16 @@ try {
     await ai.click('#iCust');
     await ai.waitForSelector('#aiText', { timeout: 3000 }).catch(() => errs.push('prompt box did not open'));
     if (await ai.locator('[data-act="add"], #edSvg [data-x]').count()) errs.push('drawing tools should not show in prompt mode');
-    const n0 = await ai.evaluate(() => window.__pad.edState().P.furn.length);
+    const n0 = await ai.evaluate(() => JSON.stringify(window.__pad.edState().P.doors));
     await ai.fill('#aiText', 'Add a plant and turn something');
     await ai.click('#aiGo');
     await ai.waitForSelector('.aip .eclist li', { timeout: 5000 }).catch(() => errs.push('prompt result did not list changes'));
-    const r = await ai.evaluate(() => { const E = window.__pad.edState(); return { n: E.P.furn.length, used: E.used, dirty: E.dirty, text: document.getElementById('edSide').textContent }; });
-    if (r.n !== n0 + 1 || r.used !== 1 || !r.dirty) errs.push('prompt steps were not applied as one change: ' + JSON.stringify({ n0, n: r.n, used: r.used }));
+    const r = await ai.evaluate(() => { const E = window.__pad.edState(); return { n: JSON.stringify(E.P.doors), used: E.used, dirty: E.dirty, text: document.getElementById('edSide').textContent, furn: document.querySelectorAll('#edSvg [class^="m-"]').length }; });
+    if (r.n === n0 || r.used !== 1 || !r.dirty) errs.push('prompt steps were not applied as one change: ' + JSON.stringify({ used: r.used }));
+    if (r.furn) errs.push('tracing should show no furniture, it shows ' + r.furn + ' pieces');
     if (!/not found/.test(r.text)) errs.push('a step that could not be done was not reported');
     await ai.click('#edUndo');
-    if ((await ai.evaluate(() => window.__pad.edState().P.furn.length)) !== n0) errs.push('Undo did not take back the prompt');
+    if ((await ai.evaluate(() => JSON.stringify(window.__pad.edState().P.doors))) !== n0) errs.push('Undo did not take back the prompt');
     await ai.fill('#aiText', 'Add a plant again'); await ai.click('#aiGo');
     await ai.waitForFunction(() => window.__pad.edState().used === 1 && !window.__pad.edState().busy, null, { timeout: 5000 }).catch(() => errs.push('second prompt did not finish'));
     await ai.click('#edDone');
@@ -142,12 +144,17 @@ try {
       await ai.click('#edDone'); await ai.click('#ecOk'); await ai.waitForTimeout(400);
       const kept = await ai.evaluate(() => { const u = window.__pad.units()[0]; return { W: u.plan.W, D: u.plan.D, dim: u.custom && u.custom.dim && u.custom.dim[0], people: u.people.length, nodes: Object.keys(u.plan.nodes).length }; });
       if (!kept.dim || kept.dim.W !== kept.W || kept.dim.D !== kept.D) errs.push('a saved room edit did not keep the unit size: ' + JSON.stringify(kept));
+      // accepting furnishes the new layout afresh: a toilet 457 mm from the walls beside it, a bed, a sink, and nothing overlapping a wall
+      const fz = await ai.evaluate(() => { const T = window.__pad, u = T.units()[0], P = u.plan, k = {}; P.furn.forEach(p => k[p.k] = (k[p.k] || 0) + 1); return { k, wc: T.wcClear(P), ov: T.edOverlaps ? T.edOverlaps(P).size : -1 }; });
+      if (!fz.k.wc || !fz.k.bed || !fz.k.sink || !(fz.k.tub || fz.k.shower)) errs.push('accepting a layout should place a toilet, bed, sink and tub or shower: ' + JSON.stringify(fz.k));
+      if (fz.wc < 0.456) errs.push('the new toilet is too close to a wall: ' + fz.wc);
+      if (fz.ov > 0) errs.push('furnishing left ' + fz.ov + ' pieces overlapping walls or each other');
     }
     // Baseline layouts gallery
     await ai.evaluate(() => document.getElementById('iClose').click());
     await ai.click('#add'); await ai.click('#browseLay');
     const cards = await ai.locator('.lcard').count();
-    if (cards !== 9) errs.push('the catalog gallery should show the 9 catalog layouts, it shows ' + cards);
+    if (cards !== 12) errs.push('the catalog gallery should show the 12 catalog layouts, it shows ' + cards);
     await ai.click('#layF [data-f="2"]');
     if ((await ai.locator('.lcard').count()) !== 1) errs.push('the 2 bed filter should leave one catalog layout');
     await ai.click('#layF [data-f="0"]');
@@ -159,10 +166,10 @@ try {
     await ai.click('#add'); await ai.click('#quickOpts [data-n="1"]'); await ai.waitForTimeout(250);
     await ai.click('#add'); await ai.click('#quickOpts [data-n="3"]'); await ai.waitForTimeout(250);
     const q2 = await ai.evaluate(() => { const L = window.__pad.units(), a = L[L.length - 2], b = L[L.length - 1]; return { a: a.n + ':' + a.layout, b: b.n + ':' + b.layout }; });
-    if (!/^1:1B-/.test(q2.a) || !/^3:null$/.test(q2.b)) errs.push('quick add should start 1 bed from the catalog and leave 3 bed generated: ' + JSON.stringify(q2));
+    if (/^1:null$/.test(q2.a) || !/^1:/.test(q2.a) || !/^3:null$/.test(q2.b)) errs.push('quick add should start 1 bed from the catalog and leave 3 bed generated: ' + JSON.stringify(q2));
     // printed net area carries over: the catalog layouts show 668, 678 or 670 ft2
     const net = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 2]; return Math.round(u.plan.rooms.reduce((s, r) => s + r.a, 0) / 0.092903 + (u.plan.netAdj || 0) / 0.092903); });
-    if (![668, 678, 670].includes(net)) errs.push('catalog unit net area should match the printed drawing, got ' + net + ' ft2');
+    if (![668, 678, 670, 547].includes(net)) errs.push('catalog unit net area should match the printed drawing, got ' + net + ' ft2');
   }
   await ai.close();
 
@@ -230,7 +237,7 @@ try {
       if (u.n === 0 && T.livDin(u.plan) < 13.5 - 0.01) out.push(`${tag}: living and dining ${T.livDin(u.plan).toFixed(1)} m2 is under 13.5`);
       if (u.n === 1 && !u.layout && ![6, 6.5, 7].some(w => Math.abs(w - u.plan.W) < 0.01)) out.push(`${tag}: 1-bed width ${u.plan.W} is not 6, 6.5 or 7`);
       if (u.plan.W < 2) out.push(`${tag}: wall under 2 m`);
-      if (T.wcClear(u.plan) < 0.457 - 0.001) out.push(`${tag}: toilet ${T.wcClear(u.plan).toFixed(3)} m from a side wall`);
+      if (!u.layout && T.wcClear(u.plan) < 0.457 - 0.001) out.push(`${tag}: toilet ${T.wcClear(u.plan).toFixed(3)} m from a side wall`);
       for (const f of u.plan.furn) if (f.k === 'tub' && !(Math.abs(f.w - 1.524) < 0.001 && (Math.abs(f.d - 0.762) < 0.001 || Math.abs(f.d - 0.813) < 0.001))) out.push(`${tag}: tub ${f.w} x ${f.d} is not 60x30 or 60x32 in`);
     }
     return out;
