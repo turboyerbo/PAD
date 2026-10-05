@@ -104,7 +104,7 @@ const handle = async (req, context) => {
     try {
       r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        headers: Object.assign({ 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' }, process.env.ANTHROPIC_WORKSPACE_ID ? { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID } : {}),   // only keys that are not scoped to a workspace need this
         body: JSON.stringify({ model, max_tokens: 900, system: SYSTEM, tools: [TOOL], tool_choice: { type: 'tool', name: TOOL.name }, messages }),
         signal: AbortSignal.timeout(left)
       });
@@ -115,8 +115,8 @@ const handle = async (req, context) => {
     console.error('Anthropic ' + r.status + ' for ' + model + ': ' + detail);
     why = r.status === 401 ? 'The Anthropic key was rejected. Check ANTHROPIC_API_KEY in Netlify.'
       : r.status === 429 ? 'The assistant is busy. Try again in a moment.'
-      : `The assistant returned ${r.status}${detail ? ': ' + clean(detail, 220) : ''} (${model}).`;
-    if (r.status !== 404 && r.status !== 400) break;   // only an unavailable model is worth trying another for
+      : `The assistant returned ${r.status}${detail ? ': ' + clean(detail, 260) : ''} (${model}).${/workspace/i.test(detail) ? ' Set ANTHROPIC_WORKSPACE_ID in Netlify, or use a key created inside a workspace.' : ''}`;
+    if (!(r.status === 404 || (r.status === 400 && /model/i.test(detail)))) break;   // only an unavailable model is worth trying another for
     r = null;
   }
   if (!r || !r.ok) return json({ error: why || 'The assistant could not be reached.' }, 502);
