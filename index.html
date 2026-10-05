@@ -467,6 +467,26 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .mi[aria-pressed="true"]{border-color:var(--accent);background:var(--furn-fill)}
 .mi:disabled{opacity:.4}
 .mi.mclose{text-align:center;border-color:var(--ink)}
+/* keyplan */
+.keyplan{position:absolute;top:10px;right:14px;z-index:6;width:236px;box-sizing:border-box;background:rgba(255,255,255,.93);border:1px solid var(--ink);padding:6px 8px 7px;font-size:11px;line-height:1.35;box-shadow:0 6px 18px rgba(38,38,31,.18)}
+.kp-h{display:flex;align-items:center;gap:6px}
+.kp-h b{letter-spacing:.1em;text-transform:uppercase;font-size:10px}
+.kp-h span{flex:1;color:var(--ink-2);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kp-h button{border:0;background:none;padding:0 3px;font-size:14px;line-height:1;color:var(--ink)}
+#kpSvg{width:100%;display:block;margin-top:5px}
+#kpSvg *{vector-effect:non-scaling-stroke}
+.kp-u{fill:var(--fx-fill);stroke:var(--ink);stroke-width:.8;cursor:pointer}
+.kp-m{fill:var(--furn-fill);stroke:var(--ink-2);stroke-width:.6}
+.kp-c{fill:var(--rule);stroke:none}
+.kp-t{fill:none;stroke:var(--ink-2);stroke-width:.8;stroke-dasharray:3 2}
+.kp-u.sel{stroke:var(--accent);stroke-width:2}
+.kp-st{margin-top:4px;color:var(--ink-2)}
+.kp-st b{color:var(--ink)}
+#kpForm{display:flex;gap:6px;align-items:end;margin-top:6px}
+#kpForm label{display:grid;gap:2px;flex:1;font-size:11px;color:var(--ink-2)}
+#kpForm input{width:100%;box-sizing:border-box;border:1px solid var(--ink);background:var(--fx-fill);padding:4px 6px;font:inherit;font-size:13px}
+.keyplan.min .kp-body{display:none}
+body.mob .keyplan{top:40px;right:6px;width:172px}
 /* home */
 .homelink{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
 .homelink:focus-visible{outline:2px solid #fff;outline-offset:3px}
@@ -577,7 +597,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <h2 id="lmT">Why PAD measures area and efficiency</h2>
     <p class="lm-lead">Calculating area and building efficiency is the primary goal of the design team for Patry Group buildings. Every unit in PAD shows its net area, its gross area and its efficiency, and they update as you describe changes.</p>
     <p class="lm-formula" role="note"><b>Efficiency</b> = Usable Floor Area (UFA) ÷ Gross Floor Area (GFA)</p>
-    <p class="lm-lead">In PAD, each unit's gross area includes its share of the corridor in front of it (1.8 m deep), and a building's efficiency is its total net area divided by its total gross area. Stairs, elevators and shafts are not drawn yet, so a finished building will come in lower than the figure shown.</p>
+    <p class="lm-lead">In PAD, the keyplan shows the units on both sides of a 1.6 m corridor, each unit's gross area includes half of that corridor, and a building's efficiency is its total net area divided by its total gross area. Stairs, elevators and shafts are not drawn yet, so a finished building will come in lower than the figure shown.</p>
     <div class="lm-grid">
       <article class="lm-card">
         <h3><span>1</span>Optimizing units</h3>
@@ -1553,7 +1573,8 @@ function ftin(mm){const half=Math.round(mm/25.4*2)/2;const ft=Math.floor(half/12
 const area=u=>u.plan.W*u.plan.D;
 // Gross: to centreline of perimeter walls. Exterior wall is 0.30 m (centre 0.15 in), corridor wall 0.20 m (centre 0.10 in); party walls are shared, so width is unchanged.
 const gross=u=>grossAll(u.plan);   // the unit to its wall centrelines plus its share of the corridor in front of it
-const corrShare=P=>P.W*CORR;
+const KEYCORR=1.6;   // the keyplan corridor, m. Units face each other across it, so each unit carries half
+const corrShare=P=>P.W*KEYCORR/2;
 const grossAll=P=>grossArea(P)+corrShare(P);
 const netA=u=>netArea(u.plan);
 const eff=u=>netA(u)/gross(u)*100;
@@ -1778,7 +1799,7 @@ function showInfo(u){
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=(u.layout?'Baseline layout · '+layoutName(u.layout):u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
   $('iTitle').textContent=tagOf(u)+' · '+(u.minimal?'Minimum studio':u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
-  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Unit gross (to wall centrelines)',`${grossArea(u.plan).toFixed(1)} m²`],['Share of the corridor',`${corrShare(u.plan).toFixed(1)} m²`],['Gross with corridor',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency (corridor in)',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(balconyArea(u.plan)?[['Balcony',balconyArea(u.plan).toFixed(1)+' m\u00B2 (not in net area)']]:[]),...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
+  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Unit gross (to wall centrelines)',`${grossArea(u.plan).toFixed(1)} m²`],['Half the 1.6 m corridor',`${corrShare(u.plan).toFixed(1)} m²`],['Gross with corridor',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency (corridor in)',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(balconyArea(u.plan)?[['Balcony',balconyArea(u.plan).toFixed(1)+' m\u00B2 (not in net area)']]:[]),...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
   if(m.storeRooms)rows.push(['Storage rooms',m.storeRooms]);
   rows.push(['Occupants shown',u.people.length]);
   $('iList').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
