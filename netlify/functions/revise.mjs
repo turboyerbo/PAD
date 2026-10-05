@@ -68,7 +68,7 @@ How to work:
 
 function clean(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
 
-export default async (req, context) => {
+const handle = async (req, context) => {
   const key = process.env.ANTHROPIC_API_KEY;
   if (req.method === 'GET') return json({ ready: !!key });
   if (req.method !== 'POST') return json({ error: 'Use POST.' }, 405);
@@ -94,21 +94,43 @@ export default async (req, context) => {
     messages.push({ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_prev', content: 'The page applied those steps and the checks found problems:\n' + rep.issues.slice(0, 6).map(s => '- ' + clean(String(s), 200)).join('\n') + '\nGive a corrected full list of steps, starting again from the original plan above.', is_error: true }] });
   }
 
-  let r;
-  try {
-    r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL(), max_tokens: 1500, system: SYSTEM, tools: [TOOL], tool_choice: { type: 'tool', name: TOOL.name }, messages }),
-      signal: AbortSignal.timeout(25000)
-    });
-  } catch (e) { return json({ error: 'The assistant did not answer in time. Try again.' }, 504); }
-  if (!r.ok) return json({ error: r.status === 401 ? 'The Anthropic key was rejected. Check ANTHROPIC_API_KEY in Netlify.' : r.status === 429 ? 'The assistant is busy. Try again in a moment.' : 'The assistant could not be reached.' }, 502);
+  // Try the chosen model, then the others if it is not available to this account. Every failure comes back as JSON with the reason.
+  const models = [...new Set([MODEL(), 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-4-5-20251001'])];
+  const started = Date.now();
+  let r = null, why = '';
+  for (const model of models) {
+    const left = 22000 - (Date.now() - started);
+    if (left < 3000) { why = why || 'The assistant took too long.'; break; }
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model, max_tokens: 900, system: SYSTEM, tools: [TOOL], tool_choice: { type: 'tool', name: TOOL.name }, messages }),
+        signal: AbortSignal.timeout(left)
+      });
+    } catch (e) { why = 'The assistant did not answer in time (' + model + '). Try again, or set PAD_MODEL to a faster model.'; r = null; break; }
+    if (r.ok) break;
+    let detail = '';
+    try { const j = await r.json(); detail = (j && j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
+    console.error('Anthropic ' + r.status + ' for ' + model + ': ' + detail);
+    why = r.status === 401 ? 'The Anthropic key was rejected. Check ANTHROPIC_API_KEY in Netlify.'
+      : r.status === 429 ? 'The assistant is busy. Try again in a moment.'
+      : `The assistant returned ${r.status}${detail ? ': ' + clean(detail, 220) : ''} (${model}).`;
+    if (r.status !== 404 && r.status !== 400) break;   // only an unavailable model is worth trying another for
+    r = null;
+  }
+  if (!r || !r.ok) return json({ error: why || 'The assistant could not be reached.' }, 502);
   const data = await r.json();
   const call = (data.content || []).find(c => c.type === 'tool_use');
   if (!call || !call.input) return json({ error: 'No answer came back. Try rewording the request.' }, 502);
   const ops = (Array.isArray(call.input.ops) ? call.input.ops : []).filter(o => o && OPS.includes(o.op)).slice(0, MAX_OPS);
   return json({ say: clean(call.input.say, 400), ops });
+};
+
+// Whatever goes wrong, answer with JSON so the page can show the reason instead of a bare gateway error.
+export default async (req, context) => {
+  try { return await handle(req, context); }
+  catch (e) { console.error(e); return json({ error: 'The assistant function failed: ' + clean(String((e && e.message) || e), 160) }, 500); }
 };
 
 export const config = { path: '/api/revise' };
