@@ -168,7 +168,7 @@ try {
     const q2 = await ai.evaluate(() => { const L = window.__pad.units(), a = L[L.length - 2], b = L[L.length - 1]; return { a: a.n + ':' + a.layout, b: b.n + ':' + b.layout }; });
     if (/^1:null$/.test(q2.a) || !/^1:/.test(q2.a) || !/^3:null$/.test(q2.b)) errs.push('quick add should start 1 bed from the catalog and leave 3 bed generated: ' + JSON.stringify(q2));
     // printed net area carries over: the catalog layouts show 668, 678 or 670 ft2
-    const net = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 2]; return Math.round(u.plan.rooms.reduce((s, r) => s + r.a, 0) / 0.092903 + (u.plan.netAdj || 0) / 0.092903); });
+    const net = await ai.evaluate(() => { const T = window.__pad, L = T.units(), u = L[L.length - 2]; return Math.round(T.netArea(u.plan) / 0.092903); });
     if (![668, 678, 670, 547].includes(net)) errs.push('catalog unit net area should match the printed drawing, got ' + net + ' ft2');
   }
   await ai.close();
