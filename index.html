@@ -68,6 +68,13 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 .stats{font-family:var(--narrow);font-size:13px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 14px;font-variant-numeric:tabular-nums;flex:1;min-width:0}
 .stats b{color:var(--ink);font-weight:600}
 .tools{display:flex;gap:6px;flex-wrap:wrap}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bar .tb,.mi{display:inline-flex;align-items:center;gap:7px}
+.mi{display:flex;gap:10px}
+.bar .tb .kpn{font-size:11px;opacity:.8;letter-spacing:0;text-transform:none}
+.bar .tb[aria-expanded="true"]{background:#fff;color:var(--navy)}
+.bar .tb .cbadge{margin-left:2px}
+@media (max-width:1420px){.tools .tb .lb,.tools .tb .kpn{display:none}.tools .tb{padding:7px 10px}}
 .tb{border:1px solid var(--ink);background:transparent;border-radius:2px;padding:6px 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:500}
 .tb[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
 .tb:disabled{opacity:.35;cursor:default}
@@ -485,7 +492,9 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 #kpForm{display:flex;gap:6px;align-items:end;margin-top:6px}
 #kpForm label{display:grid;gap:2px;flex:1;font-size:11px;color:var(--ink-2)}
 #kpForm input{width:100%;box-sizing:border-box;border:1px solid var(--ink);background:var(--fx-fill);padding:4px 6px;font:inherit;font-size:13px}
-.keyplan.min .kp-body{display:none}
+.keyplan{display:none}
+.keyplan.open{display:block}
+.kp-h button .ic{width:14px;height:14px}
 body.mob .keyplan{top:40px;right:6px;width:172px}
 /* home */
 .homelink{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
@@ -664,18 +673,19 @@ body.no-ai:not(.manual) .cust{display:none}
   <button class="homelink" id="hHome" type="button" aria-label="Home"><img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52"></button>
   <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p><b id="hProj">Building</b> <span id="hRole"></span> <span class="badge" id="badge">Placeholder baseline</span></p></div>
   <div class="stats" id="stats"></div>
-  <div class="tools"><button class="tb" id="hHomeBtn" type="button">Home</button><button class="tb" id="hBuildings" type="button">Buildings</button><button class="tb" id="hShare" type="button">Share</button><button class="tb" id="hChat" type="button">Chat<span class="cbadge" id="hCnt" hidden>0</span></button>
-    <button class="tb" id="grp" aria-pressed="false">Group by bedrooms</button>
-    <button class="tb" id="undo">Undo</button>
-    <button class="tb" id="reset">Restore baseline</button>
-    <button class="tb sq" id="zout" aria-label="Zoom out">−</button>
-    <button class="tb sq" id="zin" aria-label="Zoom in">+</button>
+  <div class="tools"><button class="tb" id="hHomeBtn" type="button" title="Home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span class="lb">Home</span></button><button class="tb" id="hBuildings" type="button" title="Buildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span class="lb">Buildings</span></button><button class="tb" id="hShare" type="button" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span class="lb">Share</span></button><button class="tb" id="hChat" type="button" title="Chat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lb">Chat</span><span class="cbadge" id="hCnt" hidden>0</span></button>
+    <button class="tb" id="hKeyplan" type="button" title="Keyplan: how much of the building is designed" aria-expanded="false" aria-controls="keyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span class="lb">Keyplan</span><span class="kpn" id="hKpTxt"></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <button class="tb" id="grp" aria-pressed="false" title="Group by bedrooms"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span class="lb">Group by bedrooms</span></button>
+    <button class="tb" id="undo" title="Undo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg><span class="lb">Undo</span></button>
+    <button class="tb" id="reset" title="Restore baseline"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg><span class="lb">Restore baseline</span></button>
+    <button class="tb sq" id="zout" aria-label="Zoom out" title="Zoom out"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/></svg></button>
+    <button class="tb sq" id="zin" aria-label="Zoom in" title="Zoom in"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6M11 8v6"/></svg></button>
   </div>
 </header>
 
 <div class="stage">
 <aside class="keyplan" id="keyplan" aria-label="Keyplan: how much of the building is designed">
-  <div class="kp-h"><b>Keyplan</b><span id="kpPct"></span><button id="kpEdit" type="button" aria-label="Set the building length" title="Set the building length">✎</button><button id="kpMin" type="button" aria-label="Show or hide the keyplan" aria-expanded="true">–</button></div>
+  <div class="kp-h"><b>Keyplan</b><span id="kpPct"></span><button id="kpEdit" type="button" aria-label="Set the building length" title="Set the building length"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg></button><button id="kpMin" type="button" aria-label="Close the keyplan" title="Close"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <div class="kp-body"><svg id="kpSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Both sides of the corridor"></svg><div class="kp-st" id="kpStats"></div>
     <form id="kpForm" hidden><label>Building length, m <input id="kpLen" type="number" min="10" max="300" step="1" inputmode="numeric"></label><button class="tb" type="submit">Set</button></form></div>
 </aside>
@@ -711,9 +721,9 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mHome2">Home</button><button class="mi" id="mBuildings">Buildings</button><button class="mi" id="mShare">Share building</button><button class="mi" id="mChat">Chat<span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mZin">Zoom in</button><button class="mi" id="mZout">Zoom out</button><button class="mi" id="mDetail" aria-pressed="false">Show dimensions</button><button class="mi" id="mGrp" aria-pressed="false">Group by bedrooms</button>
-  <button class="mi" id="mUndo">Undo last added unit</button>
-  <button class="mi" id="mReset">Restore baseline</button>
+  <button class="mi" id="mHome2"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Home</span></button><button class="mi" id="mBuildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span>Buildings</span></button><button class="mi" id="mShare"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span>Share building</span></button><button class="mi" id="mChat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Chat</span><span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mKeyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span>Keyplan</span></button><button class="mi" id="mZin"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6M11 8v6"/></svg><span>Zoom in</span></button><button class="mi" id="mZout"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/></svg><span>Zoom out</span></button><button class="mi" id="mDetail" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v10M21 7v10M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span id="mDetailTxt">Show dimensions</span></button><button class="mi" id="mGrp" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span>Group by bedrooms</span></button>
+  <button class="mi" id="mUndo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg><span>Undo last added unit</span></button>
+  <button class="mi" id="mReset"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg><span>Restore baseline</span></button>
   <button class="mi mclose" id="mClose2">Close</button>
 </aside>
 <aside class="info" id="info" hidden aria-labelledby="iTitle">
@@ -1520,7 +1530,7 @@ const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
 function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
-  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpMin}));}catch(e){}
+  try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpOpen}));}catch(e){}
   if(!PROJ)return;
   try{localStorage.setItem('pad.proj.'+PROJ.id,JSON.stringify(snapshot()));}catch(e){}
   clearTimeout(saveT);saveT=setTimeout(flushSave,500);
@@ -1545,10 +1555,11 @@ function keyplanFigures(){
 }
 function drawKeyplan(){
   const el=$('keyplan');if(!el)return;
-  el.classList.toggle('min',kpMin);$('kpMin').setAttribute('aria-expanded',String(!kpMin));$('kpMin').textContent=kpMin?'+':'\u2013';
+  el.classList.toggle('open',kpOpen);$('hKeyplan').setAttribute('aria-expanded',String(kpOpen));
   const k=keyplanFigures(),tot=Math.max(bldgLen,k.row),dep=k.L.length?Math.max(...k.L.map(u=>u.plan.D)):8.4,pad=0.6;
   const vw=tot+2*pad,vh=2*dep+KEYCORR+2*pad,cy=pad+dep;
   const pct=Math.min(100,k.row/bldgLen*100);
+  $('hKpTxt').textContent=k.L.length?`${k.row.toFixed(0)}/${bldgLen} m`:'';
   $('kpPct').textContent=k.L.length?`${k.row.toFixed(0)} of ${bldgLen} m`:`0 of ${bldgLen} m`;
   let s=`<rect class="kp-t" x="${pad}" y="${pad}" width="${f(tot)}" height="${f(2*dep+KEYCORR)}"/><rect class="kp-c" x="${pad}" y="${cy}" width="${f(Math.max(0,k.row))}" height="${KEYCORR}"/>`;
   let x=pad;
@@ -1557,7 +1568,11 @@ function drawKeyplan(){
   $('kpSvg').setAttribute('viewBox',`0 0 ${f(vw)} ${f(vh)}`);$('kpSvg').innerHTML=s;
   $('kpStats').innerHTML=k.L.length?`<b>${k.eff.toFixed(1)}%</b> efficient \u00B7 ${k.units} units both sides<br>${k.net2.toFixed(0)} m\u00B2 net of ${k.gross2.toFixed(0)} m\u00B2 gross, corridor included<br>${pct.toFixed(0)}% of the building${k.row>bldgLen+0.01?' (over the length set)':''}`:'Add a unit to start the keyplan.';
 }
-$('kpMin').onclick=()=>{kpMin=!kpMin;drawKeyplan();save();};
+$('hKeyplan').onclick=e=>{e.stopPropagation();kpOpen=!kpOpen;drawKeyplan();save();};
+$('mKeyplan').onclick=()=>{$('mMenu').hidden=true;kpOpen=!kpOpen;drawKeyplan();save();};
+$('kpMin').onclick=()=>{kpOpen=false;drawKeyplan();save();};
+document.addEventListener('click',e=>{if(kpOpen&&!e.target.closest('#keyplan,#hKeyplan,#mKeyplan')){kpOpen=false;drawKeyplan();save();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&kpOpen&&!/INPUT|TEXTAREA/.test(e.target.tagName)){kpOpen=false;drawKeyplan();save();}});
 $('kpEdit').onclick=()=>{const f2=$('kpForm');f2.hidden=!f2.hidden;if(!f2.hidden){$('kpLen').value=bldgLen;setTimeout(()=>$('kpLen').select(),20);}};
 $('kpForm').addEventListener('submit',e=>{e.preventDefault();const v=Math.round(+$('kpLen').value);if(!(v>=10&&v<=300)){toast('Use a building length between 10 and 300 m.');return;}bldgLen=v;$('kpForm').hidden=true;drawKeyplan();save();});
 $('kpSvg').addEventListener('click',e=>{
@@ -1578,7 +1593,7 @@ const corrShare=P=>P.W*KEYCORR/2;
 const grossAll=P=>grossArea(P)+corrShare(P);
 const netA=u=>netArea(u.plan);
 const eff=u=>netA(u)/gross(u)*100;
-let DM=8.4,BM=0,detail=false,bldgLen=100,kpMin=false;   // bldgLen: the building length the keyplan measures against, m
+let DM=8.4,BM=0,detail=false,bldgLen=100,kpOpen=false;   // bldgLen: the building length the keyplan measures against, m
 const lite=()=>isMob&&!detail;   // phones show room names and areas only, until Show dimensions is on
 
 /* ---------- render ---------- */
@@ -1756,7 +1771,7 @@ function mobSync(){
   $('mStats').innerHTML=$('stats').innerHTML;
   $('mBadge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);
   $('mUndo').disabled=!added().length;$('mReset').hidden=!(PROJ&&PROJ.base);$('mReset').disabled=!added().length&&!removedBase.length;
-  $('mDetail').setAttribute('aria-pressed',String(detail));$('mDetail').textContent=detail?'Hide dimensions':'Show dimensions';
+  $('mDetail').setAttribute('aria-pressed',String(detail));$('mDetailTxt').textContent=detail?'Hide dimensions':'Show dimensions';
   mobFocus();
 }
 function mobFocus(){
@@ -3564,7 +3579,7 @@ async function openProject(id){
     closeProject();
     PROJ={id:p.id,name:p.name,role:p.role,base:!!(p.data&&p.data.base)};
     loadData(p.data);
-    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpMin=!!pr.kpMin;}}catch(e){}
+    try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
     showView('app');setMob();selected=null;
     $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
     chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
@@ -3662,7 +3677,7 @@ addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
 if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,rm:{rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
-try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpMin=!!pr.kpMin;}}catch(e){}
+try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
 showView('boot');
 BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
