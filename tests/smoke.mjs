@@ -66,8 +66,9 @@ try {
       const req = route.request();
       if (req.method() === 'GET') return route.fulfill({ json: { ready } });
       page.hits++;
-      const plan = req.postDataJSON().plan, it = plan.items.find(x => x.kind !== 'wc' && x.kind !== 'sink' && x.kind !== 'rug');
-      return route.fulfill({ json: { say: 'Added a plant and turned one item.', ops: [{ op: 'add_item', kind: 'plant', x: 0.5, y: 1.2 }, { op: 'rotate_item', id: it.id }, { op: 'move_item', id: 99999, dx: 1, dy: 0 }] } });
+      const plan = req.postDataJSON().plan, dr = plan.doors.find(x => !x.entry);
+      if (plan.items) errs.push('the plan sent to the assistant should not list furniture');
+      return route.fulfill({ json: { say: 'Flipped a door.', ops: [{ op: 'flip_door', id: dr.id }, { op: 'remove_wall', wall: 'w99' }] } });
     });
     await page.goto(`http://localhost:${PORT}/?debug`);
     await page.click('#lStart'); await page.fill('#pName', 'Prompt Building'); await page.click('#pNew');
@@ -85,15 +86,16 @@ try {
     await ai.click('#iCust');
     await ai.waitForSelector('#aiText', { timeout: 3000 }).catch(() => errs.push('prompt box did not open'));
     if (await ai.locator('[data-act="add"], #edSvg [data-x]').count()) errs.push('drawing tools should not show in prompt mode');
-    const n0 = await ai.evaluate(() => window.__pad.edState().P.furn.length);
+    const n0 = await ai.evaluate(() => JSON.stringify(window.__pad.edState().P.doors));
     await ai.fill('#aiText', 'Add a plant and turn something');
     await ai.click('#aiGo');
     await ai.waitForSelector('.aip .eclist li', { timeout: 5000 }).catch(() => errs.push('prompt result did not list changes'));
-    const r = await ai.evaluate(() => { const E = window.__pad.edState(); return { n: E.P.furn.length, used: E.used, dirty: E.dirty, text: document.getElementById('edSide').textContent }; });
-    if (r.n !== n0 + 1 || r.used !== 1 || !r.dirty) errs.push('prompt steps were not applied as one change: ' + JSON.stringify({ n0, n: r.n, used: r.used }));
+    const r = await ai.evaluate(() => { const E = window.__pad.edState(); return { n: JSON.stringify(E.P.doors), used: E.used, dirty: E.dirty, text: document.getElementById('edSide').textContent, furn: document.querySelectorAll('#edSvg [class^="m-"]').length }; });
+    if (r.n === n0 || r.used !== 1 || !r.dirty) errs.push('prompt steps were not applied as one change: ' + JSON.stringify({ used: r.used }));
+    if (r.furn) errs.push('tracing should show no furniture, it shows ' + r.furn + ' pieces');
     if (!/not found/.test(r.text)) errs.push('a step that could not be done was not reported');
     await ai.click('#edUndo');
-    if ((await ai.evaluate(() => window.__pad.edState().P.furn.length)) !== n0) errs.push('Undo did not take back the prompt');
+    if ((await ai.evaluate(() => JSON.stringify(window.__pad.edState().P.doors))) !== n0) errs.push('Undo did not take back the prompt');
     await ai.fill('#aiText', 'Add a plant again'); await ai.click('#aiGo');
     await ai.waitForFunction(() => window.__pad.edState().used === 1 && !window.__pad.edState().busy, null, { timeout: 5000 }).catch(() => errs.push('second prompt did not finish'));
     await ai.click('#edDone');
@@ -142,6 +144,11 @@ try {
       await ai.click('#edDone'); await ai.click('#ecOk'); await ai.waitForTimeout(400);
       const kept = await ai.evaluate(() => { const u = window.__pad.units()[0]; return { W: u.plan.W, D: u.plan.D, dim: u.custom && u.custom.dim && u.custom.dim[0], people: u.people.length, nodes: Object.keys(u.plan.nodes).length }; });
       if (!kept.dim || kept.dim.W !== kept.W || kept.dim.D !== kept.D) errs.push('a saved room edit did not keep the unit size: ' + JSON.stringify(kept));
+      // accepting furnishes the new layout afresh: a toilet 457 mm from the walls beside it, a bed, a sink, and nothing overlapping a wall
+      const fz = await ai.evaluate(() => { const T = window.__pad, u = T.units()[0], P = u.plan, k = {}; P.furn.forEach(p => k[p.k] = (k[p.k] || 0) + 1); return { k, wc: T.wcClear(P), ov: T.edOverlaps ? T.edOverlaps(P).size : -1 }; });
+      if (!fz.k.wc || !fz.k.bed || !fz.k.sink || !(fz.k.tub || fz.k.shower)) errs.push('accepting a layout should place a toilet, bed, sink and tub or shower: ' + JSON.stringify(fz.k));
+      if (fz.wc < 0.456) errs.push('the new toilet is too close to a wall: ' + fz.wc);
+      if (fz.ov > 0) errs.push('furnishing left ' + fz.ov + ' pieces overlapping walls or each other');
     }
     // Baseline layouts gallery
     await ai.evaluate(() => document.getElementById('iClose').click());
