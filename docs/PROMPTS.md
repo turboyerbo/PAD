@@ -8,7 +8,7 @@ Units are changed only by describing the change in words. There are no drawing t
 2. Type a request, for example "Move the bed under the window and make the kitchen an L-shape".
 3. The page sends the request and a compact description of the plan to `/api/revise`. That is the Netlify function in `netlify/functions/revise.mjs`, which asks Claude for a short list of small steps.
 4. The page applies the steps with the same editing code the old drawing tools used, then runs the code checks (toilet clearance, kitchen area, tub sizes, dead-end halls, overlaps). If the checks find new problems, the page sends them back once and applies the corrected steps.
-5. The result shows on the tracing paper over the original. Up to 5 requests per sheet. Review changes, then Confirm and save, and it becomes the next iteration of the unit (v2, v3 and so on). The earlier versions stay in the unit panel and can be restored.
+5. The result shows on the tracing paper over the original. Up to 5 requests per sheet. Review changes, then either Save as next iteration (v2, v3 and so on, earlier versions stay in the unit panel and can be restored) or Save as new unit, which adds a variation beside the original and leaves the original as it was.
 
 ## Turning it on
 

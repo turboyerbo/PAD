@@ -79,6 +79,24 @@ try {
     await ai.click('#ecOk'); await ai.waitForTimeout(300);
     const it = await ai.evaluate(() => { const u = window.__pad.units()[0]; return { n: u.iters && u.iters.length, cur: u.cur, note: u.iters && u.iters[1] && u.iters[1].note }; });
     if (it.n !== 2 || it.cur !== 2 || !/plant/.test(it.note || '')) errs.push('a confirmed prompt did not save as a new iteration: ' + JSON.stringify(it));
+    // Save the same kind of sheet as a new unit instead: the original stays as it was
+    const n1 = await ai.evaluate(() => window.__pad.units().length);
+    await ai.evaluate(() => { if (document.getElementById('info').hidden) document.querySelector('#strip .unit .hit').dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await ai.click('#iCust'); await ai.fill('#aiText', 'Another plant'); await ai.click('#aiGo');
+    await ai.waitForFunction(() => window.__pad.edState().used === 1 && !window.__pad.edState().busy, null, { timeout: 5000 }).catch(() => errs.push('third prompt did not finish'));
+    await ai.click('#edDone'); await ai.click('#ecNew'); await ai.waitForTimeout(300);
+    const nv = await ai.evaluate(() => { const L = window.__pad.units(); return { n: L.length, first: L[0].iters.length, last: L[L.length - 1].iters && L[L.length - 1].iters.length, custom: !!L[L.length - 1].custom }; });
+    if (nv.n !== n1 + 1 || nv.first !== 2 || nv.last !== 1 || !nv.custom) errs.push('Save as new unit did not add a variation beside the original: ' + JSON.stringify(nv));
+    // Baseline layouts gallery
+    await ai.click('#add'); await ai.click('#browseLay');
+    const cards = await ai.locator('.lcard').count();
+    if (cards < 15) errs.push('baseline layout gallery shows ' + cards + ' layouts');
+    await ai.click('#layF [data-f="2"]');
+    const two = await ai.locator('.lcard').count();
+    if (!two || two >= cards) errs.push('the 2 bed filter did not narrow the gallery');
+    await ai.click('.lcard'); await ai.waitForTimeout(300);
+    const lay = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 1], P = u.plan; return { n: L.length, layout: u.layout, rooms: P.rooms.length, bed: P.furn.some(p => p.k === 'bed'), W: P.W }; });
+    if (lay.layout == null || lay.n !== nv.n + 1 || !lay.bed || lay.rooms < 5) errs.push('adding a baseline layout failed: ' + JSON.stringify(lay));
   }
   await ai.close();
 
