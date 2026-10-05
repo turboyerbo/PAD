@@ -467,7 +467,6 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .mi[aria-pressed="true"]{border-color:var(--accent);background:var(--furn-fill)}
 .mi:disabled{opacity:.4}
 .mi.mclose{text-align:center;border-color:var(--ink)}
-
 /* home */
 .homelink{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;cursor:pointer;text-align:left}
 .homelink:focus-visible{outline:2px solid #fff;outline-offset:3px}
@@ -578,7 +577,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <h2 id="lmT">Why PAD measures area and efficiency</h2>
     <p class="lm-lead">Calculating area and building efficiency is the primary goal of the design team for Patry Group buildings. Every unit in PAD shows its net area, its gross area and its efficiency, and they update as you describe changes.</p>
     <p class="lm-formula" role="note"><b>Efficiency</b> = Usable Floor Area (UFA) ÷ Gross Floor Area (GFA)</p>
-    <p class="lm-lead">In PAD, the keyplan shows the units on both sides of a 1.6 m corridor, each unit's gross area includes half of that corridor, and a building's efficiency is its total net area divided by its total gross area. Stairs, elevators and shafts are not drawn yet, so a finished building will come in lower than the figure shown.</p>
+    <p class="lm-lead">In PAD, each unit's gross area includes its share of the corridor in front of it (1.8 m deep), and a building's efficiency is its total net area divided by its total gross area. Stairs, elevators and shafts are not drawn yet, so a finished building will come in lower than the figure shown.</p>
     <div class="lm-grid">
       <article class="lm-card">
         <h3><span>1</span>Optimizing units</h3>
@@ -1554,8 +1553,7 @@ function ftin(mm){const half=Math.round(mm/25.4*2)/2;const ft=Math.floor(half/12
 const area=u=>u.plan.W*u.plan.D;
 // Gross: to centreline of perimeter walls. Exterior wall is 0.30 m (centre 0.15 in), corridor wall 0.20 m (centre 0.10 in); party walls are shared, so width is unchanged.
 const gross=u=>grossAll(u.plan);   // the unit to its wall centrelines plus its share of the corridor in front of it
-const KEYCORR=1.6;   // the keyplan corridor, m. Units face each other across it, so each unit carries half
-const corrShare=P=>P.W*KEYCORR/2;
+const corrShare=P=>P.W*CORR;
 const grossAll=P=>grossArea(P)+corrShare(P);
 const netA=u=>netArea(u.plan);
 const eff=u=>netA(u)/gross(u)*100;
@@ -1780,7 +1778,7 @@ function showInfo(u){
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=(u.layout?'Baseline layout · '+layoutName(u.layout):u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
   $('iTitle').textContent=tagOf(u)+' · '+(u.minimal?'Minimum studio':u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
-  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Unit gross (to wall centrelines)',`${grossArea(u.plan).toFixed(1)} m²`],['Half the 1.6 m corridor',`${corrShare(u.plan).toFixed(1)} m²`],['Gross with corridor',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency (corridor in)',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(balconyArea(u.plan)?[['Balcony',balconyArea(u.plan).toFixed(1)+' m\u00B2 (not in net area)']]:[]),...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
+  const rows=[['Net area',`${netA(u).toFixed(1)} m²`],['Unit gross (to wall centrelines)',`${grossArea(u.plan).toFixed(1)} m²`],['Share of the corridor',`${corrShare(u.plan).toFixed(1)} m²`],['Gross with corridor',`${gross(u).toFixed(1)} m²`],['Net / gross efficiency (corridor in)',`${eff(u).toFixed(1)}%`],['Footprint (outer faces)',`${a.toFixed(1)} m²`],['Width',`${mm} mm / ${ftin(mm)}`],['Length (depth)',`${Math.round(u.plan.D*1000)} mm / ${ftin(Math.round(u.plan.D*1000))}`],...(u.maxA?[['Max area set',`${u.maxA.toFixed(1)} m²`]]:[]),['Bedrooms',u.n===0?'Studio':u.n],['Bathrooms',m.baths||1],['Laundry',m.laundry?'In-suite':'Not shown'],...(balconyArea(u.plan)?[['Balcony',balconyArea(u.plan).toFixed(1)+' m\u00B2 (not in net area)']]:[]),...(m.dens?[['Dens',m.dens]]:[]),['Priority',u.minimal?'Smallest possible studio':(u.pri==='other'?'Other':PRI_LABEL[u.pri])],...(u.corner?[['Position',`Corner, ${u.corner==='L'?'left':'right'} end`]]:[])];
   if(m.storeRooms)rows.push(['Storage rooms',m.storeRooms]);
   rows.push(['Occupants shown',u.people.length]);
   $('iList').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
