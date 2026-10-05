@@ -34,6 +34,21 @@ try {
   await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('guest reload did not return to the building list'));
   if (!/Guest Building/.test((await g.textContent('#pList')) || '')) errs.push('guest building was not kept');
   // Home is one click away from the building list and from a building, and the landing page then offers a way back in
+  // Keyplan: both rows of units either side of a 1.6 m corridor, and the efficiency taken from it
+  await g.click('.pitem'); await g.waitForSelector('body.view-app', { timeout: 5000 });
+  await g.click('#add'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.waitForTimeout(300);
+  if (await g.isVisible('#keyplan')) errs.push('the keyplan should be closed until it is opened from the navbar');
+  await g.click('#hKeyplan');
+  if (!(await g.isVisible('#keyplan'))) errs.push('the Keyplan button in the navbar did not open the keyplan');
+  const kp = await g.evaluate(() => { const T = window.__pad, n = T.units().length, rows = document.querySelectorAll('#kpSvg .kp-u').length, mir = document.querySelectorAll('#kpSvg .kp-m').length; return { n, rows, mir, txt: document.getElementById('kpStats').textContent, eff: parseFloat(document.getElementById('kpStats').textContent) }; });
+  if (!kp.n || kp.rows !== kp.n || kp.mir !== kp.n) errs.push('the keyplan should draw each unit and its mirror: ' + JSON.stringify(kp));
+  if (!(kp.eff > 70 && kp.eff < 95)) errs.push('keyplan efficiency looks wrong: ' + kp.txt);
+  await g.click('#kpEdit'); await g.fill('#kpLen', '40'); await g.press('#kpLen', 'Enter');
+  if (!/of 40 m/.test(await g.textContent('#kpPct'))) errs.push('setting the building length did not change the keyplan');
+  await g.click('#kpMin');
+  if (await g.isVisible('#keyplan')) errs.push('the keyplan close button did not close it');
+  for (const id of ['hHomeBtn', 'hBuildings', 'grp', 'undo', 'reset', 'zout', 'zin', 'hKeyplan']) if (!(await g.locator('#' + id + ' svg.ic').count())) errs.push('navbar button without an icon: ' + id);
+  await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
   await g.click('#pHomeBtn');
   if (!(await g.isVisible('#land')) || !(await g.isVisible('#lContinue')) || (await g.isVisible('#lStart'))) errs.push('Home from the building list did not show the landing page with Go to my buildings');
   await g.click('#lContinue'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 }).catch(() => errs.push('Go to my buildings did not return to the list'));
