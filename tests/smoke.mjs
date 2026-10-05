@@ -11,7 +11,8 @@ const PORT = 8137;
 const srv = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: root, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 900));
 // "fulldemo" switches on accounts, sharing and chat, which are hidden until the shared service (Supabase) is connected.
-const URL = `http://localhost:${PORT}/?debug&fulldemo`;
+// "manualedit" keeps the old drawing tools; units are normally changed only through the prompt box (tested below with a mocked assistant).
+const URL = `http://localhost:${PORT}/?debug&fulldemo&manualedit`;
 const errs = [];
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
 
@@ -33,6 +34,71 @@ try {
   await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('guest reload did not return to the building list'));
   if (!/Guest Building/.test((await g.textContent('#pList')) || '')) errs.push('guest building was not kept');
   await g.close();
+
+  // Prompt editing: the assistant is mocked, so this checks the page side only (apply, check, undo, confirm as an iteration)
+  const aiOpen = async (ready) => {
+    const page = await browser.newPage({ viewport: { width: 1500, height: 860 } });
+    page.on('pageerror', e => errs.push('prompt page script error: ' + e.message));
+    page.hits = 0;
+    await page.route('**/api/revise', async route => {
+      const req = route.request();
+      if (req.method() === 'GET') return route.fulfill({ json: { ready } });
+      page.hits++;
+      const plan = req.postDataJSON().plan, it = plan.items.find(x => x.kind !== 'wc' && x.kind !== 'sink' && x.kind !== 'rug');
+      return route.fulfill({ json: { say: 'Added a plant and turned one item.', ops: [{ op: 'add_item', kind: 'plant', x: 0.5, y: 1.2 }, { op: 'rotate_item', id: it.id }, { op: 'move_item', id: 99999, dx: 1, dy: 0 }] } });
+    });
+    await page.goto(`http://localhost:${PORT}/?debug`);
+    await page.click('#lStart'); await page.fill('#pName', 'Prompt Building'); await page.click('#pNew');
+    await page.waitForSelector('body.view-app', { timeout: 5000 });
+    await page.click('#quickOpts [data-n="1"]'); await page.waitForTimeout(300);
+    await page.evaluate(() => document.querySelector('#strip .unit .hit').dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    return page;
+  };
+  const off = await aiOpen(false);
+  if (await off.isVisible('#iCustBox')) errs.push('Describe a change should be hidden until the assistant is set up');
+  await off.close();
+  const ai = await aiOpen(true);
+  if (!(await ai.isVisible('#iCustBox'))) errs.push('Describe a change should show once the assistant is set up');
+  else {
+    await ai.click('#iCust');
+    await ai.waitForSelector('#aiText', { timeout: 3000 }).catch(() => errs.push('prompt box did not open'));
+    if (await ai.locator('[data-act="add"], #edSvg [data-x]').count()) errs.push('drawing tools should not show in prompt mode');
+    const n0 = await ai.evaluate(() => window.__pad.edState().P.furn.length);
+    await ai.fill('#aiText', 'Add a plant and turn something');
+    await ai.click('#aiGo');
+    await ai.waitForSelector('.aip .eclist li', { timeout: 5000 }).catch(() => errs.push('prompt result did not list changes'));
+    const r = await ai.evaluate(() => { const E = window.__pad.edState(); return { n: E.P.furn.length, used: E.used, dirty: E.dirty, text: document.getElementById('edSide').textContent }; });
+    if (r.n !== n0 + 1 || r.used !== 1 || !r.dirty) errs.push('prompt steps were not applied as one change: ' + JSON.stringify({ n0, n: r.n, used: r.used }));
+    if (!/not found/.test(r.text)) errs.push('a step that could not be done was not reported');
+    await ai.click('#edUndo');
+    if ((await ai.evaluate(() => window.__pad.edState().P.furn.length)) !== n0) errs.push('Undo did not take back the prompt');
+    await ai.fill('#aiText', 'Add a plant again'); await ai.click('#aiGo');
+    await ai.waitForFunction(() => window.__pad.edState().used === 1 && !window.__pad.edState().busy, null, { timeout: 5000 }).catch(() => errs.push('second prompt did not finish'));
+    await ai.click('#edDone');
+    if (!/Add a plant again/.test(await ai.inputValue('#ecNote'))) errs.push('the confirm note should start with the request');
+    await ai.click('#ecOk'); await ai.waitForTimeout(300);
+    const it = await ai.evaluate(() => { const u = window.__pad.units()[0]; return { n: u.iters && u.iters.length, cur: u.cur, note: u.iters && u.iters[1] && u.iters[1].note }; });
+    if (it.n !== 2 || it.cur !== 2 || !/plant/.test(it.note || '')) errs.push('a confirmed prompt did not save as a new iteration: ' + JSON.stringify(it));
+    // Save the same kind of sheet as a new unit instead: the original stays as it was
+    const n1 = await ai.evaluate(() => window.__pad.units().length);
+    await ai.evaluate(() => { if (document.getElementById('info').hidden) document.querySelector('#strip .unit .hit').dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await ai.click('#iCust'); await ai.fill('#aiText', 'Another plant'); await ai.click('#aiGo');
+    await ai.waitForFunction(() => window.__pad.edState().used === 1 && !window.__pad.edState().busy, null, { timeout: 5000 }).catch(() => errs.push('third prompt did not finish'));
+    await ai.click('#edDone'); await ai.click('#ecNew'); await ai.waitForTimeout(300);
+    const nv = await ai.evaluate(() => { const L = window.__pad.units(); return { n: L.length, first: L[0].iters.length, last: L[L.length - 1].iters && L[L.length - 1].iters.length, custom: !!L[L.length - 1].custom }; });
+    if (nv.n !== n1 + 1 || nv.first !== 2 || nv.last !== 1 || !nv.custom) errs.push('Save as new unit did not add a variation beside the original: ' + JSON.stringify(nv));
+    // Baseline layouts gallery
+    await ai.click('#add'); await ai.click('#browseLay');
+    const cards = await ai.locator('.lcard').count();
+    if (cards < 15) errs.push('baseline layout gallery shows ' + cards + ' layouts');
+    await ai.click('#layF [data-f="2"]');
+    const two = await ai.locator('.lcard').count();
+    if (!two || two >= cards) errs.push('the 2 bed filter did not narrow the gallery');
+    await ai.click('.lcard'); await ai.waitForTimeout(300);
+    const lay = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 1], P = u.plan; return { n: L.length, layout: u.layout, rooms: P.rooms.length, bed: P.furn.some(p => p.k === 'bed'), W: P.W }; });
+    if (lay.layout == null || lay.n !== nv.n + 1 || !lay.bed || lay.rooms < 5) errs.push('adding a baseline layout failed: ' + JSON.stringify(lay));
+  }
+  await ai.close();
 
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).
   const signUp = async (page, email, name) => {
