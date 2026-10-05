@@ -1,0 +1,5 @@
+[
+  { "id": "A1-1_5", "name": "1 bed + den, type A", "n": 2, "netSF": 668 },
+  { "id": "A1-1_7", "name": "1 bed + den, type B", "n": 2, "netSF": 678 },
+  { "id": "A1-1_9", "name": "1 bed + den, type C", "n": 2, "netSF": 670 }
+]

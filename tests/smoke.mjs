@@ -97,13 +97,20 @@ try {
     // Baseline layouts gallery
     await ai.click('#add'); await ai.click('#browseLay');
     const cards = await ai.locator('.lcard').count();
-    if (cards < 15) errs.push('baseline layout gallery shows ' + cards + ' layouts');
-    await ai.click('#layF [data-f="2"]');
-    const two = await ai.locator('.lcard').count();
-    if (!two || two >= cards) errs.push('the 2 bed filter did not narrow the gallery');
+    if (cards !== 3) errs.push('the catalog gallery should show the 3 catalog layouts, it shows ' + cards);
+    if (await ai.isVisible('#layF')) errs.push('the bedroom filter should hide while the catalog has one bedroom count');
     await ai.click('.lcard'); await ai.waitForTimeout(300);
     const lay = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 1], P = u.plan; return { n: L.length, layout: u.layout, rooms: P.rooms.length, bed: P.furn.some(p => p.k === 'bed'), W: P.W }; });
     if (lay.layout == null || lay.n !== nv.n + 1 || !lay.bed || lay.rooms < 5) errs.push('adding a baseline layout failed: ' + JSON.stringify(lay));
+    // A new unit with a catalog bedroom count starts from a catalog layout; one without a catalog stays generated
+    await ai.evaluate(() => document.getElementById('lay').hidden = true);
+    await ai.click('#add'); await ai.click('#quickOpts [data-n="2"]'); await ai.waitForTimeout(250);
+    await ai.click('#add'); await ai.click('#quickOpts [data-n="1"]'); await ai.waitForTimeout(250);
+    const q2 = await ai.evaluate(() => { const L = window.__pad.units(), a = L[L.length - 2], b = L[L.length - 1]; return { a: a.n + ':' + a.layout, b: b.n + ':' + b.layout }; });
+    if (!/^2:A1-1_/.test(q2.a) || !/^1:null$/.test(q2.b)) errs.push('quick add should start 2 bed from the catalog and leave 1 bed generated: ' + JSON.stringify(q2));
+    // printed net area carries over: the catalog layouts show 668, 678 or 670 ft2
+    const net = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 2]; return Math.round(u.plan.rooms.reduce((s, r) => s + r.a, 0) / 0.092903 + (u.plan.netAdj || 0) / 0.092903); });
+    if (![668, 678, 670].includes(net)) errs.push('catalog unit net area should match the printed drawing, got ' + net + ' ft2');
   }
   await ai.close();
 
