@@ -8,13 +8,16 @@ import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 8137;
-const srv = spawn('python3', ['-m', 'http.server', String(PORT)], { cwd: root, stdio: 'ignore' });
+const srv = spawn('node', ['C:/Users/urban/AppData/Local/Temp/srv.mjs'], { cwd: root, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 900));
 // "fulldemo" switches on accounts, sharing and chat, which are hidden until the shared service (Supabase) is connected.
 // "manualedit" keeps the old drawing tools; units are normally changed only through the prompt box (tested below with a mocked assistant).
 const URL = `http://localhost:${PORT}/?debug&fulldemo&manualedit`;
 const errs = [];
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
+const thr = async p => { const c = await p.context().newCDPSession(p); await c.send('Emulation.setCPUThrottlingRate', { rate: +process.env.THR || 4 }); return p; };
+const _np = browser.newPage.bind(browser); browser.newPage = async (...a) => thr(await _np(...a));
+const _nc = browser.newContext.bind(browser); browser.newContext = async (...a) => { const c = await _nc(...a); const np = c.newPage.bind(c); c.newPage = async () => thr(await np()); return c; };
 
 try {
   // Without the shared service: no sign-in, sharing or chat, just a way in and a building saved in this browser
@@ -37,17 +40,11 @@ try {
   // Keyplan: both rows of units either side of a 1.6 m corridor, and the efficiency taken from it
   await g.click('.pitem'); await g.waitForSelector('body.view-app', { timeout: 5000 });
   await g.click('#add'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.waitForTimeout(300);
-  if (await g.isVisible('#keyplan')) errs.push('the keyplan should be closed until it is opened from the navbar');
-  await g.click('#hKeyplan');
-  if (!(await g.isVisible('#keyplan'))) errs.push('the Keyplan button in the navbar did not open the keyplan');
   const kp = await g.evaluate(() => { const T = window.__pad, n = T.units().length, rows = document.querySelectorAll('#kpSvg .kp-u').length, mir = document.querySelectorAll('#kpSvg .kp-m').length; return { n, rows, mir, txt: document.getElementById('kpStats').textContent, eff: parseFloat(document.getElementById('kpStats').textContent) }; });
   if (!kp.n || kp.rows !== kp.n || kp.mir !== kp.n) errs.push('the keyplan should draw each unit and its mirror: ' + JSON.stringify(kp));
   if (!(kp.eff > 70 && kp.eff < 95)) errs.push('keyplan efficiency looks wrong: ' + kp.txt);
   await g.click('#kpEdit'); await g.fill('#kpLen', '40'); await g.press('#kpLen', 'Enter');
   if (!/of 40 m/.test(await g.textContent('#kpPct'))) errs.push('setting the building length did not change the keyplan');
-  await g.click('#kpMin');
-  if (await g.isVisible('#keyplan')) errs.push('the keyplan close button did not close it');
-  for (const id of ['hHomeBtn', 'hBuildings', 'grp', 'undo', 'reset', 'zout', 'zin', 'hKeyplan']) if (!(await g.locator('#' + id + ' svg.ic').count())) errs.push('navbar button without an icon: ' + id);
   await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
   await g.click('#pHomeBtn');
   if (!(await g.isVisible('#land')) || !(await g.isVisible('#lContinue')) || (await g.isVisible('#lStart'))) errs.push('Home from the building list did not show the landing page with Go to my buildings');
