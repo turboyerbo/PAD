@@ -75,7 +75,7 @@ try {
     await page.goto(`http://localhost:${PORT}/?debug`);
     await page.click('#lStart'); await page.fill('#pName', 'Prompt Building'); await page.click('#pNew');
     await page.waitForSelector('body.view-app', { timeout: 5000 });
-    await page.click('#quickOpts [data-n="1"]'); await page.waitForTimeout(300);
+    await page.evaluate(() => window.__pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-01_1' })); await page.keyboard.press('Escape'); await page.waitForTimeout(400);   // a known catalog plan, so the room editing below does not depend on a random pick
     await page.evaluate(() => document.querySelector('#strip .unit .hit').dispatchEvent(new MouseEvent('click', { bubbles: true })));
     return page;
   };
@@ -180,6 +180,16 @@ try {
     const modeTxt = (await ai.locator('#edModes [data-mode]').allTextContents()).map(s => s.trim()).join('|');
     if (modeTxt !== 'Furniture|Drafting|Layout (AI)') errs.push('edit modes should be Furniture, Drafting and Layout (AI), got ' + modeTxt);
     const st = () => ai.evaluate(() => { const E = window.__pad.edState(); return { mode: E.mode, W: E.P.W, D: E.P.D, walls: E.P.walls.length, furn: document.querySelectorAll('#edSvg [class^="m-"]').length, walker: !!document.getElementById('edWk'), stuck: (E.wk ? E.wk.stuck.join() : ''), chips: [...document.querySelectorAll('#edSide .chip')].map(c => c.textContent), btns: [...document.querySelectorAll('#edSide [data-act]')].map(c => c.dataset.act) }; });
+    // Tool icons: every button in the editor's three modes carries a small icon, except the arrow nudges, which are arrows already
+    for (const m of ['furn', 'draft', 'layout']) {
+      await ai.click('#edModes [data-mode="' + m + '"]'); await ai.waitForTimeout(250);
+      if (m === 'furn') await ai.evaluate(() => { const E = window.__pad.edState(), f = E.P.furn.find(q => q.k === 'bed'); if (f) window.__pad.edSelect({ t: 'f', id: f.id }); });
+      if (m === 'draft') await ai.evaluate(() => { const E = window.__pad.edState(), g = window.__pad.wallGroups(E.P).find(q => q.b - q.a > 1.5); if (g) window.__pad.edSelect({ t: 'w', wi: g.idxs[0] }); });
+      const bare = await ai.evaluate(() => [...document.querySelectorAll('#edSide button, .ed-top button')].filter(b => !b.classList.contains('ti') && !b.querySelector('svg') && !/nudge/.test(b.dataset.act || '') && !b.closest('#edModes') && !/edHandle/.test(b.id) && !/^[\u25C0\u25B2\u25BC\u25B6]/.test(b.textContent.trim())).map(b => (b.dataset.act || b.id) + ':' + b.textContent.trim().slice(0, 20)));
+      if (bare.length) errs.push('tools without an icon in ' + m + ' mode: ' + bare.join(', '));
+    }
+    await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); }); await ai.waitForTimeout(300);
+    await ai.evaluate(() => window.__pad.openEditor(window.__pad.units()[0])); await ai.waitForTimeout(500);
     let s = await st();
     if (s.mode !== 'layout' || !s.walker || s.furn) errs.push('Layout (AI) should start with a walking person and no furniture: ' + JSON.stringify({ m: s.mode, w: s.walker, f: s.furn }));
     await ai.click('#edModes [data-mode="furn"]'); s = await st();

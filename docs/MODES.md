@@ -47,3 +47,7 @@ Dimensions
 - To add one, open Drafting, press Add a dimension, and click two points on walls (a corner, or a point along a wall edge, which snaps within 300 mm). A dimension runs along the longer of the two directions, sits 400 mm outside, and shows its length in millimetres.
 - Click a dimension in Drafting to flip it to the other side or delete it (or press Delete). It does not use up one of the five changes.
 - A dimension is kept as two points on walls (`dms`). If a wall moves away from either point, the dimension is hidden and Drafting offers to remove it; confirming drops it.
+
+Tool icons
+- Every tool button in the editor's three modes has a small line icon: the header buttons (Undo, Start over, Discard, Review changes) and every button in the side panel, including each furniture, wall and bump-out in the lists. The arrow nudges keep their arrows, and the kitchen templates keep their own pictures.
+- Icons live in `ICON_ED` in index.html (paths on a 24 by 24 grid) and are drawn as a CSS mask, so they take the button's colour and survive the label being rewritten. `iconKey` decides which icon a button gets from its `data-act`. A new tool needs an entry in both. The smoke test fails when a tool has no icon.

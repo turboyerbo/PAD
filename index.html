@@ -2796,7 +2796,7 @@ function edBubbles(cw){
     const hw=isMob?72:112,px=Math.max(hw,Math.min(cw-hw,E.x0+mid*E.Sc)),py=E.y0+(R.y+R.h/2)*E.Sc-10;
     h+=`<div class="bub" data-py="${f(py)}" style="left:${f(px)}px;top:${f(py)}px"><button class="bx" data-m="dismiss" data-k="${k}" aria-label="Dismiss">×</button><p>${isMob?`Dead-end hall, ${de.len.toFixed(1)} m. Fill it?`:`This hall is a dead end, ${de.len.toFixed(1)} m past the last door. Do you want to add a closet here, or close it off with a wall?`}</p><div class="edbtns"><button class="tb" data-m="closet" data-k="${k}">${isMob?'Closet':'Add closet'}</button><button class="tb" data-m="wall" data-k="${k}">${isMob?'Wall':'Add wall'}</button></div></div>`;
   });
-  box.innerHTML=h;
+  box.innerHTML=h;edDecorate(box);
   // not enough room above the hall: show the bubble below it instead of cutting it off
   box.querySelectorAll('.bub').forEach(b=>{const py=+b.dataset.py;if(py-b.offsetHeight<6){b.classList.add('below');b.style.top=f(py+22)+'px';}});
 }
@@ -2931,6 +2931,62 @@ function edHandleSync(p,d,gr,usr,bp){
 }
 function edToggleTools(on){const ed=$('ed');ed.classList.toggle('tools',on===undefined?!ed.classList.contains('tools'):on);edPanel();requestAnimationFrame(()=>{if(E)edRender();});}
 $('edHandle').onclick=()=>edToggleTools();
+/* A small icon beside every tool in the editor, so a tool can be found by its picture. Each key is a path on a 24 by 24 grid, drawn as a line icon
+   in the button's own colour (a CSS mask, so the icon survives the label being rewritten). edDecorate adds the right one to every button in the side panel. */
+const ICON_ED={
+  undo:'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',reset:'M4 4v6h6M4.5 10A8 8 0 1 1 6 17',discard:'M6 6l12 12M18 6L6 18',review:'M5 12l4 4 10-10',
+  rot:'M20 12a8 8 0 1 1-2.5-5.8M20 4v4h-4',dup:'M9 9h10v10H9zM5 15V5h10',del:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  tidy:'M5 19L17 7M15 5l4 4M4 5v3M2.5 6.5h3M20 15v3M18.5 16.5h3',clean:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
+  flip:'M3 8h15M14 4l4 4-4 4M21 16H6M10 12l-4 4 4 4',swing:'M5 19V5M5 5a14 14 0 0 1 14 14',door:'M6 21V4h12v17M3 21h18M14 12h.01',
+  shorter:'M4 12h11M19 7v10',longer:'M4 12h14M14 8l4 4-4 4',
+  narrower:'M3 12h6M6 9l3 3-3 3M21 12h-6M18 9l-3 3 3 3',wider:'M9 12H3M6 9l-3 3 3 3M15 12h6M18 9l3 3-3 3',
+  shallower:'M12 3v6M9 6l3 3 3-3M12 21v-6M9 18l3-3 3 3',deeper:'M12 9V3M9 6l3-3 3 3M12 15v6M9 18l3 3 3-3',
+  ruler:'M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2',swap:'M7 4v16M4 7l3-3 3 3M17 20V4M14 17l3 3 3-3',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9.5a2.5 2.5 0 1 0 .01 0',
+  target:'M12 3v4M12 17v4M3 12h4M17 12h4M12 9.5a2.5 2.5 0 1 0 .01 0',shuffle:'M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18 4l3 3-3 3M18 14l3 3-3 3',
+  k_wc:'M8 4h8v6H8zM6 10h12c0 5-3 7-6 7s-6-2-6-7zM9 20h6',k_van:'M3 11h18v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM12 11V6h3',k_tub:'M4 11h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM6 11V7a2 2 0 0 1 4 0M7 18l-1 2M17 18l1 2',
+  k_shower:'M6 7a6 6 0 0 1 12 0M12 7v2M8 13v1M12 13v1M16 13v1M10 17v1M14 17v1',k_rshower:'M6 7a6 6 0 0 1 12 0M12 7v2M8 13v1M12 13v1M16 13v1M3 20h18',
+  k_bed:'M3 19V7M3 15h18v4M21 19v-6a3 3 0 0 0-3-3h-8v5',k_ns:'M6 6h12v12H6zM6 11h12M12 14v.01',k_dresser:'M4 6h16v13H4zM4 12h16M12 6v13',k_closet:'M5 4h14v16H5zM12 4v16M9.5 12h.01M14.5 12h.01',k_desk:'M3 9h18M5 9v10M19 9v10M9 9v5h6V9',
+  k_sofa:'M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3zM6 18v2M18 18v2',k_arm:'M7 10V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v3M5 11a2 2 0 0 1 2 2v2h10v-2a2 2 0 0 1 4 0v5H3v-5a2 2 0 0 1 2-2zM6 19v2M18 19v2',
+  k_ctable:'M4 10h16v4H4zM6 14v5M18 14v5',k_rtable:'M12 4a6 4 0 1 0 .01 0M12 12v7M8 19h8',k_ltable:'M3 9h18v3H3zM6 12v7M18 12v7',k_tv:'M3 6h18v11H3zM9 21h6M12 17v4',k_shelf:'M5 4v16M19 4v16M5 9h14M5 15h14',
+  k_rug:'M4 6h16v12H4zM8 9h8v6H8z',k_plant:'M12 21v-7M12 14c-4 0-6-3-6-7 4 0 6 3 6 7zM12 14c4 0 6-3 6-7-4 0-6 3-6 7zM8 21h8',
+  k_counter:'M3 9h18v10H3zM3 9l2-3h14l2 3',k_sink:'M3 11h18v4a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM12 11V6h4',k_cook:'M4 5h16v14H4zM9 10a1.5 1.5 0 1 0 .01 0M15 10a1.5 1.5 0 1 0 .01 0M9 15a1.5 1.5 0 1 0 .01 0M15 15a1.5 1.5 0 1 0 .01 0',
+  k_fridge:'M6 3h12v18H6zM6 10h12M9 6v2M9 13v3',k_island:'M3 8h18v8H3zM6 16v3M18 16v3',k_wd:'M5 3h14v18H5zM5 8h14M12 17a3.5 3.5 0 1 0 .01 0',
+  k_wallh:'M3 12h18M3 9v6M21 9v6',k_wallv:'M12 3v18M9 3h6M9 21h6',k_alcove:'M5 20V6h14v14M9 20v-8h6v8',
+  k_balcony:'M3 20V9h18v11M3 14h18M8 14v6M12 14v6M16 14v6',k_den:'M4 20V9h16v11M9 9V5h6v4',k_nook:'M5 20V8h6V5h8v15z',k_loggia:'M4 4h16v16H4zM8 8h8v12H8',k_vestibule:'M4 20V4h16v16M4 14h6v6M14 20v-6h6'
+};
+const iconKey=b=>{
+  const a=b.dataset.act,d=+b.dataset.d;
+  if(a==='add'){const it=PAL[+b.dataset.g].it[+b.dataset.i];return it.k?'k_'+it.k:it.wall?'k_wall'+it.wall:it.alcove?'k_alcove':it.bump?'k_'+it.bump:null;}
+  if(a==='fp')return d>0?(b.dataset.ax==='W'?'wider':'deeper'):(b.dataset.ax==='W'?'narrower':'shallower');
+  if(a==='wtrim'||a==='ulen')return d>0?'longer':'shorter';
+  if(a==='bw')return d>0?'wider':'narrower';
+  if(a==='bd')return d>0?'deeper':'shallower';
+  if(/^(wdel|ddel|bdel|mdel|mclean|del)$/.test(a))return'del';
+  if(a==='wtidy')return'tidy';
+  if(a==='urot')return'rot';
+  if(a==='dflip')return'flip';
+  if(a==='dswing')return'swing';
+  if(a==='dadd')return'door';
+  if(a==='dimtool')return'ruler';
+  if(a==='mflip')return'swap';
+  if(a==='dnd'||a==='rnd')return'eye';
+  if(a==='rplace')return'target';
+  if(/^(rot|dup|clean|reset)$/.test(a))return a;
+  if(b.id==='aiGo'||b.dataset.ex)return'clean';
+  if(b.id==='aiVar')return'shuffle';
+  if(b.id==='rmGo')return'review';
+  if(b.dataset.m==='closet')return'k_closet';
+  if(b.dataset.m==='wall')return'k_wallv';
+  return null;   // the arrows, kitchen templates (they carry their own picture) and the rest keep their text
+};
+(()=>{const s=document.createElement('style');s.textContent='.ti::before{content:"";display:inline-block;width:15px;height:15px;margin-right:6px;vertical-align:-3px;background:currentColor;-webkit-mask:var(--ti) center/contain no-repeat;mask:var(--ti) center/contain no-repeat}.chip.ti::before{width:14px;height:14px;margin-right:5px}body.mob .ed-act .ti::before{width:12px;height:12px;margin-right:3px}'+Object.entries(ICON_ED).map(([k,p])=>`.ti-${k}{--ti:url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='${p}'/></svg>`)}")}`).join('');document.head.appendChild(s);})();
+function edDecorate(root){
+  (root||$('edSide')).querySelectorAll('button').forEach(b=>{
+    if(b.classList.contains('ti')||b.querySelector('svg'))return;
+    const k=iconKey(b);if(k&&ICON_ED[k])b.classList.add('ti','ti-'+k);
+  });
+}
+[['edUndo','undo'],['edReset','reset'],['edCancel','discard'],['edDone','review']].forEach(([id,k])=>$(id).classList.add('ti','ti-'+k));
 const edHide=()=>E.mode==='layout'||E.mode==='draft';   // furniture is hidden while the building itself is edited
 const roomSig=P=>JSON.stringify(P.rooms.filter(q=>!q.bk).map(q=>[q.n,q.x,q.y,q.w,q.h]));
 const edPalOk=gp=>{const dr=/^(Walls|Balcony)/.test(gp.g);return E.mode==='all'||(E.mode==='draft')===dr;};
@@ -3051,7 +3107,7 @@ function edPanel(){
   h+=PAL.map((gp,gi)=>!edPalOk(gp)?'':`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
   h+=`<h3 class="sub">Code check</h3>`+edIssues(P,u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('');
   h+=edCompare();
-  $('edSide').innerHTML=h;edHandleSync(p,d,gr,usr,bp);$('edUndo').disabled=!E.hist.length;$('edDone').disabled=!E.dirty;edMeter();
+  $('edSide').innerHTML=h;edDecorate();edHandleSync(p,d,gr,usr,bp);$('edUndo').disabled=!E.hist.length;$('edDone').disabled=!E.dirty;edMeter();
 }
 $('edSide').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E||E.ai)return;if(b.dataset.act==='add')edAdd(PAL[+b.dataset.g].it[+b.dataset.i]);else edAct(b.dataset.act,b.dataset);});
 $('edBub').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!E)return;
@@ -3206,7 +3262,7 @@ function aiPanel(){
     h+='</div>';
   });
   h+=`<h3 class="sub">Code check</h3>`+edIssues(P,E.u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('')+edCompare()+'</div>';
-  $('edSide').innerHTML=h;$('edUndo').disabled=!E.hist.length||busy;$('edDone').disabled=!E.dirty||busy;$('edReset').disabled=busy;edMeter();
+  $('edSide').innerHTML=h;edDecorate();$('edUndo').disabled=!E.hist.length||busy;$('edDone').disabled=!E.dirty||busy;$('edReset').disabled=busy;edMeter();
   const open=$('ed').classList.contains('tools');
   $('edHandleTxt').textContent=open?'Hide panel':'Rooms and describe a change';$('edHandle').setAttribute('aria-expanded',String(open));
   Object.entries(isMob?{edReset:'Reset',edCancel:'Discard',edDone:'Review'}:{edReset:'Start over',edCancel:'Discard',edDone:'Review changes'}).forEach(([id,x])=>{$(id).textContent=x;});
