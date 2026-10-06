@@ -296,7 +296,9 @@ function convert(id, cl, ents, blocks, nBeds, opts = {}) {
   have(R.wc).forEach(e => { const o = place(e, 'wc', { back: 'near' }); if (o) pushItem('wc', { x: o.x, y: o.y, rot: o.rot }); });
   // keep only what is inside the unit
   const FIXD = { ns: [.44, .44], arm: [.8, .8], sink: [.7, .44], cook: [.6, .54], fridge: [.74, .7], wc: [.4, .7], wd: [.66, .66] };
-  const bbOf = p => { let w, d; if (p.k === 'rtable') w = d = 2 * ((p.r || 0.45) + 0.45); else if (p.k === 'plant') w = d = (p.s || 0.45) * 0.9; else if (p.w !== undefined) { w = p.w; d = p.d; } else [w, d] = FIXD[p.k] || [0.6, 0.6]; if (((p.rot % 180) + 180) % 180 === 90) [w, d] = [d, w]; return [p.x - w / 2, p.y - d / 2, p.x + w / 2, p.y + d / 2]; };
+  const bbOf = p => { let w, d; if (p.k === 'rtable') w = d = 2 * ((p.r || 0.45) + 0.45); else if (p.k === 'plant') w = d = (p.s || 0.45) * 0.9; else if (p.w !== undefined) { w = p.w; d = p.d; } else [w, d] = FIXD[p.k] || [0.6, 0.6];
+    if (p.k === 'desk') d += 0.5; else if (p.k === 'ltable') { w += 0.1; d += 0.9; }   // the chairs, as PAD's own overlap check counts them
+    if (((p.rot % 180) + 180) % 180 === 90) [w, d] = [d, w]; return [p.x - w / 2, p.y - d / 2, p.x + w / 2, p.y + d / 2]; };
   const contentMinY = furn.length ? Math.min(...furn.filter(p => p.k !== 'rug').map(p => bbOf(p)[1])) : 1;
   // Every piece must sit inside the unit. The outer walls were redrawn to PAD's thicknesses, so a piece drawn against a thinner
   // wall is nudged in (up to 0.25 m), a piece that overlaps a wall is slid off it, and one that still does not fit is left out.

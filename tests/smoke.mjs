@@ -60,7 +60,7 @@ try {
 
   // Prompt editing: the assistant is mocked, so this checks the page side only (apply, check, undo, confirm as an iteration)
   const aiOpen = async (ready) => {
-    const page = await browser.newPage({ viewport: { width: 1500, height: 860 } });
+    const page = await browser.newPage({ viewport: { width: 1500, height: 860 }, reducedMotion: 'reduce' });   // sheets close at once, so a test never meets one that is still sliding away
     page.on('pageerror', e => errs.push('prompt page script error: ' + e.message));
     page.hits = 0;
     await page.route('**/api/revise', async route => {
@@ -155,11 +155,11 @@ try {
     }
     // Baseline layouts gallery
     await ai.evaluate(() => document.getElementById('iClose').click());
-    await ai.click('#add'); await ai.click('#browseLay');
+    await ai.evaluate(() => document.getElementById('add').click()); await ai.waitForTimeout(300); await ai.evaluate(() => document.getElementById('browseLay').click());
     const cards = await ai.locator('.lcard').count();
-    if (cards !== 12) errs.push('the catalog gallery should show the 12 catalog layouts, it shows ' + cards);
+    if (cards !== 18) errs.push('the catalog gallery should show the 18 catalog layouts, it shows ' + cards);
     await ai.click('#layF [data-f="2"]');
-    if ((await ai.locator('.lcard').count()) !== 1) errs.push('the 2 bed filter should leave one catalog layout');
+    if ((await ai.locator('.lcard').count()) !== 7) errs.push('the 2 bed filter should leave the seven 2 bedroom layouts');
     await ai.click('#layF [data-f="0"]');
     await ai.click('.lcard'); await ai.waitForTimeout(300);
     const lay = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 1], P = u.plan; return { n: L.length, layout: u.layout, rooms: P.rooms.length, bed: P.furn.some(p => p.k === 'bed'), W: P.W }; });
@@ -213,6 +213,7 @@ try {
       if (!r.c) errs.push(c.id + ': with a wall across the unit the walking person should find rooms it cannot reach');
     }
     // Dimensions: none are drawn until a person adds one with two clicks in Drafting, and they show on the combined layout
+    await ai.waitForTimeout(900);   // let the previous sheet finish closing
     await ai.evaluate(() => { document.getElementById('iClose') && document.getElementById('iClose').click(); window.__pad.openEditor(window.__pad.units()[0]); });
     await ai.waitForTimeout(500);
     await ai.click('#edModes [data-mode="draft"]');
@@ -243,7 +244,8 @@ try {
         if (new Set(r.j.furniture.map(p => p.id)).size !== r.j.furniture.length) errs.push(c.id + ' furniture ids are not unique');
         nExp++;
       }
-      if (nExp !== 12) errs.push('expected to export 12 catalog layouts, exported ' + nExp);
+      const nCat = JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8')).length;
+      if (nExp !== nCat) errs.push('expected to export ' + nCat + ' catalog layouts, exported ' + nExp);
       if (!(await ai.locator('#iExp').count())) errs.push('the unit panel should have an Export JSON button');
     }
     // Circulation steps and the clean-up pass: a second corridor door opens a gap in the corridor wall, a hall gives space to a room, and nothing is left overlapping
