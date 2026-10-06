@@ -19,3 +19,4 @@ Follow CONTRIBUTING.md, plus these rules:
 - On-screen text: plain and short, no em-dashes.
 - In the pull request description, say what you changed, what you tested, and anything you could not test.
 - A unit exports as JSON for another team (docs/EXPORT.md). If you change the plan data, update `padExport`, the schema in docs/export/ and the sample, and run tools/validate-export.mjs.
+- A corner unit turns the building into wings (docs/WINGS.md). `ordered()` returns only the wing on screen; use `allUnits()` for the whole building.

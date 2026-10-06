@@ -312,12 +312,27 @@ try {
     if (JSON.stringify(w2.w) !== JSON.stringify([3, 4, 1]) || w2.cur !== 1) errs.push('wings: a unit added beyond a corner should start the next wing and show it: ' + JSON.stringify(w2));
     if (!w2.saved.includes(w2.n)) errs.push('wings: the order along the building should be saved: ' + JSON.stringify(w2));
     // scrolling to the end of a wing on a narrow screen turns the view by itself
-    await wp.setViewportSize({ width: 700, height: 860 }); await wp.waitForTimeout(900);
+    await wp.setViewportSize({ width: 900, height: 860 }); await wp.waitForTimeout(900);
     await wp.evaluate(() => { const w = window.__pad; if (w.wing() !== 0) w.turnWing(-1); }); await wp.waitForTimeout(900);
     const sc = await wp.evaluate(() => { const s = document.getElementById('scroller'); return { max: s.scrollWidth - s.clientWidth, wing: window.__pad.wing() }; });
-    if (sc.wing === 0 && sc.max > 20) { await wp.evaluate(() => { const s = document.getElementById('scroller'); s.scrollLeft = s.scrollWidth; }); await wp.waitForTimeout(1000); if ((await wp.evaluate(() => window.__pad.wing())) !== 1) errs.push('wings: scrolling to the end on a corner should turn the view to the next wing'); }
+    if (sc.wing === 0 && sc.max > 20) { await wp.evaluate(() => { document.getElementById('scroller').scrollLeft = 0; }); await wp.waitForTimeout(900);   // from the start of the wing, as a person scrolls
+      await wp.evaluate(() => { const s = document.getElementById('scroller'); s.scrollLeft = s.scrollWidth; }); await wp.waitForTimeout(1000); if ((await wp.evaluate(() => window.__pad.wing())) !== 1) errs.push('wings: scrolling to the end on a corner should turn the view to the next wing'); }
     else errs.push('wings: expected a scrolling strip on a narrow screen: ' + JSON.stringify(sc));
     await wp.close();
+    // phone: Next, at the last unit of a wing that ends on a corner, turns the view to the next wing
+    {
+      const mp = await browser.newPage({ viewport: { width: 390, height: 800 }, reducedMotion: 'reduce' });
+      mp.on('pageerror', e => errs.push('wings phone script error: ' + e.message));
+      await mp.goto(`http://localhost:${PORT}/?debug`); await mp.click('#lStart'); await mp.fill('#pName', 'Wings'); await mp.click('#pNew');
+      await mp.waitForSelector('body.view-app', { timeout: 5000 }); await mp.keyboard.press('Escape'); await mp.waitForTimeout(300);
+      await mp.evaluate(() => { const pad = window.__pad; pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-01_1' }); pad.addUnit({ n: 1, pri: 'balanced', seed: 3, side: 'R', corner: 'R' }); pad.addUnit({ n: 2, pri: 'balanced', seed: 4, layout: 'A2-1.1_1' }); });
+      await mp.waitForTimeout(700);
+      await mp.evaluate(() => document.getElementById('mNext').click()); await mp.waitForTimeout(400);
+      await mp.evaluate(() => document.getElementById('mNext').click()); await mp.waitForTimeout(500);
+      const pm = await mp.evaluate(() => ({ wing: window.__pad.wing(), tag: document.getElementById('wingTag').textContent }));
+      if (pm.wing !== 1 || !/Wing 2 of 2/.test(pm.tag)) errs.push('wings on a phone: Next at the end of a wing should turn to the next one: ' + JSON.stringify(pm));
+      await mp.close();
+    }
   }
 
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).

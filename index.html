@@ -1858,7 +1858,9 @@ function mobFocus(){
   list.forEach((u,i)=>{const dd=Math.abs(PADL+(u.ox+u.plan.W/2)*S-mid);if(dd<bd){bd=dd;best=i;}});
   mobIdx=best;const u=list[best];
   $('mCount').textContent=`${best+1} / ${list.length}`;
-  $('mPrev').disabled=best<=0;$('mNext').disabled=best>=list.length-1;
+  {const{W}=wingInfo(),nx=!grouped&&curWing<W.length-1,pv=!grouped&&curWing>0;   // at the end of a wing that has another beyond it, Next turns the view
+    $('mPrev').disabled=best<=0&&!pv;$('mNext').disabled=best>=list.length-1&&!nx;
+    $('mNext').setAttribute('aria-label',best>=list.length-1&&nx?'Turn to the next wing':'Next unit');$('mPrev').setAttribute('aria-label',best<=0&&pv?'Back to the previous wing':'Previous unit');}
   $('mFocus').innerHTML=`<b>${tagOf(u)}</b><span>${escapeHtml(TYPEU(u))}</span>`;
 }
 function mobGo(i,smooth){
@@ -1874,7 +1876,8 @@ scroller.addEventListener('scroll',()=>{
   clearTimeout(snapT);
   snapT=setTimeout(()=>{const u=mobList()[mobIdx];if(!u||u.plan.W*S>scroller.clientWidth*0.95)return;snapping=true;mobGo(mobIdx,true);setTimeout(()=>{snapping=false;},500);},160);
 },{passive:true});
-$('mPrev').onclick=()=>mobGo(mobIdx-1,true);$('mNext').onclick=()=>mobGo(mobIdx+1,true);
+$('mPrev').onclick=()=>{if(mobIdx<=0&&!grouped&&curWing>0)turnWing(-1);else mobGo(mobIdx-1,true);};
+$('mNext').onclick=()=>{if(mobIdx>=mobList().length-1&&!grouped&&curWing<wingsOf().length-1)turnWing(1);else mobGo(mobIdx+1,true);};
 $('mAdd').onclick=()=>openModal(mobIdx===0&&mobList().length>1?'L':'R');
 const mMenu=$('mMenu');
 $('mMenuBtn').onclick=()=>{mMenu.hidden=!mMenu.hidden;$('mMenuBtn').setAttribute('aria-expanded',String(!mMenu.hidden));};
@@ -4441,7 +4444,7 @@ function turnWing(d){
   if(turning||grouped||to<0||to>=W.length)return;
   turning=true;clearTimeout(autoT);
   const turn=d>0?W[to].turn:W[curWing].turn,sgn=(turn==='L'?1:-1)*d;
-  const swap=()=>{curWing=to;render();scroller.scrollLeft=d>0?0:scroller.scrollWidth;noAutoUntil=Date.now()+1200;navUpdate();};
+  const swap=()=>{curWing=to;render();scroller.scrollLeft=d>0?0:scroller.scrollWidth;noAutoUntil=Date.now()+1200;if(isMob)mobGo(d>0?0:mobList().length-1,false);navUpdate();};
   if(reduce){swap();turning=false;return;}
   svg.style.transformOrigin=`${scroller.scrollLeft+scroller.clientWidth/2}px 50%`;
   svg.style.transition='transform .3s ease-in,opacity .3s';svg.style.transform=`rotate(${sgn*90}deg) scale(.6)`;svg.style.opacity='0';
