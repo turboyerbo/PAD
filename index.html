@@ -1435,6 +1435,7 @@ function useLayout(P,L){
   P.meta=Object.assign({},P.meta,{baths:Math.max(1,P.furn.filter(p=>p.k==='wc').length),laundry:P.furn.some(p=>p.k==='wd')});
   if(P.bumps.length)syncBumps(P);
   P.netAdj=0;P.netAdj=L.net?L.net-netArea(P):0;   // the drawing's net area counts the partitions inside the unit, and a recess takes area out
+  cleanPlan(P);   // same tidy pass the editor runs: no broken walls, no names on walls
   P.sideWins=undefined;P.side=undefined;P.grid=null;
 }
 /* Corner unit: the outer side wall becomes exterior, with a window to every habitable room along it. */
@@ -1732,22 +1733,25 @@ function occMarkup(u){let pp='';u.people.forEach((p,i)=>{pp+=`<path class="trail
 function roomLabels(u,X,uy,map,sc,fsz,plain){   // plain: room names and areas only, no dimensions
   const SS=sc||S,fs=fsz||Math.max(6.5,Math.min(10.5,SS*0.21)),df=Math.max(5.8,fs*0.82);let t='';
   const placed=[];
-  u.plan.rooms.forEach(q=>{const pt=map?map(q.lx,q.ly):[X+q.lx*SS,uy+q.ly*SS];
+  u.plan.rooms.forEach(q=>{if(q.hl)return;const pt=map?map(q.lx,q.ly):[X+q.lx*SS,uy+q.ly*SS];
     // phones: label only the main rooms, and drop any label that would overlap one already placed
     if(isMob){if(/^(Closet|Hall|Entry)$/.test(q.n)||q.a<3)return;const w=Math.max(q.n.length,7)*fs*0.36,b=[pt[0]-w,pt[1]-fs,pt[0]+w,pt[1]+fs*1.3];if(placed.some(o=>b[0]<o[2]&&b[2]>o[0]&&b[1]<o[3]&&b[3]>o[1]))return;placed.push(b);}
     const x=f(pt[0]),y=pt[1],nm=escapeHtml(q.n.toUpperCase()),ar=q.a.toFixed(1)+' m²',dm=Math.round(q.w*1000)+' × '+Math.round(q.h*1000);
-    if(q.h*SS<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text>${lite()||plain?``:`<text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`}`;
-    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text>${lite()||plain?``:`<text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`}`;});
+    if(q.no){t+=`<text class="rl" x="${x}" y="${f(y)}" font-size="${f(fs*0.9)}">${nm}</text>`;return;}
+    if(q.h*SS<fs*2.6||q.n==='Closet')t+=`<text class="rl" x="${x}" y="${f(y+fs*0.35-df*0.6)}" font-size="${f(fs*0.9)}">${nm} <tspan class="ra" style="font-weight:400">${ar}</tspan></text>${lite()||plain||q.nd?``:`<text class="ht" x="${x}" y="${f(y+fs*0.35+df*0.7)}" font-size="${f(df)}">${dm}</text>`}`;
+    else t+=`<text class="rl" x="${x}" y="${f(y-1)}" font-size="${f(fs)}">${nm}</text><text class="ra" x="${x}" y="${f(y+fs)}" font-size="${f(fs)}">${ar}</text>${lite()||plain||q.nd?``:`<text class="ht" x="${x}" y="${f(y+fs*2+1)}" font-size="${f(df)}">${dm}</text>`}`;});
   return t;
 }
 function openingDims(u,X,uy){
   const P=u.plan;let o='';const fs=S<26?7:8.5;
   P.doors.forEach(d=>{
+    if(d.nd)return;
     const ax=X+d.hx*S,ay=uy+d.hy*S,bx=ax+d.cx*d.w*S,by=ay+d.cy*d.w*S,k=-7,px=k*d.ox,py=k*d.oy;
     o+=`<path class="htl" d="M${f(ax+px)} ${f(ay+py)}L${f(bx+px)} ${f(by+py)}M${f(ax+px*0.4)} ${f(ay+py*0.4)}L${f(ax+px*1.6)} ${f(ay+py*1.6)}M${f(bx+px*0.4)} ${f(by+py*0.4)}L${f(bx+px*1.6)} ${f(by+py*1.6)}"/>`;
     o+=`<text class="ht" x="${f((ax+bx)/2+px*1.9)}" y="${f((ay+by)/2+py*1.9)}" font-size="${fs}">${Math.round(d.w*1000)}</text>`;
   });
   P.wins.forEach(w=>{
+    if(w.nd)return;
     const x1=X+w.x1*S,x2=X+w.x2*S,y=uy+0.3*S+8;
     o+=`<path class="htl" d="M${f(x1)} ${f(y)}H${f(x2)}M${f(x1)} ${f(y-3)}V${f(y+3)}M${f(x2)} ${f(y-3)}V${f(y+3)}"/><text class="ht" x="${f((x1+x2)/2)}" y="${f(y+8)}" font-size="${fs}">W ${Math.round((w.x2-w.x1)*1000)}</text>`;
   });
@@ -2730,6 +2734,7 @@ function edRender(){
   if(s&&s.t==='d'){const d=P.doors.find(x=>x.id===s.id);if(d){const[lo,hi]=doorRng(d);g+=doorHor(d)?`<rect class="wsel" x="${f(lo)}" y="${f(d.hy-0.15)}" width="${f(hi-lo)}" height="0.3"/>`:`<rect class="wsel" x="${f(d.hx-0.15)}" y="${f(lo)}" width="0.3" height="${f(hi-lo)}"/>`;}}
   if(s&&s.t==='b'){const b=bumpsOf(P).find(x=>x.id===s.id);if(b){const r=bumpRect(P,b);g+=`<rect class="sel" x="${f(r[0])}" y="${f(r[1])}" width="${f(r[2]-r[0])}" height="${f(r[3]-r[1])}"/>`;}}
   if(s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr)gr.idxs.forEach(i=>{const w=P.walls[i];g+=`<rect class="wsel" x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"/>`;});}
+  if(s&&s.t==='r'){const q=P.rooms.find(x=>x.rid===s.id);if(q){const b=lblBox(q);g+=`<rect class="sel" x="${f(b[0])}" y="${f(b[1])}" width="${f(b[2]-b[0])}" height="${f(b[3]-b[1])}"/>`;}}
   if(s&&s.t==='w'){const w0=P.walls[s.wi];if(w0&&w0.ag)P.walls.forEach(v=>{if(v.ag===w0.ag&&v!==w0)g+=`<rect class="wsel" x="${f(v.x)}" y="${f(v.y)}" width="${f(v.w)}" height="${f(v.h)}"/>`;});}
   if(E.ai)g+=`<g id="rmOv">${rmOverlay()}</g>`+edWalkerSVG();
   const fs=Math.max(8,Math.min(12,Sc*0.22));
@@ -2761,6 +2766,7 @@ function edHit(pt){
   if(DR)for(const d of P.doors)if(inDoor(d,pt,true))return{t:'d',id:d.id};
   if(FU)for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k!=='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
   if(DR)for(const d of P.doors)if(inDoor(d,pt,false))return{t:'d',id:d.id};
+  if(E.mode==='draft'){const q=P.rooms.find(r=>!r.bk&&r.lx!==undefined&&pt.x>=lblBox(r)[0]&&pt.x<=lblBox(r)[2]&&pt.y>=lblBox(r)[1]&&pt.y<=lblBox(r)[3]);if(q)return{t:'r',id:q.rid};}
   if(FU)for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k==='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
   if(!DR)return null;
   const bh=bumpAt(P,pt);if(bh)return{t:'b',id:bh.id};
@@ -2782,6 +2788,7 @@ $('edSvg').addEventListener('pointermove',e=>{
   if(!E.drag.moved&&Math.hypot(dx,dy)<0.05)return;
   E.drag.moved=true;const P=E.P;edRestore(P,E.drag.start);const s=E.sel,sn=v=>Math.round(v/0.05)*0.05;
   if(s.t==='f'){const p=P.furn.find(x=>x.id===s.id);p.x=clampX(P,p.x+sn(dx));p.y=clampY(P,p.y+sn(dy));}
+  else if(s.t==='r'){const q=P.rooms.find(x=>x.rid===s.id);if(q){q.lx=f(q.lx+sn(dx));q.ly=f(q.ly+sn(dy));}}
   else if(s.t==='b'){const b=bumpsOf(P).find(x=>x.id===s.id);if(b)nudgeBump(P,b,dx);}
   else if(s.t==='d'){const d=P.doors.find(x=>x.id===s.id);moveDoor(P,d,doorHor(d)?dx:dy);}
   else{const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);
@@ -2813,6 +2820,12 @@ function edAct(a,b){
   else if(a==='del'&&p){if(!edPush())return edBlock();P.furn=P.furn.filter(x=>x!==p);E.sel=null;}
   else if(a==='fnudge'&&p){if(!edPush())return edBlock();p.x=clampX(P,p.x+(+b.dx));p.y=clampY(P,p.y+(+b.dy));}
   else if(a==='wnudge'&&gr){if(!edPush())return edBlock();if(!moveWall(P,gr,+b.d))edUnpush();}
+  else if(a==='clean'){const r=edClean();E.msg=r.left.length?'':(r.fixed?`Tidied ${r.fixed} small thing${r.fixed>1?'s':''}.`:'Nothing to tidy.');}
+  else if(a==='wtidy'&&gr){const n=tidyWalls(P);E.sel=null;E.msg=n?`Tidied ${n} piece${n>1?'s':''} of wall.`:'This wall is already clean.';}
+  else if(a==='dnd'&&d){if(!edPush())return edBlock();d.nd=d.nd?0:1;}
+  else if(a==='rnd'&&s&&s.t==='r'){const q=P.rooms.find(x=>x.rid===s.id);if(q){if(!edPush())return edBlock();q.nd=q.nd?0:1;}}
+  else if(a==='rnudge'&&s&&s.t==='r'){const q=P.rooms.find(x=>x.rid===s.id);if(q){if(!edPush())return edBlock();q.lx=f(q.lx+(+b.dx));q.ly=f(q.ly+(+b.dy));}}
+  else if(a==='rplace'&&s&&s.t==='r'){const q=P.rooms.find(x=>x.rid===s.id);if(q){if(!edPush())return edBlock();q.nd=0;cleanLabels(P);}}
   else if(a==='wtrim'&&gr){if(!edPush())return edBlock();if(!trimWall(P,gr,b.end,+b.d))edUnpush();}
   else if(a==='fp'){if(!edPush('fp'))return edBlock();if(!fpMove(P,b.ax,+b.d))edUnpush();}
   else if(a==='wdel'&&gr){if(!edPush())return edBlock();const rm=new Set(gr.idxs);{const w0=P.walls[gr.idxs[0]];if(w0&&w0.ag)P.walls.forEach((v,i)=>{if(v.ag===w0.ag)rm.add(i);});}P.walls=P.walls.filter((w,i)=>!rm.has(i));P.doors=P.doors.filter(dr=>!(doorHor(dr)===gr.hor&&doorOn(dr,gr,gr.a-0.15,gr.b+0.15)));E.sel=null;}
@@ -2955,7 +2968,10 @@ function edPanel(){
   else if(gr&&usr){const w=P.walls[gr.idxs[0]];h+=`<h3 class="sub">Added wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round(Math.max(w.w,w.h)*1000)} mm</dd></dl><div class="edbtns"><button class="tb" data-act="ulen" data-d="-0.1">Shorter</button><button class="tb" data-act="ulen" data-d="0.1">Longer</button><button class="tb" data-act="urot">Rotate 90°</button><button class="tb" data-act="wdel">Remove wall</button></div>${nudge('unudge',0.05)}<div class="edbtns"><button class="tb" data-act="dadd">Add door</button></div><p class="note">Drag it anywhere, or nudge 50 mm at a time.</p>`;}
   else if(gr){h+=`<h3 class="sub">${gr.hor?'Horizontal':'Vertical'} wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round((gr.b-gr.a)*1000)} mm</dd><dt>Position</dt><dd>${Math.round(gr.pos*1000)} mm from the ${gr.hor?'window wall':'left wall'}</dd></dl><div class="edbtns"><button class="tb" data-act="wnudge" data-d="-0.1">${gr.hor?'▲ 100':'◀ 100'}</button><button class="tb" data-act="wnudge" data-d="-0.05">${gr.hor?'▲ 50':'◀ 50'}</button><button class="tb" data-act="wnudge" data-d="0.05">${gr.hor?'▼ 50':'▶ 50'}</button><button class="tb" data-act="wnudge" data-d="0.1">${gr.hor?'▼ 100':'▶ 100'}</button></div><div class="edbtns"><button class="tb" data-act="dadd">Add door</button><button class="tb" data-act="wdel">Remove wall</button></div><p class="note">Drag the wall, or nudge it in millimetres. Doors and room areas follow.</p>`;}
   else h+=`<p class="note">${E.mode==='furn'?'Click an item to move, rotate or delete it, or add one below.':E.mode==='draft'?'Click a wall to move or trim it, or a door to slide, flip or delete it. Add walls, doors, alcoves and bump-outs below. Furniture is hidden while you draft.':'Click a wall to move it, or a door to slide it. Click an item to move, rotate or delete it. Add items below.'}</p>`;
-  if(gr&&!usr&&E.mode!=='furn')h+=trimHtml(gr);
+  if(gr&&!usr&&E.mode!=='furn')h+=trimHtml(gr)+`<div class="edbtns"><button class="tb" data-act="wtidy">Tidy this wall</button></div>`;
+  if(d&&E.mode!=='furn')h+=`<div class="edbtns"><button class="tb" data-act="dnd">${d.nd?'Show':'Hide'} its dimension</button></div>`;
+  if(s&&s.t==='r'){const rl=P.rooms.find(x=>x.rid===s.id);if(rl)h+=`<h3 class="sub">${escapeHtml(rl.n)} name</h3><div class="edbtns"><button class="tb" data-act="rnd">${rl.nd?'Show':'Hide'} size text</button><button class="tb" data-act="rplace">Move to a clear spot</button></div>${nudge('rnudge',0.1)}<p class="note">Drag the name, or nudge it 100 mm at a time.</p>`;}
+  if(E.mode==='draft')h+=cleanHtml();
   if(E.mode==='draft'||E.mode==='all')h+=fpHtml(P);
   if(E.mode!=='draft'&&kRoom(P))h+=`<h3 class="sub">Kitchen layouts</h3><div class="ktpl">${Object.keys(KINDS).map(k=>{const r=kTemplate(P,k);return `<div class="kt"><button class="ktp" type="button" data-act="kitchen" data-kind="${k}"${r.ok?'':' disabled'}>${kIcon(k)}<span>${KINDS[k]}</span></button>${r.ok?'':`<small>${escapeHtml(r.reason)}</small>`}</div>`;}).join('')}</div><p class="note">Start from a template, then change it. A template counts as one change.</p>`;
   h+=PAL.map((gp,gi)=>!edPalOk(gp)?'':`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
@@ -2994,7 +3010,7 @@ let AIREADY=false;
 document.body.classList.toggle('manual',MANUAL);
 document.body.classList.add('no-ai');
 if(/^https?:/.test(location.protocol))fetch('/api/revise',{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(j=>{AIREADY=!!(j&&j.ready);document.body.classList.toggle('no-ai',!AIREADY);}).catch(()=>{});
-const AIEX=['Suggest one small variation that still works','Make the kitchen an L-shape','Add a balcony','Make the bathroom door open the other way','Add a nook by the window','Move the entry door toward the kitchen'];
+const AIEX=['Make the unit narrower and longer at the same area','Add a laundry room','Add a second door from the corridor and grow the bedroom and bath','Make the kitchen an L-shape','Add a balcony','Make the bathroom door open the other way'];
 const r2=v=>Math.round(v*100)/100;
 /* The plan as the assistant sees it: ids, positions, sizes. Wall ids are tracked in E.wt so they stay valid while steps change the plan. */
 function aiPlan(){
@@ -3041,6 +3057,9 @@ function aiOps(ops){
         if(o.keep_area&&hw&&!hd)D=P.D*P.W/W;else if(o.keep_area&&hd&&!hw)W=P.W*P.D/D;
         W=f(Math.max(E.orig.W-1,Math.min(E.orig.W+1,W)));D=f(Math.max(E.orig.D-1,Math.min(E.orig.D+1.5,D)));
         rm.W=W;rm.D=D;const sol=rmSolve(rm);rm.W=sol.W;rm.D=sol.D;rmApply(P,rm,sol,()=>++E.nid);E.rmEdited=true;break;}
+      case'add_room':{const r=addRoom(P,String(o.kind||'laundry'),o.host);if(!r.ok)miss.push(r.why);break;}
+      case'grow_room':{const r=growRoom(P,String(o.room||''),aiNum(o.d,1.5));if(!r.ok)miss.push(r.why);break;}
+      case'add_corridor_door':{const r=addCorridorDoor(P,o.room);if(!r.ok)miss.push(r.why);break;}
       case'add_bump':{if(!BUMPS[o.kind]){miss.push('That kind of balcony or bump-out is not available.');break;}const n=bumpsOf(P).length;E.msg='';addBump(o.kind);if(bumpsOf(P).length===n)miss.push(E.msg||'That could not be added.');break;}
       case'resize_bump':if(need(b,'A balcony or bump-out to resize was not found.')){if(o.d)resizeBump(P,b,'w',aiNum(o.d,3));if(o.dd)resizeBump(P,b,'d',aiNum(o.dd,3));}break;
       case'remove_bump':if(need(b,'A balcony or bump-out to remove was not found.')){removeBump(P,b);E.sel=null;}break;
@@ -3077,6 +3096,7 @@ async function aiRun(text){
       if(!r2x.error&&r2x.ops&&r2x.ops.length){res=r2x;entry.say=r2x.say||entry.say;miss=apply(r2x.ops);now=aiBad(P).filter(m=>!was.has(m));}
       else{miss=apply(res.ops);}
     }
+    edClean();
     const after=edSnap(P);
     if(after!==before){
       const o=Object.assign({W:P.W,D:P.D,side:P.side,sideWins:P.sideWins},JSON.parse(before));
@@ -3092,6 +3112,7 @@ function aiPanel(){
   const P=E.P,busy=E.busy;let h='<div class="aip">';
   if(E.msg)h+=`<p class="chk-warn">${escapeHtml(E.msg)}</p>`;
   h+=rmPanel();
+  h+=cleanHtml();
   h+=`<p class="note">The person walking the plan shows the route to every room. Resize a room or describe a change and the layout is regenerated so it stays walkable.</p>`;
   if(E.wk&&E.wk.stuck.length)h+=`<p class="chk-bad">The person cannot walk to: ${escapeHtml(E.wk.stuck.join(', '))}. Add a door or open a wall to it.</p>`;
   h+=`<h3 class="sub">How much may change</h3><div class="amt"><input type="range" id="aiAmt" min="1" max="100" step="1" value="${E.amt}" aria-label="How much may change, as a percentage"${busy?' disabled':''}><output id="aiAmtV" for="aiAmt">${E.amt}%</output></div><p class="note" id="aiAmtN">${escapeHtml(amtNote(E.amt))}</p><button class="tb wide" id="aiVar" type="button"${busy?' disabled':''}>Suggest a variation</button>`;
@@ -3521,7 +3542,7 @@ function rmCommit(tree,text,after){
   if(sol.grown[0]||sol.grown[1])entry.changes.push('The unit grew'+(sol.grown[1]?` ${sol.grown[1].toFixed(1)} m deeper`:'')+(sol.grown[0]?`${sol.grown[1]?' and':''} ${sol.grown[0].toFixed(1)} m wider`:'')+' to fit.');
   if(res.reds)entry.say=`${res.reds} room${res.reds>1?'s are':' is'} red. Click a red room to set its size.`;
   E.log.unshift(entry);E.prompts.push(text);
-  rmSelectRed();
+  edClean();rmSelectRed();
   if(after)after(entry);
   edRender();aiPanel();
 }
@@ -3562,8 +3583,176 @@ function rmTyped(k,A,Wm,Dm){
   if(sol.grown[0]||sol.grown[1])entry.changes.push('The unit grew'+(sol.grown[1]?` ${sol.grown[1].toFixed(1)} m deeper`:'')+(sol.grown[0]?`${sol.grown[1]?' and':''} ${sol.grown[0].toFixed(1)} m wider`:'')+' to fit.');
   const stillRed=E.P.rooms.some(q=>q.red);
   if(stillRed&&!entry.say)entry.say='Some rooms are still red. Adjust them, or move rooms around to make space.';
-  E.log.unshift(entry);E.prompts.push(entry.text);rmSelectRed(true);
+  edClean();E.log.unshift(entry);E.prompts.push(entry.text);rmSelectRed(true);
   edRender();aiPanel();
+}
+/* ---------- clean-up pass ----------
+   After a layout changes, the drawing is checked for the small mistakes that make a plan look careless: walls broken into pieces or
+   overlapping, wall ends that stop just short of the wall they meet, room names sitting on walls, door swings or other names, and
+   dimension text on top of names. Each is fixed where it can be. What cannot be fixed is listed, and can be tidied by hand in Drafting. */
+const lblBox=(q,x,y)=>{
+  x=x===undefined?q.lx:x;y=y===undefined?q.ly:y;
+  if(q.hl)return[x,y,x,y];
+  const comp=q.h<0.6||q.n==='Closet',nw=q.n.length*0.14+0.2;
+  if(q.no)return[x-nw/2,y-0.15,x+nw/2,y+0.15];
+  const w=comp?(q.n.length+8)*0.12+0.2:Math.max(1.0,nw);
+  return comp?[x-w/2,y-0.2,x+w/2,y+0.2]:[x-w/2,y-0.22,x+w/2,y+(q.nd?0.42:0.65)];
+};
+const boxHit=(a,b,m)=>Math.min(a[2],b[2])-Math.max(a[0],b[0])>(m||0)&&Math.min(a[3],b[3])-Math.max(a[1],b[1])>(m||0);
+function swingBox(d){
+  const w=d.w,p=[[d.hx,d.hy],[d.hx+d.cx*w,d.hy+d.cy*w],[d.hx+d.ox*w,d.hy+d.oy*w],[d.hx+(d.cx+d.ox)*w,d.hy+(d.cy+d.oy)*w]];
+  return[Math.min(...p.map(a=>a[0])),Math.min(...p.map(a=>a[1])),Math.max(...p.map(a=>a[0])),Math.max(...p.map(a=>a[1]))];
+}
+/* Walls: join pieces that touch or overlap, drop specks, and close small gaps at corners and T-junctions. Returns how many things changed. */
+function tidyWalls(P){
+  let fixed=0;const n0=P.walls.length;
+  const sig=w=>[w.w>w.h?'h':'v',Math.round((w.w>w.h?w.y:w.x)*100),Math.round((w.w>w.h?w.h:w.w)*100),w.u||0,w.bw||0,w.rail||0,w.ag||0].join('_');
+  const by={};P.walls.forEach(w=>{(by[sig(w)]=by[sig(w)]||[]).push(w);});
+  let out=[];
+  Object.values(by).forEach(L=>{
+    const hor=L[0].w>L[0].h,a=hor?'x':'y',s=hor?'w':'h';L.sort((p,q)=>p[a]-q[a]);let cur=null;
+    L.forEach(w=>{if(cur&&w[a]<=cur[a]+cur[s]+0.02){cur[s]=f(Math.max(cur[a]+cur[s],w[a]+w[s])-cur[a]);}else{cur=Object.assign({},w);out.push(cur);}});
+  });
+  fixed+=n0-out.length;
+  // specks: shorter than a door jamb and not beside a door
+  const nearDoor=w=>P.doors.some(d=>{const r=swingBox(d),cx=w.x+w.w/2,cy=w.y+w.h/2;return cx>r[0]-0.3&&cx<r[2]+0.3&&cy>r[1]-0.3&&cy<r[3]+0.3;});
+  const keep=out.filter(w=>w.rail||w.bw||w.u||Math.max(w.w,w.h)>=0.13||nearDoor(w));
+  fixed+=out.length-keep.length;out=keep;
+  // wall ends that stop just short of the wall they meet
+  const solid=out.filter(w=>!w.rail&&!w.bw);
+  out.forEach(w=>{
+    if(w.rail||w.bw)return;
+    const hor=w.w>w.h;
+    solid.forEach(v=>{
+      if(v===w||(v.w>v.h)===hor)return;
+      if(hor){
+        const cy=w.y+w.h/2;if(cy<v.y-0.02||cy>v.y+v.h+0.02)return;
+        const gl=w.x-(v.x+v.w),gr=v.x-(w.x+w.w);
+        if(gl>0.005&&gl<=0.15){w.x=f(v.x+v.w);w.w=f(w.w+gl);fixed++;}
+        else if(gr>0.005&&gr<=0.15){w.w=f(w.w+gr);fixed++;}
+      }else{
+        const cx=w.x+w.w/2;if(cx<v.x-0.02||cx>v.x+v.w+0.02)return;
+        const gt=w.y-(v.y+v.h),gb=v.y-(w.y+w.h);
+        if(gt>0.005&&gt<=0.15){w.y=f(v.y+v.h);w.h=f(w.h+gt);fixed++;}
+        else if(gb>0.005&&gb<=0.15){w.h=f(w.h+gb);fixed++;}
+      }
+    });
+  });
+  P.walls=out;return fixed;
+}
+/* Names: any name on a wall, a door swing or another name moves to the nearest clear spot in its room. If none exists the size text is dropped. */
+function cleanLabels(P){
+  const R=P.rooms.filter(q=>!q.bk&&q.lx!==undefined),Wl=P.walls.filter(w=>!w.rail).map(w=>[w.x,w.y,w.x+w.w,w.y+w.h]),Sw=P.doors.map(swingBox);
+  let moved=0,hidden=0;const left=[];
+  const bad=(q,x,y)=>{
+    const b=lblBox(q,x,y);
+    if(Wl.some(w=>boxHit(b,w,0.02))||Sw.some(s=>boxHit(b,s,0.05)))return true;
+    if(R.some(o=>o!==q&&boxHit(b,lblBox(o),0)))return true;
+    return P.rooms.some(o=>o!==q&&!o.bk&&o.a<q.a&&x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h);   // a name belongs to its room, not to a smaller room drawn inside it
+  };
+  R.slice().sort((a,b)=>a.a-b.a).forEach(q=>{
+    if(!bad(q,q.lx,q.ly))return;
+    const find=()=>{
+      for(let r=0.1;r<=2.5;r+=0.1){const n=Math.max(8,Math.round(r*40));
+        for(let i=0;i<n;i++){const t=i/n*6.2832,x=q.lx+Math.cos(t)*r,y=q.ly+Math.sin(t)*r;
+          if(x<q.x+0.2||x>q.x+q.w-0.2||y<q.y+0.2||y>q.y+q.h-0.2)continue;
+          if(!bad(q,x,y)){q.lx=f(x);q.ly=f(y);return true;}}}
+      return false;
+    };
+    if(find()){moved++;return;}
+    if(!q.nd){q.nd=1;hidden++;if(find()){moved++;return;}}
+    if(!q.no){q.no=1;hidden++;if(find()){moved++;return;}}   // name only, without the area
+    if(!q.hl&&q.a<3){q.hl=1;hidden++;return;}                 // a closet too small for any name: it is left unnamed
+    left.push(`The ${q.n.toLowerCase()} name sits on a wall or a door swing.`);
+  });
+  // dimension text on top of a name
+  P.doors.forEach(d=>{
+    if(d.nd)return;
+    const cx=d.hx+d.cx*d.w/2+d.ox*0.35,cy=d.hy+d.cy*d.w/2+d.oy*0.35,b=doorHor(d)?[cx-0.28,cy-0.12,cx+0.28,cy+0.12]:[cx-0.12,cy-0.28,cx+0.12,cy+0.28];
+    if(R.some(o=>boxHit(b,lblBox(o),0))){d.nd=1;hidden++;}
+  });
+  P.wins.forEach(w=>{
+    if(w.nd)return;const m=(w.x1+w.x2)/2,b=[m-0.4,0.4,m+0.4,0.7];
+    if(R.some(o=>boxHit(b,lblBox(o),0))){w.nd=1;hidden++;}
+  });
+  return{moved,hidden,left};
+}
+function cleanPlan(P){
+  let fixed=0,left=[];
+  for(let pass=0;pass<3;pass++){
+    const w=tidyWalls(P),l=cleanLabels(P);
+    fixed+=w+l.moved+l.hidden;left=l.left;
+    if(!w&&!l.moved&&!l.hidden)break;
+  }
+  // one more look for what is still wrong
+  const n=P.walls.filter(w=>!w.rail&&!w.bw&&Math.max(w.w,w.h)<0.13).length;
+  return{fixed,left};
+}
+function edClean(){const r=cleanPlan(E.P);delete E.P.grid;E.clean=r;return r;}
+const cleanHtml=()=>`<h3 class="sub">Drawing</h3>`+(E.clean&&E.clean.left.length?E.clean.left.map(m=>`<p class="chk-warn">${escapeHtml(m)}</p>`).join('')+'<p class="note">Open Drafting and click the wall, door or name to tidy it, delete it or move it.</p>':`<p class="note">${E.clean&&E.clean.fixed?`Tidied ${E.clean.fixed} small thing${E.clean.fixed>1?'s':''} in the drawing.`:'No overlaps or broken walls found.'}</p>`)+`<button class="tb wide" type="button" data-act="clean">Clean up the drawing</button>`;
+/* ---------- room steps: add a room, grow a room, a second corridor door ---------- */
+const ROOMK={laundry:{n:'Laundry',w:1.1,d:0.9},closet:{n:'Closet',w:1.0,d:0.6}};
+function wallCover(P,x0,y0,x1,y1){
+  let c=0;const N=10;
+  for(let i=0;i<=N;i++){const x=x0+(x1-x0)*i/N,y=y0+(y1-y0)*i/N;if(P.walls.some(w=>!w.rail&&x>=w.x-0.06&&x<=w.x+w.w+0.06&&y>=w.y-0.06&&y<=w.y+w.h+0.06))c++;}
+  return c/(N+1);
+}
+/* Carve a small room (laundry, closet) out of a corner of a larger room: two new walls and a door into the room it came from. */
+function addRoom(P,kind,hostName){
+  const T=ROOMK[kind]||ROOMK.laundry;
+  if(kind==='laundry'&&P.rooms.some(q=>!q.bk&&q.n==='Laundry'))return{ok:false,why:'The unit already has a laundry room.'};
+  const hosts=P.rooms.filter(q=>!q.bk&&q.a>=5&&q.w>=T.w+1&&q.h>=T.d+1&&!/^(Bath|Closet|Laundry|Mech)/.test(q.n)&&(!hostName||q.n.toLowerCase()===String(hostName).toLowerCase())).sort((a,b)=>b.a-a.a);
+  const Sw=P.doors.map(swingBox);
+  for(const h of hosts)for(const c of ['bl','br','tl','tr']){
+    const l=c[1]==='l',t=c[0]==='t',x0=l?h.x:h.x+h.w-T.w,y0=t?h.y:h.y+h.h-T.d,x1=x0+T.w,y1=y0+T.d,xo=l?x0-0.05:x1+0.05,yo=t?y0-0.05:y1+0.05;
+    if(wallCover(P,xo,y0,xo,y1)<0.85||wallCover(P,x0,yo,x1,yo)<0.85)continue;   // the two outer sides must already be walls
+    const inner=[x0+0.06,y0+0.06,x1-0.06,y1-0.06];
+    if(P.walls.some(w=>!w.rail&&boxHit(inner,[w.x,w.y,w.x+w.w,w.y+w.h],0.001))||Sw.some(s=>boxHit(inner,s,0.001)))continue;
+    const wy=f(t?y1-0.05:y0-0.05),wx=f(l?x1-0.05:x0-0.05),xc=(x0+x1)/2,oy=t?1:-1;
+    cutGaps(x0-0.05,x1+0.05,[[xc-0.38,xc+0.38]]).forEach(([a,b])=>{if(b-a>0.01)P.walls.push({x:f(a),y:wy,w:f(b-a),h:0.1});});
+    P.walls.push({x:wx,y:f(y0-0.05),w:0.1,h:f(T.d+0.1)});
+    P.doors.push({id:++E.nid,hx:f(xc-0.38),hy:f(oy>0?wy+0.1:wy),cx:1,cy:0,ox:0,oy,w:0.76});
+    let mr=0;P.rooms.forEach(q=>{if(q.rid>mr)mr=q.rid;});
+    P.rooms.push({n:T.n,x:f(x0),y:f(y0),w:T.w,h:T.d,a:T.w*T.d,lx:f(xc),ly:f((y0+y1)/2),rid:mr+1});
+    h.a=Math.max(0,h.a-T.w*T.d);delete P.grid;
+    return{ok:true,host:h.n};
+  }
+  return{ok:false,why:`No corner of a room has space for a ${T.n.toLowerCase()}.`};
+}
+/* Move the wall between a room and the hall beside it, so the room grows by d metres and the hall gives it up. */
+function growRoom(P,name,d){
+  d=Math.max(0.1,Math.min(1.5,Math.abs(+d)||0.3));
+  const q=P.rooms.filter(r=>!r.bk&&r.n.toLowerCase()===String(name).toLowerCase()).sort((a,b)=>b.a-a.a)[0];
+  if(!q)return{ok:false,why:`No room called ${name} was found.`};
+  const G=wallGroups(P),s0=edSnap(P);
+  const at=(x,y)=>P.rooms.filter(r=>!r.bk&&r!==q&&x>r.x&&x<r.x+r.w&&y>r.y&&y<r.y+r.h).sort((a,b)=>a.a-b.a)[0];
+  // the hall gives up space first, then closets and mechanical rooms, then a den or the living room
+  const rank=n=>/^(Hall|Entry)/.test(n)?0:/^(Closet|Mech)/.test(n)?1:/^(Den|Living)/.test(n)?2:9,least=n=>/^(Hall|Entry)/.test(n)?0.9:/^(Closet|Mech)/.test(n)?0.7:2;
+  const sides=[[true,q.y,-1],[true,q.y+q.h,1],[false,q.x,-1],[false,q.x+q.w,1]].map(([hor,pos,sg])=>{
+    let best=null;
+    [0.25,0.5,0.75].forEach(fr=>{const nb=hor?at(q.x+q.w*fr,pos+sg*0.4):at(pos+sg*0.4,q.y+q.h*fr);if(nb&&rank(nb.n)<9&&(!best||rank(nb.n)<rank(best.n)))best=nb;});
+    return{hor,pos,sg,nb:best};
+  }).filter(s=>s.nb&&(s.hor?s.nb.h:s.nb.w)-d>=least(s.nb.n)).sort((a,b)=>rank(a.nb.n)-rank(b.nb.n));
+  for(const{hor,pos,sg,nb}of sides){
+    const lo=hor?q.x:q.y,hi=hor?q.x+q.w:q.y+q.h;
+    const g=G.filter(w=>w.hor===hor&&Math.abs(w.pos+w.t/2-pos)<0.25&&Math.min(w.b,hi)-Math.max(w.a,lo)>0.6).sort((a,b)=>Math.abs(a.pos-pos)-Math.abs(b.pos-pos))[0];
+    if(!g)continue;
+    if(moveWall(P,g,sg*d)){delete P.grid;return{ok:true,hall:nb.n};}
+    edRestore(P,s0);
+  }
+  return{ok:false,why:`The ${name.toLowerCase()} has no hall beside it to grow into.`};
+}
+/* A second door from the corridor straight into a room, which gives the unit more circulation. */
+function addCorridorDoor(P,name){
+  const YC=f(P.D-0.2),have=P.doors.filter(d=>doorHor(d)&&d.hy>=P.D-0.45).map(doorRng);
+  const rooms=P.rooms.filter(q=>!q.bk&&q.y+q.h>=P.D-0.55&&q.w>=1.3&&(!name||q.n.toLowerCase()===String(name).toLowerCase())&&!/^(Closet|Mech)/.test(q.n)).sort((a,b)=>b.w-a.w);
+  for(const q of rooms)for(let x=q.x+0.3;x<=q.x+q.w-0.82-0.3;x+=0.1){
+    if(have.some(r=>Math.min(r[1],x+0.82)-Math.max(r[0],x)>-0.4))continue;
+    P.doors.push({id:++E.nid,hx:f(x),hy:YC,cx:1,cy:0,ox:0,oy:-1,w:0.82});
+    syncBumps(P);delete P.grid;
+    return{ok:true,room:q.n};
+  }
+  return{ok:false,why:'There is no room beside the corridor with space for another door.'};
 }
 /* ---------- variations: how much may change ----------
    The slider is the share of the unit that may change. At 1% the net area stays within 1% and rooms barely move; the footprint
@@ -3602,7 +3791,12 @@ function rmVariationLight(){
         const dw=0.1*pick([-1,1])*(1+Math.floor(Math.random()*Math.max(1,Math.ceil(a/10))));
         if(fpMove(P,'W',f(dw))){const s1=edSnap(P);let bd=0,bn=1e9;for(let k=-12;k<=12;k++){if(fpMove(P,'D',f(k*0.05))){const e=Math.abs(netOf(P)-net0);if(e<bn){bn=e;bd=k*0.05;}}edRestore(P,s1);delete P.grid;}
           if(bd&&fpMove(P,'D',f(bd)))ops.push(dw<0?'narrower and longer':'wider and shorter');else if(!bd)ops.push(dw<0?'narrower':'wider');}
-      }else if(r<0.75){
+      }else if(a>=3&&r<0.15&&!P.rooms.some(q=>!q.bk&&q.n==='Laundry')){
+        const x=addRoom(P,'laundry');if(x.ok)ops.push(`added a laundry room in the ${x.host.toLowerCase()}`);
+      }else if(a>=8&&r<0.3){
+        const x=addCorridorDoor(P);
+        if(x.ok){ops.push(`added a second door from the corridor into the ${x.room.toLowerCase()}`);['Bedroom','Bath'].forEach(n=>{const g=growRoom(P,n,0.1*(2+Math.floor(Math.random()*3)));if(g.ok)ops.push(`grew the ${n.toLowerCase()} into the ${g.hall.toLowerCase()}`);});}
+      }else if(r<0.65){
         const G=wallGroups(P).filter(g=>!isUser(P,g)&&g.b-g.a>=1.2);
         if(G.length){const g=pick(G),d=0.05*pick([-1,1])*(1+Math.floor(Math.random()*(2+a/10)));if(moveWall(P,g,d))ops.push('moved a wall');}
       }else{
@@ -3623,7 +3817,8 @@ function rmVariationLight(){
     E.log.unshift({text:`Variation at ${a}%`,say:`No small change kept every room working within ${a}%. Try again, or raise the slider.`,err:true,changes:[],miss:[],issues:[],did:false});
     return aiPanel();
   }
-  const o=Object.assign({W:B.dim[0].W,D:B.dim[0].D,side:P.side,sideWins:P.sideWins},B),entry={text:`Variation at ${a}%`,say:`Net area ${netOf(P).toFixed(1)} m², ${(Math.abs(netOf(P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`,changes:edSummary(o,P),miss:[],issues:[],did:true};
+  edClean();
+  const cap=s=>s[0].toUpperCase()+s.slice(1),o=Object.assign({W:B.dim[0].W,D:B.dim[0].D,side:P.side,sideWins:P.sideWins},B),entry={text:`Variation at ${a}%`,say:`Net area ${netOf(P).toFixed(1)} m², ${(Math.abs(netOf(P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`,changes:[...new Set(done.map(cap))],miss:[],issues:[],did:true};
   E.hist.push({s:before,spent:true,last:E.last});E.used++;E.last='v'+(++E.nid);E.dirty=true;E.prompts.push(entry.text);E.log.unshift(entry);
   E.rm=null;E.sel=null;edRender();aiPanel();
 }
@@ -3661,7 +3856,7 @@ function rmVariation(){
     return aiPanel();
   }
   E.rm=rm;rm.W=pickd.W;rm.D=pickd.D;
-  rmCommit(pickd.tree,`Variation at ${a}%`,en=>{en.say=en.say||`Net area ${netOf(E.P).toFixed(1)} m², ${(Math.abs(netOf(E.P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`;});
+  rmCommit(pickd.tree,`Variation at ${a}%`,en=>{edClean();en.say=en.say||`Net area ${netOf(E.P).toFixed(1)} m², ${(Math.abs(netOf(E.P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`;});
 }
 /* The Rooms block of the side panel. */
 function rmPanel(){
@@ -4077,7 +4272,7 @@ $('shCopy').onclick=async()=>{try{await navigator.clipboard.writeText(location.o
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);

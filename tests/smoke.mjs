@@ -133,9 +133,10 @@ try {
       const noDoor = await ai.evaluate(() => window.__pad.edState().P.rooms.filter(q => (q.red || []).some(m => /has no door/.test(m))).map(q => q.n));
       if (!after.entry || after.doors < 2 || noDoor.length) errs.push('after a room move the unit lost doors or left rooms with no way in: ' + JSON.stringify({ doors: after.doors, noDoor }));
       // typed size: a bigger bedroom, kept as asked
-      const c = await at('Den'); await ai.mouse.click(c[0], c[1]); await ai.waitForTimeout(150);
+      let tn = 'Den';   // a room with no small room drawn over it, so the click selects it
+      for (const nm of ['Den', 'Living', 'Kitchen', 'Bedroom']) { const c = await at(nm); if (!c) continue; await ai.mouse.click(c[0], c[1]); await ai.waitForTimeout(150); if (await ai.locator('#rmA').count()) { tn = nm; break; } }
       await ai.fill('#rmA', '14'); await ai.click('#rmGo'); await ai.waitForTimeout(300);
-      const den = await ai.evaluate(() => { const E = window.__pad.edState(), q = E.P.rooms.find(x => x.n === 'Den'); return { a: q && q.a, used: E.used, W: E.P.W, D: E.P.D }; });
+      const den = await ai.evaluate(tn => { const E = window.__pad.edState(), q = E.P.rooms.find(x => x.n === tn); return { a: q && q.a, used: E.used, W: E.P.W, D: E.P.D }; }, tn);
       if (!den.a || Math.abs(den.a - 14) > 0.6 || den.used !== 2) errs.push('a typed room area was not kept: ' + JSON.stringify(den));
       if (den.D < after.D - 1e-6 || den.D - before.D > 1.05 || den.W - before.W > 0.45) errs.push('the footprint should change only a little: ' + JSON.stringify({ den, before }));
       await ai.click('#edUndo'); await ai.click('#edUndo'); await ai.waitForTimeout(200);
@@ -187,6 +188,10 @@ try {
     await ai.click('#edModes [data-mode="draft"]'); s = await st();
     if (s.mode !== 'draft' || s.furn) errs.push('Drafting should hide furniture');
     if (s.chips.includes('Double bed') || !s.chips.includes('Interior alcove') || !s.chips.includes('Balcony') || !s.btns.includes('fp')) errs.push('Drafting should offer walls, alcoves, bump-outs and footprint: ' + s.chips.join());
+    if (!s.btns.includes('clean')) errs.push('Drafting should offer Clean up the drawing');
+    await ai.evaluate(() => { const E = window.__pad.edState(); window.__pad.edSelect({ t: 'r', id: E.P.rooms.find(q => !q.bk).rid }); });
+    { const t = await ai.locator('#edSide').innerText(); if (!/size text/i.test(t) || !/clear spot/i.test(t)) errs.push('clicking a room name in Drafting should offer hide size text and move to a clear spot'); }
+    await ai.evaluate(() => { const E = window.__pad.edState(); window.__pad.edSelect(null); });
     const w0 = s.W, d0 = s.D, nw0 = s.walls;
     await ai.click('#edSide [data-act="fp"][data-ax="W"][data-d="0.1"]'); s = await st();
     if (Math.abs(s.W - w0 - 0.1) > 0.001) errs.push('Wider did not widen the footprint: ' + w0 + ' to ' + s.W);
@@ -198,7 +203,7 @@ try {
     if (s.walls !== nw0 + 3) errs.push('Interior alcove should add three walls: ' + nw0 + ' to ' + s.walls);
     await ai.click('#edModes [data-mode="layout"]'); await ai.waitForTimeout(400); s = await st();
     if (s.mode !== 'layout' || !s.walker || s.furn) errs.push('back in Layout (AI) the walking person should show');
-    await ai.click('#edCancel'); await ai.click('#edCancel'); await ai.waitForTimeout(200);
+    await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); }); await ai.waitForTimeout(200);
     // every catalog layout is walkable from the entry to every room, also after the footprint grows
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
       const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); pad.openEditor(u); const E = pad.edState(), out = { a: pad.edRoute(E.P).stuck.join() };
@@ -207,10 +212,24 @@ try {
       if (r.a || r.b || Math.abs(r.w - 0.4) > 0.001) errs.push(c.id + ' walking check: ' + JSON.stringify(r));
       if (!r.c) errs.push(c.id + ': with a wall across the unit the walking person should find rooms it cannot reach');
     }
+    // Circulation steps and the clean-up pass: a second corridor door opens a gap in the corridor wall, a hall gives space to a room, and nothing is left overlapping
+    let grew = 0;
+    for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
+      const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); pad.openEditor(u); const E = pad.edState(), P = E.P, out = {};
+        const nd = P.doors.length, a = pad.addCorridorDoor(P); out.door = a.ok; if (a.ok) { const d = P.doors[P.doors.length - 1], mx = d.hx + d.w / 2, my = d.hy + 0.05; out.blocked = P.walls.some(w => mx > w.x && mx < w.x + w.w && my > w.y && my < w.y + w.h); }
+        out.grew = pad.growRoom(P, 'Bedroom', 0.3).ok || pad.growRoom(P, 'Bath', 0.3).ok;
+        const rep = pad.cleanPlan(P); out.left = rep.left.join(); out.stuck = pad.edRoute(P).stuck.join();
+        document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); return out; }, c);
+      if (r.door && r.blocked) errs.push(c.id + ': the new corridor door has a wall across it');
+      if (r.left) errs.push(c.id + ' clean-up left: ' + r.left);
+      if (r.stuck) errs.push(c.id + ' unreachable after the circulation steps: ' + r.stuck);
+      if (r.grew) grew++;
+    }
+    if (grew < 6) errs.push('rooms grew into the hall or a closet on only ' + grew + ' of 12 layouts');
     // Suggest a variation: at 1% the net area stays within 1%, and the slider range is 1 to 100
     const sl = await ai.evaluate(() => { window.__pad.openEditor(window.__pad.units()[0]); const s = document.getElementById('aiAmt'); return s ? { min: s.min, max: s.max, v: s.value } : null; });
     if (!sl || sl.min !== '1' || sl.max !== '100' || sl.v !== '1') errs.push('the change slider should run 1 to 100 and start at 1: ' + JSON.stringify(sl));
-    await ai.click('#edCancel'); await ai.click('#edCancel');
+    await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); });
     let okv = 0, nv2 = 0;
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
       const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); pad.openEditor(u); const E = pad.edState(), n0 = pad.netArea(E.orig); document.getElementById('aiVar').click();

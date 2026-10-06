@@ -9,7 +9,7 @@ const hits = new Map();   // best effort per-instance limit; set a spend limit i
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
-const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint'];
+const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint', 'add_room', 'grow_room', 'add_corridor_door'];
 const KINDS = ['bed', 'ns', 'sofa', 'arm', 'ctable', 'rtable', 'ltable', 'desk', 'dresser', 'closet', 'shelf', 'tv', 'rug', 'plant', 'wd', 'counter', 'sink', 'cook', 'fridge', 'island', 'wc', 'van', 'tub', 'shower'];
 
 const TOOL = {
@@ -36,6 +36,8 @@ const TOOL = {
             x: { type: 'number' }, y: { type: 'number' }, rot: { type: 'number', description: '0, 90, 180 or 270.' },
             w: { type: 'number' }, h: { type: 'number' },
             hor: { type: 'boolean', description: 'add_wall: true for a wall that runs left to right.' },
+            room: { type: 'string', description: 'grow_room: the room to grow, like Bedroom or Bath. add_corridor_door: the room beside the corridor to give the door to (optional).' },
+            host: { type: 'string', description: 'add_room: the room to carve the new room out of (optional), like Bedroom or Living.' },
             width: { type: 'number', description: 'set_footprint: new unit width in metres.' },
             depth: { type: 'number', description: 'set_footprint: new unit depth in metres.' },
             keep_area: { type: 'boolean', description: 'set_footprint: when only width or only depth is given, change the other so the gross area stays the same.' }
@@ -67,6 +69,8 @@ How to work:
 - The request comes with a change amount from 1 to 100 percent. At 1 to 10, change almost nothing: one or two steps, the rooms stay where they are, net area within that percent. At 11 to 40, a few steps and rooms may swap sides. At 41 to 89, several steps and a different footprint are fine. At 90 or more, a full reorganisation is allowed, but every room must stay reachable from the entry door.
 - set_footprint changes the width and depth of the unit (within 1 m of the original). With keep_area the other dimension follows so the gross area stays the same, for example a narrower and longer unit. Rooms are re-fitted to the new footprint.
 - A new door from a room to the corridor (add_door on the corridor wall) gives extra circulation, which lets neighbouring rooms grow. Say so when you use it.
+- add_room (kind laundry or closet) carves a small room out of a corner of a larger room, with a door back into it. A laundry room is where the washer and dryer go.
+- add_corridor_door gives the unit a second door from the corridor into a room. grow_room (room, d in metres) then moves the wall between that room and the hall beside it, so the room gets larger and the hall gives space up. Use these together when the request is to let the bedroom or bath grow, and say that the extra door adds circulation.
 - Do the smallest set of steps that meets the request. Prefer sliding doors over moving walls. Use kitchen_layout (u, l, gal2, gal1) to choose the kitchen arrangement that will be drawn when the layout is saved.
 - Moves by walls are in 50 mm steps. Keep distances sensible.
 - If the request asks for a variation without saying what to change, pick one or two small changes that keep the unit working, such as sliding or flipping a door, nudging a wall, or a different kitchen layout. Keep every room, and say in one sentence what you changed.

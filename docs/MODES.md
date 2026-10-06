@@ -28,3 +28,16 @@ A slider from 1% to 100% sets how far a variation may go. It starts at 1%.
 - Suggest a variation uses the slider without the assistant. Up to 40% it keeps the plan and changes a few things on it: the footprint proportion at the same net area (narrower and longer, or the reverse, as in a width of 6.5 m becoming 6.2 m and the depth growing), a wall nudged, a door slid. Over 40% the room engine re-fits the rooms after random moves, and from 90% the moves are many and the order of rooms is shuffled.
 - Net area stays within the slider percentage of the sheet underneath (not above 90%). No room may turn red that was not red, and the walking person must still reach every room. When nothing qualifies the panel says so.
 - The same number goes to the assistant with each request. It sets how many steps it may take, and the new `set_footprint` step changes width and depth, optionally keeping the gross area.
+
+Circulation steps (sketch 2 to 3)
+- Add a room: `addRoom` carves a laundry room or closet out of a corner of a larger room, with two new walls and a door back into the room it came from.
+- A second door from the corridor: `addCorridorDoor` opens a door from the corridor straight into a room and rebuilds the corridor wall around it.
+- Grow a room: `growRoom` moves the wall between a room and the hall beside it (then a closet or mechanical room, then a den or living room) so the room gets larger and the neighbour gives space up. The hall is never left narrower than 0.9 m.
+- The assistant has the same three steps (`add_room`, `add_corridor_door`, `grow_room`). Suggest a variation uses them too, from about 3% (a room) and 8% (the door and growth) on the slider.
+
+The clean-up pass (`cleanPlan`)
+- Runs when a layout is imported, after any layout change, after a variation, and when you press Clean up the drawing.
+- Walls: pieces that touch or overlap are joined, specks are removed, and ends that stop up to 150 mm short of the wall they meet are extended to it.
+- Names: a name on a wall, a door swing or another name moves to the nearest clear spot in its room. If none exists the size text is dropped, then the area, and for a closet too small for any name the name is hidden.
+- Dimension text on top of a name is hidden for that door or window.
+- Whatever cannot be fixed is listed in the panel. In Drafting, click a wall (Tidy this wall, trim, delete, then add one again), a door (delete it or hide its dimension) or a room name (hide the size text, move it to a clear spot, drag it) to fix it by hand.
