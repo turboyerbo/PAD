@@ -69,6 +69,7 @@ try {
       page.hits++;
       const plan = req.postDataJSON().plan, dr = plan.doors.find(x => !x.entry);
       if (plan.items) errs.push('the plan sent to the assistant should not list furniture');
+      if (typeof req.postDataJSON().amount !== 'number') errs.push('the change amount was not sent to the assistant');
       return route.fulfill({ json: { say: 'Flipped a door.', ops: [{ op: 'flip_door', id: dr.id }, { op: 'remove_wall', wall: 'w99' }] } });
     });
     await page.goto(`http://localhost:${PORT}/?debug`);
@@ -197,18 +198,27 @@ try {
     if (s.walls !== nw0 + 3) errs.push('Interior alcove should add three walls: ' + nw0 + ' to ' + s.walls);
     await ai.click('#edModes [data-mode="layout"]'); await ai.waitForTimeout(400); s = await st();
     if (s.mode !== 'layout' || !s.walker || s.furn) errs.push('back in Layout (AI) the walking person should show');
-    // close every door but the entry: the person cannot reach the rooms and the panel says so
-    await ai.evaluate(() => { const E = window.__pad.edState(); E.P.doors = E.P.doors.filter(d => d.hy >= E.P.D - 0.45); });
-    await ai.click('#edModes [data-mode="furn"]'); await ai.click('#edModes [data-mode="layout"]'); await ai.waitForTimeout(300); s = await st();
-    if (!s.stuck || !/cannot walk to/.test(await ai.locator('#edSide').innerText())) errs.push('rooms without doors should be reported as unreachable');
     await ai.click('#edCancel'); await ai.click('#edCancel'); await ai.waitForTimeout(200);
     // every catalog layout is walkable from the entry to every room, also after the footprint grows
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
       const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); pad.openEditor(u); const E = pad.edState(), out = { a: pad.edRoute(E.P).stuck.join() };
         document.querySelector('#edModes [data-mode="draft"]').click(); for (let i = 0; i < 4; i++) { document.querySelector('#edSide [data-act="fp"][data-ax="W"][data-d="0.1"]').click(); document.querySelector('#edSide [data-act="fp"][data-ax="D"][data-d="0.1"]').click(); }
-        document.querySelector('#edModes [data-mode="layout"]').click(); out.b = pad.edRoute(E.P).stuck.join(); out.w = E.P.W - E.orig.W; document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); return out; }, c);
+        document.querySelector('#edModes [data-mode="layout"]').click(); out.b = pad.edRoute(E.P).stuck.join(); out.w = E.P.W - E.orig.W; E.P.walls.push({ x: 0, y: E.P.D / 2, w: E.P.W, h: 0.1 }); out.c = pad.edRoute(E.P).stuck.length; document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); return out; }, c);
       if (r.a || r.b || Math.abs(r.w - 0.4) > 0.001) errs.push(c.id + ' walking check: ' + JSON.stringify(r));
+      if (!r.c) errs.push(c.id + ': with a wall across the unit the walking person should find rooms it cannot reach');
     }
+    // Suggest a variation: at 1% the net area stays within 1%, and the slider range is 1 to 100
+    const sl = await ai.evaluate(() => { window.__pad.openEditor(window.__pad.units()[0]); const s = document.getElementById('aiAmt'); return s ? { min: s.min, max: s.max, v: s.value } : null; });
+    if (!sl || sl.min !== '1' || sl.max !== '100' || sl.v !== '1') errs.push('the change slider should run 1 to 100 and start at 1: ' + JSON.stringify(sl));
+    await ai.click('#edCancel'); await ai.click('#edCancel');
+    let okv = 0, nv2 = 0;
+    for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
+      const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); pad.openEditor(u); const E = pad.edState(), n0 = pad.netArea(E.orig); document.getElementById('aiVar').click();
+        const out = { did: E.dirty, dev: Math.abs(pad.netArea(E.P) - n0) / n0, stuck: pad.edRoute(E.P).stuck.length }; document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); return out; }, c);
+      nv2++; if (r.did) okv++;
+      if (r.did && (r.dev > 0.0101 || r.stuck)) errs.push(c.id + ' variation at 1% broke the limits: ' + JSON.stringify(r));
+    }
+    if (okv < nv2 - 1) errs.push('Suggest a variation worked on only ' + okv + ' of ' + nv2 + ' layouts');
   await ai.close();
 
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).

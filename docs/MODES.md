@@ -21,3 +21,10 @@ Layout (AI)
 - Leaving Layout, or confirming, places furniture afresh to fit (`rmFurnish`). A piece that does not fit is left out.
 
 `?manualedit` still opens the old combined tools. It is for tests only and shows no mode buttons.
+
+How much may change (Layout (AI))
+
+A slider from 1% to 100% sets how far a variation may go. It starts at 1%.
+- Suggest a variation uses the slider without the assistant. Up to 40% it keeps the plan and changes a few things on it: the footprint proportion at the same net area (narrower and longer, or the reverse, as in a width of 6.5 m becoming 6.2 m and the depth growing), a wall nudged, a door slid. Over 40% the room engine re-fits the rooms after random moves, and from 90% the moves are many and the order of rooms is shuffled.
+- Net area stays within the slider percentage of the sheet underneath (not above 90%). No room may turn red that was not red, and the walking person must still reach every room. When nothing qualifies the panel says so.
+- The same number goes to the assistant with each request. It sets how many steps it may take, and the new `set_footprint` step changes width and depth, optionally keeping the gross area.
