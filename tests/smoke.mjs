@@ -230,6 +230,22 @@ try {
       if (st2.udt < 1) errs.push('an added dimension should show on the combined layout');
       if (st2.auto) errs.push('the combined layout should show no dimensions that were not added, it shows ' + st2.auto);
     }
+    // Export: every catalog layout exports as JSON that matches the draft schema, with the areas PAD shows
+    {
+      const { validateExport } = await import('../tools/validate-export.mjs');
+      let nExp = 0;
+      for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
+        const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); return { j: JSON.parse(JSON.stringify(pad.padExport(u))), net: pad.netArea(u.plan) }; }, c);
+        const ve = validateExport(r.j);
+        ve.slice(0, 3).forEach(m => errs.push(c.id + ' export: ' + m));
+        if (Math.abs(r.j.plan.areas.netM2 - r.net) > 0.01) errs.push(c.id + ' exported net area ' + r.j.plan.areas.netM2 + ' differs from PAD ' + r.net);
+        if (!r.j.rooms.length || !r.j.walls.length || !r.j.furniture.length || !r.j.doors.length) errs.push(c.id + ' export is missing rooms, walls, doors or furniture');
+        if (new Set(r.j.furniture.map(p => p.id)).size !== r.j.furniture.length) errs.push(c.id + ' furniture ids are not unique');
+        nExp++;
+      }
+      if (nExp !== 12) errs.push('expected to export 12 catalog layouts, exported ' + nExp);
+      if (!(await ai.locator('#iExp').count())) errs.push('the unit panel should have an Export JSON button');
+    }
     // Circulation steps and the clean-up pass: a second corridor door opens a gap in the corridor wall, a hall gives space to a room, and nothing is left overlapping
     let grew = 0;
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {

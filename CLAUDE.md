@@ -18,3 +18,4 @@ Follow CONTRIBUTING.md, plus these rules:
 - Colours follow the reference plan: hatched grey walls, cyan furniture and fixtures, green plants. People and pets are the only orange. Use the CSS variables, not new hex values.
 - On-screen text: plain and short, no em-dashes.
 - In the pull request description, say what you changed, what you tested, and anything you could not test.
+- A unit exports as JSON for another team (docs/EXPORT.md). If you change the plan data, update `padExport`, the schema in docs/export/ and the sample, and run tools/validate-export.mjs.
