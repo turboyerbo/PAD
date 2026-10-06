@@ -6,10 +6,10 @@
 const MODEL = () => process.env.PAD_MODEL || 'claude-sonnet-5-5';
 const MAX_PROMPT = 600, MAX_OPS = 8;
 // Limits are Netlify environment variables, so they can change without a deploy of code:
-//   PAD_PER_HOUR  requests one person (one IP address) may make in an hour. Default 20. 0 turns this limit off.
-//   PAD_PER_DAY   requests all people together may make in one day (Toronto time). Default 200. 0 turns this limit off.
+//   PAD_PER_HOUR  requests one person (one IP address) may make in an hour. Default 0, which means no limit.
+//   PAD_PER_DAY   requests all people together may make in one day (Toronto time). Default 0, which means no limit.
 const num = (v, d) => { const n = Math.floor(Number(v)); return v !== undefined && v !== '' && Number.isFinite(n) && n >= 0 ? n : d; };
-const PER_HOUR = () => num(process.env.PAD_PER_HOUR, 20), PER_DAY = () => num(process.env.PAD_PER_DAY, 200);
+const PER_HOUR = () => num(process.env.PAD_PER_HOUR, 0), PER_DAY = () => num(process.env.PAD_PER_DAY, 0);
 const hits = new Map();   // per person: best effort, kept in memory by each server instance
 const dayMem = { day: '', n: 0 };   // used for the daily count only if Netlify Blobs cannot be reached
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto' }).format(new Date());
