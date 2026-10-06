@@ -1,0 +1,8 @@
+{
+  "name": "pad",
+  "private": true,
+  "description": "Patry Analysis and Design. A static page; only the Netlify function in netlify/functions needs this dependency.",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

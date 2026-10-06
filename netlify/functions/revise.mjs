@@ -4,8 +4,34 @@
 // POST /api/revise ->  { say, ops }            (the page applies and checks the ops itself)
 
 const MODEL = () => process.env.PAD_MODEL || 'claude-sonnet-5-5';
-const MAX_PROMPT = 600, MAX_OPS = 8, PER_HOUR = 20;
-const hits = new Map();   // best effort per-instance limit; set a spend limit in the Anthropic console too
+const MAX_PROMPT = 600, MAX_OPS = 8;
+// Limits are Netlify environment variables, so they can change without a deploy of code:
+//   PAD_PER_HOUR  requests one person (one IP address) may make in an hour. Default 20. 0 turns this limit off.
+//   PAD_PER_DAY   requests all people together may make in one day (Toronto time). Default 200. 0 turns this limit off.
+const num = (v, d) => { const n = Math.floor(Number(v)); return v !== undefined && v !== '' && Number.isFinite(n) && n >= 0 ? n : d; };
+const PER_HOUR = () => num(process.env.PAD_PER_HOUR, 20), PER_DAY = () => num(process.env.PAD_PER_DAY, 200);
+const hits = new Map();   // per person: best effort, kept in memory by each server instance
+const dayMem = { day: '', n: 0 };   // used for the daily count only if Netlify Blobs cannot be reached
+const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto' }).format(new Date());
+
+/* The daily count lives in Netlify Blobs so every server instance shares it. The read and the write are not one atomic step, so
+   a burst of requests at the same moment can slip a few past the cap. Set a spend limit in the Anthropic console as well. */
+async function countDay(limit) {
+  const day = today();
+  try {
+    const { getStore } = await import('@netlify/blobs');
+    const store = getStore({ name: 'pad-usage', consistency: 'strong' }), key = 'day-' + day;
+    const cur = await store.get(key, { type: 'json' }), n = (cur && cur.n) || 0;
+    if (n >= limit) return false;
+    await store.setJSON(key, { n: n + 1 });
+    return true;
+  } catch (e) {
+    if (dayMem.day !== day) { dayMem.day = day; dayMem.n = 0; }
+    if (dayMem.n >= limit) return false;
+    dayMem.n++;
+    return true;
+  }
+}
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
@@ -86,8 +112,8 @@ const handle = async (req, context) => {
   if (!key) return json({ error: 'The prompt feature is not set up yet.' }, 503);
 
   const ip = (context && context.ip) || req.headers.get('x-nf-client-connection-ip') || 'x', now = Date.now();
-  const mine = (hits.get(ip) || []).filter(t => now - t < 3600e3);
-  if (mine.length >= PER_HOUR) return json({ error: 'That is a lot of requests in an hour. Try again a little later.' }, 429);
+  const hourly = PER_HOUR(), mine = (hits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hourly && mine.length >= hourly) return json({ error: 'That is a lot of requests in an hour. Try again a little later.' }, 429);
   mine.push(now); hits.set(ip, mine);
   if (hits.size > 500) for (const [k, v] of hits) if (!v.some(t => now - t < 3600e3)) hits.delete(k);
 
@@ -97,6 +123,9 @@ const handle = async (req, context) => {
   if (!prompt) return json({ error: 'Describe the change you want.' }, 400);
   const plan = body.plan;
   if (!plan || typeof plan !== 'object' || JSON.stringify(plan).length > 24000) return json({ error: 'Plan missing or too large.' }, 400);
+  // only requests that will reach Claude count toward the day
+  const daily = PER_DAY();
+  if (daily && !(await countDay(daily))) return json({ error: 'The assistant has reached its limit for today. It starts again after midnight, Toronto time.' }, 429);
 
   const amount = Math.max(1, Math.min(100, Math.round(Number(body.amount) || 1)));
   const messages = [{ role: 'user', content: `Plan:\n${JSON.stringify(plan)}\n\nChange amount: ${amount} percent\n\nRequest: ${prompt}` }];
