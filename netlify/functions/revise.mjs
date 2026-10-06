@@ -4,12 +4,38 @@
 // POST /api/revise ->  { say, ops }            (the page applies and checks the ops itself)
 
 const MODEL = () => process.env.PAD_MODEL || 'claude-sonnet-5-5';
-const MAX_PROMPT = 600, MAX_OPS = 8, PER_HOUR = 20;
-const hits = new Map();   // best effort per-instance limit; set a spend limit in the Anthropic console too
+const MAX_PROMPT = 600, MAX_OPS = 8;
+// Limits are Netlify environment variables, so they can change without a deploy of code:
+//   PAD_PER_HOUR  requests one person (one IP address) may make in an hour. Default 0, which means no limit.
+//   PAD_PER_DAY   requests all people together may make in one day (Toronto time). Default 0, which means no limit.
+const num = (v, d) => { const n = Math.floor(Number(v)); return v !== undefined && v !== '' && Number.isFinite(n) && n >= 0 ? n : d; };
+const PER_HOUR = () => num(process.env.PAD_PER_HOUR, 0), PER_DAY = () => num(process.env.PAD_PER_DAY, 0);
+const hits = new Map();   // per person: best effort, kept in memory by each server instance
+const dayMem = { day: '', n: 0 };   // used for the daily count only if Netlify Blobs cannot be reached
+const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto' }).format(new Date());
+
+/* The daily count lives in Netlify Blobs so every server instance shares it. The read and the write are not one atomic step, so
+   a burst of requests at the same moment can slip a few past the cap. Set a spend limit in the Anthropic console as well. */
+async function countDay(limit) {
+  const day = today();
+  try {
+    const { getStore } = await import('@netlify/blobs');
+    const store = getStore({ name: 'pad-usage', consistency: 'strong' }), key = 'day-' + day;
+    const cur = await store.get(key, { type: 'json' }), n = (cur && cur.n) || 0;
+    if (n >= limit) return false;
+    await store.setJSON(key, { n: n + 1 });
+    return true;
+  } catch (e) {
+    if (dayMem.day !== day) { dayMem.day = day; dayMem.n = 0; }
+    if (dayMem.n >= limit) return false;
+    dayMem.n++;
+    return true;
+  }
+}
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
-const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout'];
+const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint', 'add_room', 'grow_room', 'add_corridor_door'];
 const KINDS = ['bed', 'ns', 'sofa', 'arm', 'ctable', 'rtable', 'ltable', 'desk', 'dresser', 'closet', 'shelf', 'tv', 'rug', 'plant', 'wd', 'counter', 'sink', 'cook', 'fridge', 'island', 'wc', 'van', 'tub', 'shower'];
 
 const TOOL = {
@@ -35,7 +61,12 @@ const TOOL = {
             kind: { type: 'string', description: 'add_item: one of ' + KINDS.join(', ') + '. add_bump: balcony, den, nook, loggia or vestibule. kitchen_layout: u, l, gal2 or gal1.' },
             x: { type: 'number' }, y: { type: 'number' }, rot: { type: 'number', description: '0, 90, 180 or 270.' },
             w: { type: 'number' }, h: { type: 'number' },
-            hor: { type: 'boolean', description: 'add_wall: true for a wall that runs left to right.' }
+            hor: { type: 'boolean', description: 'add_wall: true for a wall that runs left to right.' },
+            room: { type: 'string', description: 'grow_room: the room to grow, like Bedroom or Bath. add_corridor_door: the room beside the corridor to give the door to (optional).' },
+            host: { type: 'string', description: 'add_room: the room to carve the new room out of (optional), like Bedroom or Living.' },
+            width: { type: 'number', description: 'set_footprint: new unit width in metres.' },
+            depth: { type: 'number', description: 'set_footprint: new unit depth in metres.' },
+            keep_area: { type: 'boolean', description: 'set_footprint: when only width or only depth is given, change the other so the gross area stays the same.' }
           },
           required: ['op'], additionalProperties: false
         }
@@ -61,6 +92,11 @@ Rules the result must keep (Ontario Building Code and the owner's standards):
 - Do not move outer walls. Do not remove windows. Never remove the toilet, sink or the entry door.
 
 How to work:
+- The request comes with a change amount from 1 to 100 percent. At 1 to 10, change almost nothing: one or two steps, the rooms stay where they are, net area within that percent. At 11 to 40, a few steps and rooms may swap sides. At 41 to 89, several steps and a different footprint are fine. At 90 or more, a full reorganisation is allowed, but every room must stay reachable from the entry door.
+- set_footprint changes the width and depth of the unit (within 1 m of the original). With keep_area the other dimension follows so the gross area stays the same, for example a narrower and longer unit. Rooms are re-fitted to the new footprint.
+- A new door from a room to the corridor (add_door on the corridor wall) gives extra circulation, which lets neighbouring rooms grow. Say so when you use it.
+- add_room (kind laundry or closet) carves a small room out of a corner of a larger room, with a door back into it. A laundry room is where the washer and dryer go.
+- add_corridor_door gives the unit a second door from the corridor into a room. grow_room (room, d in metres) then moves the wall between that room and the hall beside it, so the room gets larger and the hall gives space up. Use these together when the request is to let the bedroom or bath grow, and say that the extra door adds circulation.
 - Do the smallest set of steps that meets the request. Prefer sliding doors over moving walls. Use kitchen_layout (u, l, gal2, gal1) to choose the kitchen arrangement that will be drawn when the layout is saved.
 - Moves by walls are in 50 mm steps. Keep distances sensible.
 - If the request asks for a variation without saying what to change, pick one or two small changes that keep the unit working, such as sliding or flipping a door, nudging a wall, or a different kitchen layout. Keep every room, and say in one sentence what you changed.
@@ -76,8 +112,8 @@ const handle = async (req, context) => {
   if (!key) return json({ error: 'The prompt feature is not set up yet.' }, 503);
 
   const ip = (context && context.ip) || req.headers.get('x-nf-client-connection-ip') || 'x', now = Date.now();
-  const mine = (hits.get(ip) || []).filter(t => now - t < 3600e3);
-  if (mine.length >= PER_HOUR) return json({ error: 'That is a lot of requests in an hour. Try again a little later.' }, 429);
+  const hourly = PER_HOUR(), mine = (hits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hourly && mine.length >= hourly) return json({ error: 'That is a lot of requests in an hour. Try again a little later.' }, 429);
   mine.push(now); hits.set(ip, mine);
   if (hits.size > 500) for (const [k, v] of hits) if (!v.some(t => now - t < 3600e3)) hits.delete(k);
 
@@ -87,8 +123,12 @@ const handle = async (req, context) => {
   if (!prompt) return json({ error: 'Describe the change you want.' }, 400);
   const plan = body.plan;
   if (!plan || typeof plan !== 'object' || JSON.stringify(plan).length > 24000) return json({ error: 'Plan missing or too large.' }, 400);
+  // only requests that will reach Claude count toward the day
+  const daily = PER_DAY();
+  if (daily && !(await countDay(daily))) return json({ error: 'The assistant has reached its limit for today. It starts again after midnight, Toronto time.' }, 429);
 
-  const messages = [{ role: 'user', content: `Plan:\n${JSON.stringify(plan)}\n\nRequest: ${prompt}` }];
+  const amount = Math.max(1, Math.min(100, Math.round(Number(body.amount) || 1)));
+  const messages = [{ role: 'user', content: `Plan:\n${JSON.stringify(plan)}\n\nChange amount: ${amount} percent\n\nRequest: ${prompt}` }];
   const rep = body.repair;
   if (rep && Array.isArray(rep.ops) && Array.isArray(rep.issues)) {
     messages.push({ role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_prev', name: TOOL.name, input: { say: clean(rep.say, 300), ops: rep.ops.slice(0, MAX_OPS) } }] });
