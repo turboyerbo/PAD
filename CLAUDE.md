@@ -13,7 +13,7 @@ Follow CONTRIBUTING.md, plus these rules:
 - Keep it one self-contained file with no build step. External scripts only if unavoidable.
 - Occupants must never overlap walls or furniture. Anything solid goes into `gridOf`.
   The one exception is a person lying on a bed or sofa, or getting up from it (`p.lie` above 0 or `p.tr` set). The smoke test skips them.
-- Plans change through prompts (docs/PROMPTS.md) and room-level moves (docs/ROOMS.md): drag a room, type a size. The tracing sheet shows rooms, walls, doors and windows only; furniture is placed by `rmFurnish` when a layout is accepted. Do not add wall, furniture or line drawing tools to the default editor; `?manualedit` exists for tests only.
+- Plans change through prompts (docs/PROMPTS.md) and room-level moves (docs/ROOMS.md): drag a room, type a size. The tracing sheet shows rooms, walls, doors and windows only; furniture is placed by `rmFurnish` when a layout is accepted. The editor has three modes (Furniture, Drafting, Layout (AI); see docs/MODES.md). Keep each mode to its own tools. Do not add free line drawing. `?manualedit` shows all the tools at once and exists for tests only.
 - Never put an API key in `index.html`. The Anthropic key is a Netlify environment variable used by `netlify/functions/revise.mjs`.
 - Colours follow the reference plan: hatched grey walls, cyan furniture and fixtures, green plants. People and pets are the only orange. Use the CSS variables, not new hex values.
 - On-screen text: plain and short, no em-dashes.

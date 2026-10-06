@@ -34,3 +34,12 @@ The key lives only in Netlify. It is never in `index.html` or in this repository
 - Add `?manualedit` to the address to get the old drawing tools back. The smoke test uses this for the editor checks.
 - The smoke test also covers the prompt flow with a mocked `/api/revise`.
 - Page side: search `prompt editing` in `index.html` (`aiPlan`, `aiOps`, `aiRun`, `aiPanel`).
+
+Limits on assistant requests
+
+Set these in Netlify under Site configuration, Environment variables. They take effect on the next deploy or function restart.
+- `PAD_PER_HOUR`: requests one person (one IP address) may make in an hour. Default 20. Set 0 for no limit. Counted in memory by each server instance, so it is approximate.
+- `PAD_PER_DAY`: requests all people together may make in a day, by Toronto time. Default 200. Set 0 for no limit. The count is kept in Netlify Blobs (the `@netlify/blobs` dependency in package.json), so every server instance shares it. If Blobs cannot be reached, each instance keeps its own count instead.
+- A request that fails validation does not count toward the day. The automatic repair retry is a second request and does count.
+- Neither limit is a hard spend cap. A burst of requests at the same moment can slip a few past the daily count. Also set a monthly spend limit on the workspace in the Anthropic console.
+- Suggest a variation, typed room sizes and room dragging make no requests.
