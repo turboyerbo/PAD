@@ -1,0 +1,3392 @@
+{
+  "schema": "pad-unit-plan",
+  "version": "0.1-draft",
+  "exportedAt": "2026-10-06T19:25:05.617Z",
+  "generator": "PAD (padufs.netlify.app)",
+  "units": "metres",
+  "coordinateSystem": {
+    "origin": "the outer face of the unit’s left wall at the window wall",
+    "xAxis": "to the right",
+    "yAxis": "down the page, from the window wall (y=0) toward the corridor (y=depth)",
+    "toDxf": "x′ = x, y′ = depth − y; a rotation of r degrees clockwise becomes −r in DXF",
+    "depth": 9.67,
+    "width": 6.59
+  },
+  "project": {
+    "name": "Ninth Line"
+  },
+  "plan": {
+    "id": "PAD-01-v1",
+    "name": "PAD-01",
+    "unitType": "1 BED",
+    "bedrooms": 1,
+    "corner": null,
+    "variation": {
+      "version": 1,
+      "name": "Original layout",
+      "savedAt": null,
+      "isOriginal": true
+    },
+    "source": {
+      "catalogId": "A1-4.1_1",
+      "catalogName": "A1-4.1 · 1 bed + den, 1 bath",
+      "printedNetFt2": 547
+    },
+    "areas": {
+      "netM2": 50.82,
+      "netFt2": 547,
+      "unitGrossM2": 59.216,
+      "corridorShareM2": 5.272,
+      "grossWithCorridorM2": 64.488,
+      "grossWithCorridorFt2": 694,
+      "efficiencyPct": 78.806,
+      "footprintM2": 63.725,
+      "basis": "net: sum of PAD room areas less area taken by bump-ins; unit gross: to wall centrelines; plus half of a 1.6 m shared corridor"
+    },
+    "footprint": {
+      "width": 6.59,
+      "depth": 9.67
+    }
+  },
+  "layerMap": {
+    "wallSolid": "A-WALL",
+    "wallHatch": "A-WALL-PATT",
+    "window": "A-GLAZ",
+    "doorSwing": "A-DETL-GENF",
+    "doorSliding": "A-DOOR-HDLN",
+    "roomOutline": "A-AREA",
+    "roomLabel": "A-AREA-IDEN",
+    "floor": "A-FLOR",
+    "furniture": "I-FURN",
+    "fixtures": "P-SANR-FIXT",
+    "casework": "Q-CASE",
+    "casework2d": "Q-CASE-HDLN",
+    "appliances": "Q-SPCQ",
+    "dimensions": "A-ANNO-DIMS",
+    "unitNote": "A-DETL-IDEN"
+  },
+  "rooms": [
+    {
+      "id": "R1",
+      "name": "Den",
+      "tag": "DEN",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          4.6,
+          7
+        ],
+        [
+          4.7,
+          7
+        ],
+        [
+          4.7,
+          7.1
+        ],
+        [
+          6.25,
+          7.1
+        ],
+        [
+          6.25,
+          9.45
+        ],
+        [
+          3.45,
+          9.45
+        ],
+        [
+          3.45,
+          8.35
+        ],
+        [
+          3.4,
+          8.35
+        ],
+        [
+          3.4,
+          7.95
+        ],
+        [
+          3.5,
+          7.95
+        ],
+        [
+          3.5,
+          7.9
+        ],
+        [
+          4.5,
+          7.9
+        ],
+        [
+          4.5,
+          7.1
+        ],
+        [
+          4.6,
+          7.1
+        ]
+      ],
+      "holes": [],
+      "areaM2": 6.69,
+      "areaSF": 72,
+      "polygonAreaM2": 5.767,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        4.93,
+        8.23
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R2",
+      "name": "Bath",
+      "tag": "W/C",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          2.5,
+          4
+        ],
+        [
+          3.4,
+          4
+        ],
+        [
+          3.4,
+          4.6
+        ],
+        [
+          3.6,
+          4.6
+        ],
+        [
+          3.6,
+          4
+        ],
+        [
+          4.6,
+          4
+        ],
+        [
+          4.6,
+          4.05
+        ],
+        [
+          4.7,
+          4.05
+        ],
+        [
+          4.7,
+          4.15
+        ],
+        [
+          4.6,
+          4.15
+        ],
+        [
+          4.6,
+          4.7
+        ],
+        [
+          4.75,
+          4.7
+        ],
+        [
+          4.75,
+          4.15
+        ],
+        [
+          6.25,
+          4.15
+        ],
+        [
+          6.25,
+          6.95
+        ],
+        [
+          4.75,
+          6.95
+        ],
+        [
+          4.75,
+          6.05
+        ],
+        [
+          4.6,
+          6.05
+        ],
+        [
+          4.6,
+          5.9
+        ],
+        [
+          4.5,
+          5.9
+        ],
+        [
+          4.5,
+          5.7
+        ],
+        [
+          3.8,
+          5.7
+        ],
+        [
+          3.8,
+          5.05
+        ],
+        [
+          3.55,
+          5.05
+        ],
+        [
+          3.55,
+          5.7
+        ],
+        [
+          2.45,
+          5.7
+        ],
+        [
+          2.45,
+          4.2
+        ],
+        [
+          2.5,
+          4.2
+        ]
+      ],
+      "holes": [
+        [
+          [
+            3.75,
+            4.65
+          ],
+          [
+            3.75,
+            4.85
+          ],
+          [
+            4.55,
+            4.85
+          ],
+          [
+            4.55,
+            4.65
+          ]
+        ]
+      ],
+      "areaM2": 5.39,
+      "areaSF": 58,
+      "polygonAreaM2": 7.635,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        4.965,
+        5.096
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R3",
+      "name": "Bedroom",
+      "tag": "BEDROOM",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          5.8,
+          0.3
+        ],
+        [
+          6.5,
+          0.3
+        ],
+        [
+          6.5,
+          0.35
+        ],
+        [
+          6.3,
+          0.35
+        ],
+        [
+          6.3,
+          1.25
+        ],
+        [
+          6.25,
+          1.25
+        ],
+        [
+          6.25,
+          4
+        ],
+        [
+          6.2,
+          4
+        ],
+        [
+          6.2,
+          3.3
+        ],
+        [
+          4.8,
+          3.3
+        ],
+        [
+          4.8,
+          4
+        ],
+        [
+          4.7,
+          4
+        ],
+        [
+          4.7,
+          3.4
+        ],
+        [
+          4.6,
+          3.4
+        ],
+        [
+          4.6,
+          4
+        ],
+        [
+          3.6,
+          4
+        ],
+        [
+          3.6,
+          3.8
+        ],
+        [
+          3.4,
+          3.8
+        ],
+        [
+          3.4,
+          4
+        ],
+        [
+          3.1,
+          4
+        ],
+        [
+          3.1,
+          1.35
+        ],
+        [
+          3.65,
+          1.35
+        ],
+        [
+          3.65,
+          0.4
+        ],
+        [
+          5.8,
+          0.4
+        ]
+      ],
+      "holes": [
+        [
+          [
+            3.35,
+            1.45
+          ],
+          [
+            3.35,
+            3.75
+          ],
+          [
+            3.5,
+            3.75
+          ],
+          [
+            3.5,
+            1.45
+          ]
+        ]
+      ],
+      "areaM2": 9.94,
+      "areaSF": 107,
+      "polygonAreaM2": 9.495,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        4.589,
+        2.769
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R4",
+      "name": "Living",
+      "tag": "LIVING",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          1,
+          1.2
+        ],
+        [
+          2.8,
+          1.2
+        ],
+        [
+          2.8,
+          1.35
+        ],
+        [
+          3.1,
+          1.35
+        ],
+        [
+          3.1,
+          4
+        ],
+        [
+          2.5,
+          4
+        ],
+        [
+          2.5,
+          4.2
+        ],
+        [
+          2.4,
+          4.2
+        ],
+        [
+          2.4,
+          4
+        ],
+        [
+          0.4,
+          4
+        ],
+        [
+          0.4,
+          4.2
+        ],
+        [
+          0.35,
+          4.2
+        ],
+        [
+          0.35,
+          1.45
+        ],
+        [
+          0.3,
+          1.45
+        ],
+        [
+          0.3,
+          1.4
+        ],
+        [
+          0.2,
+          1.4
+        ],
+        [
+          0.2,
+          1.35
+        ],
+        [
+          1,
+          1.35
+        ]
+      ],
+      "holes": [],
+      "extraParts": [
+        [
+          [
+            0,
+            0.3
+          ],
+          [
+            0.05,
+            0.3
+          ],
+          [
+            0.05,
+            4.45
+          ],
+          [
+            0,
+            4.45
+          ]
+        ],
+        [
+          [
+            0.1,
+            0.3
+          ],
+          [
+            0.8,
+            0.3
+          ],
+          [
+            0.8,
+            0.35
+          ],
+          [
+            0.2,
+            0.35
+          ],
+          [
+            0.2,
+            1.25
+          ],
+          [
+            0.1,
+            1.25
+          ]
+        ]
+      ],
+      "areaM2": 11.61,
+      "areaSF": 125,
+      "polygonAreaM2": 7.597,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        1.8,
+        1.96
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R5",
+      "name": "Kitchen",
+      "tag": "KITCHEN",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          0.4,
+          4
+        ],
+        [
+          2.4,
+          4
+        ],
+        [
+          2.4,
+          4.2
+        ],
+        [
+          2.45,
+          4.2
+        ],
+        [
+          2.45,
+          5.65
+        ],
+        [
+          2.4,
+          5.65
+        ],
+        [
+          2.4,
+          7.5
+        ],
+        [
+          2.3,
+          7.5
+        ],
+        [
+          2.3,
+          7.6
+        ],
+        [
+          0.5,
+          7.6
+        ],
+        [
+          0.5,
+          8.1
+        ],
+        [
+          0.45,
+          8.1
+        ],
+        [
+          0.45,
+          8.15
+        ],
+        [
+          0.4,
+          8.15
+        ],
+        [
+          0.4,
+          8.2
+        ],
+        [
+          0.35,
+          8.2
+        ],
+        [
+          0.35,
+          7.7
+        ],
+        [
+          0.4,
+          7.7
+        ],
+        [
+          0.4,
+          5.25
+        ],
+        [
+          0.35,
+          5.25
+        ],
+        [
+          0.35,
+          4.2
+        ],
+        [
+          0.4,
+          4.2
+        ]
+      ],
+      "holes": [],
+      "extraParts": [
+        [
+          [
+            0,
+            4.45
+          ],
+          [
+            0.05,
+            4.45
+          ],
+          [
+            0.05,
+            8.4
+          ],
+          [
+            0,
+            8.4
+          ]
+        ]
+      ],
+      "areaM2": 10.13,
+      "areaSF": 109,
+      "polygonAreaM2": 7.392,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        1.22,
+        6.24
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R6",
+      "name": "Mech",
+      "tag": "HVAC",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          0.35,
+          8.65
+        ],
+        [
+          0.5,
+          8.65
+        ],
+        [
+          0.5,
+          8.7
+        ],
+        [
+          1.4,
+          8.7
+        ],
+        [
+          1.4,
+          8.75
+        ],
+        [
+          1.3,
+          8.75
+        ],
+        [
+          1.3,
+          9.4
+        ],
+        [
+          0.45,
+          9.4
+        ],
+        [
+          0.45,
+          9.45
+        ],
+        [
+          0.35,
+          9.45
+        ]
+      ],
+      "holes": [],
+      "areaM2": 0.74,
+      "areaSF": 8,
+      "polygonAreaM2": 0.683,
+      "labelPoint": [
+        0.85,
+        9.02
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R7",
+      "name": "Closet",
+      "tag": "CLOSET",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          2.3,
+          7.5
+        ],
+        [
+          3.3,
+          7.5
+        ],
+        [
+          3.3,
+          7.95
+        ],
+        [
+          3.4,
+          7.95
+        ],
+        [
+          3.4,
+          8.35
+        ],
+        [
+          3.35,
+          8.35
+        ],
+        [
+          3.35,
+          8.25
+        ],
+        [
+          2.7,
+          8.25
+        ],
+        [
+          2.7,
+          8.35
+        ],
+        [
+          3.3,
+          8.35
+        ],
+        [
+          3.3,
+          9.45
+        ],
+        [
+          2.5,
+          9.45
+        ],
+        [
+          2.5,
+          9.35
+        ],
+        [
+          2.3,
+          9.35
+        ]
+      ],
+      "holes": [],
+      "areaM2": 0.65,
+      "areaSF": 7,
+      "polygonAreaM2": 1.905,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        2.583,
+        8.009
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R8",
+      "name": "Laundry",
+      "tag": "LAUNDRY",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          2.4,
+          5.65
+        ],
+        [
+          2.45,
+          5.65
+        ],
+        [
+          2.45,
+          5.7
+        ],
+        [
+          3.55,
+          5.7
+        ],
+        [
+          3.55,
+          5.8
+        ],
+        [
+          3.8,
+          5.8
+        ],
+        [
+          3.8,
+          5.7
+        ],
+        [
+          4.5,
+          5.7
+        ],
+        [
+          4.5,
+          5.9
+        ],
+        [
+          3.7,
+          5.9
+        ],
+        [
+          3.7,
+          5.95
+        ],
+        [
+          3.65,
+          5.95
+        ],
+        [
+          3.65,
+          6.05
+        ],
+        [
+          3.75,
+          6.05
+        ],
+        [
+          3.75,
+          6.1
+        ],
+        [
+          4.5,
+          6.1
+        ],
+        [
+          4.5,
+          6.8
+        ],
+        [
+          4.55,
+          6.8
+        ],
+        [
+          4.55,
+          6.85
+        ],
+        [
+          4.6,
+          6.85
+        ],
+        [
+          4.6,
+          6.95
+        ],
+        [
+          3.7,
+          6.95
+        ],
+        [
+          3.7,
+          7
+        ],
+        [
+          3.65,
+          7
+        ],
+        [
+          3.65,
+          7.1
+        ],
+        [
+          4.5,
+          7.1
+        ],
+        [
+          4.5,
+          7.9
+        ],
+        [
+          3.5,
+          7.9
+        ],
+        [
+          3.5,
+          7.95
+        ],
+        [
+          3.3,
+          7.95
+        ],
+        [
+          3.3,
+          7.5
+        ],
+        [
+          2.4,
+          7.5
+        ]
+      ],
+      "holes": [
+        [
+          [
+            3.45,
+            6.15
+          ],
+          [
+            3.45,
+            6.9
+          ],
+          [
+            3.7,
+            6.9
+          ],
+          [
+            3.7,
+            6.15
+          ]
+        ]
+      ],
+      "areaM2": 0.74,
+      "areaSF": 8,
+      "polygonAreaM2": 3.785,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        3.041,
+        7.119
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R9",
+      "name": "Hall",
+      "tag": "HALL",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          0.5,
+          7.6
+        ],
+        [
+          2.3,
+          7.6
+        ],
+        [
+          2.3,
+          9.35
+        ],
+        [
+          1.55,
+          9.35
+        ],
+        [
+          1.55,
+          8.75
+        ],
+        [
+          1.4,
+          8.75
+        ],
+        [
+          1.4,
+          8.7
+        ],
+        [
+          0.5,
+          8.7
+        ],
+        [
+          0.5,
+          8.65
+        ],
+        [
+          1.3,
+          8.65
+        ],
+        [
+          1.3,
+          8.5
+        ],
+        [
+          0.35,
+          8.5
+        ],
+        [
+          0.35,
+          8.2
+        ],
+        [
+          0.4,
+          8.2
+        ],
+        [
+          0.4,
+          8.15
+        ],
+        [
+          0.45,
+          8.15
+        ],
+        [
+          0.45,
+          8.1
+        ],
+        [
+          0.5,
+          8.1
+        ]
+      ],
+      "holes": [],
+      "areaM2": 1.12,
+      "areaSF": 12,
+      "polygonAreaM2": 2.408,
+      "areaNote": "PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out",
+      "labelPoint": [
+        1.03,
+        7.841
+      ],
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    },
+    {
+      "id": "R10",
+      "name": "Closet",
+      "tag": "CLOSET",
+      "tagMatchesRevit": true,
+      "polygon": [
+        [
+          4.8,
+          3.3
+        ],
+        [
+          6.2,
+          3.3
+        ],
+        [
+          6.2,
+          4
+        ],
+        [
+          4.8,
+          4
+        ]
+      ],
+      "holes": [],
+      "areaM2": 0.93,
+      "areaSF": 10,
+      "polygonAreaM2": 0.98,
+      "labelPoint": [
+        4.8,
+        3.68
+      ],
+      "labelHidden": true,
+      "layers": {
+        "outline": "A-AREA",
+        "label": "A-AREA-IDEN"
+      }
+    }
+  ],
+  "walls": [
+    {
+      "id": "W1",
+      "kind": "exterior",
+      "kindBasis": "position in the unit",
+      "structural": "not modelled",
+      "thickness": 0.3,
+      "start": [
+        5.8,
+        0.15
+      ],
+      "end": [
+        6.59,
+        0.15
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            5.8,
+            0.15
+          ],
+          "end": [
+            6.59,
+            0.15
+          ],
+          "polygon": [
+            [
+              5.8,
+              0
+            ],
+            [
+              6.59,
+              0
+            ],
+            [
+              6.59,
+              0.3
+            ],
+            [
+              5.8,
+              0.3
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W2",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.13,
+      "start": [
+        4.7,
+        4.083
+      ],
+      "end": [
+        6.27,
+        4.083
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            4.7,
+            4.083
+          ],
+          "end": [
+            6.27,
+            4.083
+          ],
+          "polygon": [
+            [
+              4.7,
+              4.018
+            ],
+            [
+              6.27,
+              4.018
+            ],
+            [
+              6.27,
+              4.148
+            ],
+            [
+              4.7,
+              4.148
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W3",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.09,
+      "start": [
+        3.47,
+        4.765
+      ],
+      "end": [
+        3.58,
+        4.765
+      ],
+      "orientation": "horizontal",
+      "jamb": true,
+      "segments": [
+        {
+          "start": [
+            3.47,
+            4.765
+          ],
+          "end": [
+            3.58,
+            4.765
+          ],
+          "polygon": [
+            [
+              3.47,
+              4.72
+            ],
+            [
+              3.58,
+              4.72
+            ],
+            [
+              3.58,
+              4.81
+            ],
+            [
+              3.47,
+              4.81
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W4",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.19,
+      "start": [
+        3.67,
+        5.999
+      ],
+      "end": [
+        4.61,
+        5.999
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            3.67,
+            5.999
+          ],
+          "end": [
+            4.61,
+            5.999
+          ],
+          "polygon": [
+            [
+              3.67,
+              5.904
+            ],
+            [
+              4.61,
+              5.904
+            ],
+            [
+              4.61,
+              6.094
+            ],
+            [
+              3.67,
+              6.094
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W5",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.13,
+      "start": [
+        3.67,
+        7.03
+      ],
+      "end": [
+        6.27,
+        7.03
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            3.67,
+            7.03
+          ],
+          "end": [
+            4.61,
+            7.03
+          ],
+          "polygon": [
+            [
+              3.67,
+              6.965
+            ],
+            [
+              4.61,
+              6.965
+            ],
+            [
+              4.61,
+              7.095
+            ],
+            [
+              3.67,
+              7.095
+            ]
+          ]
+        },
+        {
+          "start": [
+            4.7,
+            7.03
+          ],
+          "end": [
+            6.27,
+            7.03
+          ],
+          "polygon": [
+            [
+              4.7,
+              6.965
+            ],
+            [
+              6.27,
+              6.965
+            ],
+            [
+              6.27,
+              7.095
+            ],
+            [
+              4.7,
+              7.095
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W6",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.12,
+      "start": [
+        2.7,
+        8.298
+      ],
+      "end": [
+        3.34,
+        8.298
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            2.7,
+            8.298
+          ],
+          "end": [
+            3.34,
+            8.298
+          ],
+          "polygon": [
+            [
+              2.7,
+              8.237
+            ],
+            [
+              3.34,
+              8.237
+            ],
+            [
+              3.34,
+              8.357
+            ],
+            [
+              2.7,
+              8.357
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W7",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.13,
+      "start": [
+        0.1,
+        8.58
+      ],
+      "end": [
+        1.32,
+        8.58
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            0.1,
+            8.58
+          ],
+          "end": [
+            1.32,
+            8.58
+          ],
+          "polygon": [
+            [
+              0.1,
+              8.515
+            ],
+            [
+              1.32,
+              8.515
+            ],
+            [
+              1.32,
+              8.645
+            ],
+            [
+              0.1,
+              8.645
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W8",
+      "kind": "demising",
+      "kindBasis": "position in the unit",
+      "structural": "not modelled",
+      "thickness": 0.2,
+      "start": [
+        0,
+        9.57
+      ],
+      "end": [
+        6.59,
+        9.57
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            0,
+            9.57
+          ],
+          "end": [
+            1.52,
+            9.57
+          ],
+          "polygon": [
+            [
+              0,
+              9.47
+            ],
+            [
+              1.52,
+              9.47
+            ],
+            [
+              1.52,
+              9.67
+            ],
+            [
+              0,
+              9.67
+            ]
+          ]
+        },
+        {
+          "start": [
+            2.49,
+            9.57
+          ],
+          "end": [
+            6.59,
+            9.57
+          ],
+          "polygon": [
+            [
+              2.49,
+              9.47
+            ],
+            [
+              6.59,
+              9.47
+            ],
+            [
+              6.59,
+              9.67
+            ],
+            [
+              2.49,
+              9.67
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W9",
+      "kind": "demising",
+      "kindBasis": "position in the unit",
+      "structural": "not modelled",
+      "thickness": 0.1,
+      "start": [
+        0.05,
+        0
+      ],
+      "end": [
+        0.05,
+        9.67
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            0.05,
+            0
+          ],
+          "end": [
+            0.05,
+            9.67
+          ],
+          "polygon": [
+            [
+              0,
+              0
+            ],
+            [
+              0.1,
+              0
+            ],
+            [
+              0.1,
+              9.67
+            ],
+            [
+              0,
+              9.67
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W10",
+      "kind": "demising",
+      "kindBasis": "position in the unit",
+      "structural": "not modelled",
+      "thickness": 0.3,
+      "start": [
+        0.145,
+        0
+      ],
+      "end": [
+        0.145,
+        9.47
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            0.145,
+            0
+          ],
+          "end": [
+            0.145,
+            0.3
+          ],
+          "polygon": [
+            [
+              -0.005,
+              0
+            ],
+            [
+              0.295,
+              0
+            ],
+            [
+              0.295,
+              0.3
+            ],
+            [
+              -0.005,
+              0.3
+            ]
+          ]
+        },
+        {
+          "start": [
+            0.145,
+            1.23
+          ],
+          "end": [
+            0.145,
+            9.47
+          ],
+          "polygon": [
+            [
+              -0.005,
+              1.23
+            ],
+            [
+              0.295,
+              1.23
+            ],
+            [
+              0.295,
+              9.47
+            ],
+            [
+              -0.005,
+              9.47
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W11",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.24,
+      "start": [
+        0.217,
+        1.41
+      ],
+      "end": [
+        0.217,
+        9.47
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            0.217,
+            1.41
+          ],
+          "end": [
+            0.217,
+            9.47
+          ],
+          "polygon": [
+            [
+              0.097,
+              1.41
+            ],
+            [
+              0.337,
+              1.41
+            ],
+            [
+              0.337,
+              9.47
+            ],
+            [
+              0.097,
+              9.47
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W12",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.24,
+      "start": [
+        0.28,
+        5.23
+      ],
+      "end": [
+        0.28,
+        7.72
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            0.28,
+            5.23
+          ],
+          "end": [
+            0.28,
+            7.72
+          ],
+          "polygon": [
+            [
+              0.16,
+              5.23
+            ],
+            [
+              0.4,
+              5.23
+            ],
+            [
+              0.4,
+              7.72
+            ],
+            [
+              0.16,
+              7.72
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W13",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.33,
+      "start": [
+        3.381,
+        0.3
+      ],
+      "end": [
+        3.381,
+        1.23
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            3.381,
+            0.3
+          ],
+          "end": [
+            3.381,
+            1.23
+          ],
+          "polygon": [
+            [
+              3.216,
+              0.3
+            ],
+            [
+              3.546,
+              0.3
+            ],
+            [
+              3.546,
+              1.23
+            ],
+            [
+              3.216,
+              1.23
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W14",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.33,
+      "start": [
+        3.381,
+        8.35
+      ],
+      "end": [
+        3.381,
+        9.47
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            3.381,
+            8.35
+          ],
+          "end": [
+            3.381,
+            9.47
+          ],
+          "polygon": [
+            [
+              3.216,
+              8.35
+            ],
+            [
+              3.546,
+              8.35
+            ],
+            [
+              3.546,
+              9.47
+            ],
+            [
+              3.216,
+              9.47
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W15",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.13,
+      "start": [
+        3.435,
+        1.43
+      ],
+      "end": [
+        3.435,
+        3.75
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            3.435,
+            1.43
+          ],
+          "end": [
+            3.435,
+            3.75
+          ],
+          "polygon": [
+            [
+              3.37,
+              1.43
+            ],
+            [
+              3.5,
+              1.43
+            ],
+            [
+              3.5,
+              3.75
+            ],
+            [
+              3.37,
+              3.75
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W16",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.09,
+      "start": [
+        3.52,
+        0
+      ],
+      "end": [
+        3.52,
+        0.3
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            3.52,
+            0
+          ],
+          "end": [
+            3.52,
+            0.3
+          ],
+          "polygon": [
+            [
+              3.475,
+              0
+            ],
+            [
+              3.565,
+              0
+            ],
+            [
+              3.565,
+              0.3
+            ],
+            [
+              3.475,
+              0.3
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W17",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.09,
+      "start": [
+        3.52,
+        4.69
+      ],
+      "end": [
+        3.52,
+        4.83
+      ],
+      "orientation": "vertical",
+      "jamb": true,
+      "segments": [
+        {
+          "start": [
+            3.52,
+            4.69
+          ],
+          "end": [
+            3.52,
+            4.83
+          ],
+          "polygon": [
+            [
+              3.475,
+              4.69
+            ],
+            [
+              3.565,
+              4.69
+            ],
+            [
+              3.565,
+              4.83
+            ],
+            [
+              3.475,
+              4.83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W18",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.1,
+      "start": [
+        3.63,
+        4.8
+      ],
+      "end": [
+        3.63,
+        4.96
+      ],
+      "orientation": "vertical",
+      "jamb": true,
+      "segments": [
+        {
+          "start": [
+            3.63,
+            4.8
+          ],
+          "end": [
+            3.63,
+            4.96
+          ],
+          "polygon": [
+            [
+              3.58,
+              4.8
+            ],
+            [
+              3.68,
+              4.8
+            ],
+            [
+              3.68,
+              4.96
+            ],
+            [
+              3.58,
+              4.96
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W19",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.13,
+      "start": [
+        4.656,
+        3.4
+      ],
+      "end": [
+        4.656,
+        6.98
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            4.656,
+            3.4
+          ],
+          "end": [
+            4.656,
+            4.04
+          ],
+          "polygon": [
+            [
+              4.591,
+              3.4
+            ],
+            [
+              4.721,
+              3.4
+            ],
+            [
+              4.721,
+              4.04
+            ],
+            [
+              4.591,
+              4.04
+            ]
+          ]
+        },
+        {
+          "start": [
+            4.656,
+            4.13
+          ],
+          "end": [
+            4.656,
+            4.72
+          ],
+          "polygon": [
+            [
+              4.591,
+              4.13
+            ],
+            [
+              4.721,
+              4.13
+            ],
+            [
+              4.721,
+              4.72
+            ],
+            [
+              4.591,
+              4.72
+            ]
+          ]
+        },
+        {
+          "start": [
+            4.656,
+            6.07
+          ],
+          "end": [
+            4.656,
+            6.98
+          ],
+          "polygon": [
+            [
+              4.591,
+              6.07
+            ],
+            [
+              4.721,
+              6.07
+            ],
+            [
+              4.721,
+              6.98
+            ],
+            [
+              4.591,
+              6.98
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W20",
+      "kind": "partition",
+      "kindBasis": "inferred: interior wall",
+      "structural": "not modelled",
+      "thickness": 0.24,
+      "start": [
+        6.373,
+        0.3
+      ],
+      "end": [
+        6.373,
+        9.47
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            6.373,
+            0.3
+          ],
+          "end": [
+            6.373,
+            9.47
+          ],
+          "polygon": [
+            [
+              6.253,
+              0.3
+            ],
+            [
+              6.493,
+              0.3
+            ],
+            [
+              6.493,
+              9.47
+            ],
+            [
+              6.253,
+              9.47
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W21",
+      "kind": "demising",
+      "kindBasis": "position in the unit",
+      "structural": "not modelled",
+      "thickness": 0.1,
+      "start": [
+        6.54,
+        0
+      ],
+      "end": [
+        6.54,
+        9.67
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            6.54,
+            0
+          ],
+          "end": [
+            6.54,
+            9.67
+          ],
+          "polygon": [
+            [
+              6.49,
+              0
+            ],
+            [
+              6.59,
+              0
+            ],
+            [
+              6.59,
+              9.67
+            ],
+            [
+              6.49,
+              9.67
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "W22",
+      "kind": "exterior",
+      "kindBasis": "balcony, bump-out or recess wall",
+      "structural": "not modelled",
+      "thickness": 0.15,
+      "start": [
+        0.225,
+        0.3
+      ],
+      "end": [
+        0.225,
+        1.35
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            0.225,
+            0.3
+          ],
+          "end": [
+            0.225,
+            1.35
+          ],
+          "polygon": [
+            [
+              0.15,
+              0.3
+            ],
+            [
+              0.3,
+              0.3
+            ],
+            [
+              0.3,
+              1.35
+            ],
+            [
+              0.15,
+              1.35
+            ]
+          ]
+        }
+      ],
+      "bumpId": "B1"
+    },
+    {
+      "id": "W23",
+      "kind": "exterior",
+      "kindBasis": "balcony, bump-out or recess wall",
+      "structural": "not modelled",
+      "thickness": 0.15,
+      "start": [
+        3.555,
+        0.3
+      ],
+      "end": [
+        3.555,
+        1.35
+      ],
+      "orientation": "vertical",
+      "segments": [
+        {
+          "start": [
+            3.555,
+            0.3
+          ],
+          "end": [
+            3.555,
+            1.35
+          ],
+          "polygon": [
+            [
+              3.48,
+              0.3
+            ],
+            [
+              3.63,
+              0.3
+            ],
+            [
+              3.63,
+              1.35
+            ],
+            [
+              3.48,
+              1.35
+            ]
+          ]
+        }
+      ],
+      "bumpId": "B1"
+    },
+    {
+      "id": "W24",
+      "kind": "exterior",
+      "kindBasis": "balcony, bump-out or recess wall",
+      "structural": "not modelled",
+      "thickness": 0.15,
+      "start": [
+        0.3,
+        1.275
+      ],
+      "end": [
+        0.99,
+        1.275
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            0.3,
+            1.275
+          ],
+          "end": [
+            0.99,
+            1.275
+          ],
+          "polygon": [
+            [
+              0.3,
+              1.2
+            ],
+            [
+              0.99,
+              1.2
+            ],
+            [
+              0.99,
+              1.35
+            ],
+            [
+              0.3,
+              1.35
+            ]
+          ]
+        }
+      ],
+      "bumpId": "B1"
+    },
+    {
+      "id": "W25",
+      "kind": "exterior",
+      "kindBasis": "balcony, bump-out or recess wall",
+      "structural": "not modelled",
+      "thickness": 0.15,
+      "start": [
+        2.79,
+        1.275
+      ],
+      "end": [
+        3.48,
+        1.275
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            2.79,
+            1.275
+          ],
+          "end": [
+            3.48,
+            1.275
+          ],
+          "polygon": [
+            [
+              2.79,
+              1.2
+            ],
+            [
+              3.48,
+              1.2
+            ],
+            [
+              3.48,
+              1.35
+            ],
+            [
+              2.79,
+              1.35
+            ]
+          ]
+        }
+      ],
+      "bumpId": "B1"
+    },
+    {
+      "id": "W26",
+      "kind": "guard",
+      "kindBasis": "balcony guard",
+      "structural": "not modelled",
+      "thickness": 0.06,
+      "start": [
+        0.3,
+        0.09
+      ],
+      "end": [
+        3.48,
+        0.09
+      ],
+      "orientation": "horizontal",
+      "segments": [
+        {
+          "start": [
+            0.3,
+            0.09
+          ],
+          "end": [
+            3.48,
+            0.09
+          ],
+          "polygon": [
+            [
+              0.3,
+              0.06
+            ],
+            [
+              3.48,
+              0.06
+            ],
+            [
+              3.48,
+              0.12
+            ],
+            [
+              0.3,
+              0.12
+            ]
+          ]
+        }
+      ],
+      "bumpId": "B1"
+    }
+  ],
+  "doors": [
+    {
+      "id": "D1",
+      "wallId": "W8",
+      "kind": "entry",
+      "width": 0.97,
+      "centre": [
+        2.005,
+        9.57
+      ],
+      "offsetAlongWall": 2.005,
+      "swing": {
+        "hinge": [
+          1.52,
+          9.47
+        ],
+        "hingeSide": "start",
+        "closedDirection": [
+          1,
+          0
+        ],
+        "openDirection": [
+          0,
+          -1
+        ],
+        "opensToward": "-y (window wall)",
+        "arc": {
+          "centre": [
+            1.52,
+            9.47
+          ],
+          "radius": 0.97,
+          "from": [
+            2.49,
+            9.47
+          ],
+          "to": [
+            1.52,
+            8.5
+          ],
+          "clockwiseOnPage": false
+        }
+      },
+      "fromRoomId": null,
+      "intoRoomId": "R9",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Door - Wrap Frame - Single - Suite Entry _965x2135_",
+      "layer": "A-DETL-GENF"
+    },
+    {
+      "id": "D2",
+      "wallId": "W15",
+      "kind": "interior",
+      "width": 0.81,
+      "centre": [
+        3.435,
+        4.185
+      ],
+      "offsetAlongWall": 2.755,
+      "swing": {
+        "hinge": [
+          3.5,
+          4.59
+        ],
+        "hingeSide": "end",
+        "closedDirection": [
+          0,
+          -1
+        ],
+        "openDirection": [
+          1,
+          0
+        ],
+        "opensToward": "+x (right)",
+        "arc": {
+          "centre": [
+            3.5,
+            4.59
+          ],
+          "radius": 0.81,
+          "from": [
+            3.5,
+            3.78
+          ],
+          "to": [
+            4.31,
+            4.59
+          ],
+          "clockwiseOnPage": true
+        }
+      },
+      "fromRoomId": "R2",
+      "intoRoomId": "R2",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Unit - Single - ID01 Bathroom _2_-8__ 813mm",
+      "layer": "A-DETL-GENF"
+    },
+    {
+      "id": "D3",
+      "wallId": null,
+      "kind": "interior",
+      "width": 0.66,
+      "centre": [
+        1.42,
+        9.06
+      ],
+      "offsetAlongWall": null,
+      "swing": {
+        "hinge": [
+          1.42,
+          9.39
+        ],
+        "hingeSide": "end",
+        "closedDirection": [
+          0,
+          -1
+        ],
+        "openDirection": [
+          1,
+          0
+        ],
+        "opensToward": "+x (right)",
+        "arc": {
+          "centre": [
+            1.42,
+            9.39
+          ],
+          "radius": 0.66,
+          "from": [
+            1.42,
+            8.73
+          ],
+          "to": [
+            2.08,
+            9.39
+          ],
+          "clockwiseOnPage": true
+        }
+      },
+      "fromRoomId": "R6",
+      "intoRoomId": "R9",
+      "wallNote": "no wall run at this door in the PAD plan: the door sits in an open gap",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Unit - Single - ID06 Mech_ Closet _2_-2__ 660mm",
+      "layer": "A-DETL-GENF"
+    },
+    {
+      "id": "D4",
+      "wallId": "W18",
+      "kind": "interior",
+      "width": 0.81,
+      "centre": [
+        3.63,
+        5.405
+      ],
+      "offsetAlongWall": 0.605,
+      "swing": {
+        "hinge": [
+          3.68,
+          5.81
+        ],
+        "hingeSide": "end",
+        "closedDirection": [
+          0,
+          -1
+        ],
+        "openDirection": [
+          1,
+          0
+        ],
+        "opensToward": "+x (right)",
+        "arc": {
+          "centre": [
+            3.68,
+            5.81
+          ],
+          "radius": 0.81,
+          "from": [
+            3.68,
+            5
+          ],
+          "to": [
+            4.49,
+            5.81
+          ],
+          "clockwiseOnPage": true
+        }
+      },
+      "fromRoomId": "R2",
+      "intoRoomId": "R2",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Unit - Single - ID01 Bathroom _2_-8__ 813mm",
+      "layer": "A-DETL-GENF"
+    },
+    {
+      "id": "D5",
+      "wallId": null,
+      "kind": "interior",
+      "width": 0.76,
+      "centre": [
+        4.15,
+        4.72
+      ],
+      "offsetAlongWall": null,
+      "swing": {
+        "hinge": [
+          4.53,
+          4.72
+        ],
+        "hingeSide": "end",
+        "closedDirection": [
+          -1,
+          0
+        ],
+        "openDirection": [
+          0,
+          -1
+        ],
+        "opensToward": "-y (window wall)",
+        "arc": {
+          "centre": [
+            4.53,
+            4.72
+          ],
+          "radius": 0.76,
+          "from": [
+            3.77,
+            4.72
+          ],
+          "to": [
+            4.53,
+            3.96
+          ],
+          "clockwiseOnPage": true
+        }
+      },
+      "fromRoomId": "R2",
+      "intoRoomId": "R2",
+      "wallNote": "no wall run at this door in the PAD plan: the door sits in an open gap",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Unit - Single - ID01 Bathroom _2_-8__ 813mm",
+      "layer": "A-DETL-GENF"
+    },
+    {
+      "id": "D6",
+      "wallId": null,
+      "kind": "interior",
+      "width": 0.71,
+      "centre": [
+        3.56,
+        6.525
+      ],
+      "offsetAlongWall": null,
+      "swing": {
+        "hinge": [
+          3.56,
+          6.88
+        ],
+        "hingeSide": "end",
+        "closedDirection": [
+          0,
+          -1
+        ],
+        "openDirection": [
+          -1,
+          0
+        ],
+        "opensToward": "-x (left)",
+        "arc": {
+          "centre": [
+            3.56,
+            6.88
+          ],
+          "radius": 0.71,
+          "from": [
+            3.56,
+            6.17
+          ],
+          "to": [
+            2.85,
+            6.88
+          ],
+          "clockwiseOnPage": false
+        }
+      },
+      "fromRoomId": "R8",
+      "intoRoomId": "R8",
+      "wallNote": "no wall run at this door in the PAD plan: the door sits in an open gap",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Unit - Single - ID05 W_D Closet _2_-4__ 711mm",
+      "layer": "A-DETL-GENF"
+    }
+  ],
+  "windows": [
+    {
+      "id": "N1",
+      "wallId": "W1",
+      "from": [
+        3.5,
+        0.15
+      ],
+      "to": [
+        5.8,
+        0.15
+      ],
+      "width": 2.3,
+      "offsetAlongWall": -2.3,
+      "centre": [
+        4.65,
+        0.15
+      ],
+      "layer": "A-GLAZ"
+    }
+  ],
+  "furniture": [
+    {
+      "id": "PAD-01-v1-F01",
+      "padKind": "bed",
+      "type": "Bed",
+      "name": "Bed",
+      "centre": [
+        5.17,
+        1.61
+      ],
+      "width": 1.53,
+      "depth": 2.13,
+      "rotationDeg": 90,
+      "roomId": "R3",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Bed - Queen",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F02",
+      "padKind": "bed",
+      "type": "Bed",
+      "name": "Bed",
+      "centre": [
+        4.85,
+        9.25
+      ],
+      "width": 2.3,
+      "depth": 0.44,
+      "rotationDeg": 180,
+      "roomId": "R1",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Bed - Queen",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F03",
+      "padKind": "sofa",
+      "type": "Sofa",
+      "name": "Sofa",
+      "centre": [
+        0.81,
+        2.86
+      ],
+      "width": 0.92,
+      "depth": 2.29,
+      "rotationDeg": 0,
+      "roomId": "R4",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Couch - 3-Seater 2290 x 915",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F04",
+      "padKind": "arm",
+      "type": "Armchair",
+      "name": "Armchair",
+      "centre": [
+        2.33,
+        4.51
+      ],
+      "width": 0.8,
+      "depth": 0.8,
+      "rotationDeg": 180,
+      "roomId": "R5",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Lounge Chair - Lounge Chair 785 x 800",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F05",
+      "padKind": "ns",
+      "type": "Nightstand",
+      "name": "Nightstand",
+      "centre": [
+        5.94,
+        2.67
+      ],
+      "width": 0.44,
+      "depth": 0.44,
+      "rotationDeg": 0,
+      "roomId": "R3",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Table - Side",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F06",
+      "padKind": "ns",
+      "type": "Nightstand",
+      "name": "Nightstand",
+      "centre": [
+        5.94,
+        0.55
+      ],
+      "width": 0.44,
+      "depth": 0.44,
+      "rotationDeg": 0,
+      "roomId": "R3",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Table - Side",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F07",
+      "padKind": "ctable",
+      "type": "Coffee table",
+      "name": "Coffee table",
+      "centre": [
+        2.17,
+        2.86
+      ],
+      "width": 0.56,
+      "depth": 1.2,
+      "rotationDeg": 0,
+      "roomId": "R4",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Table - Coffee",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F08",
+      "padKind": "tv",
+      "type": "TV",
+      "name": "TV",
+      "centre": [
+        3.13,
+        2.86
+      ],
+      "width": 1.5,
+      "depth": 0.45,
+      "rotationDeg": 90,
+      "roomId": "R3",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - TV - 55_",
+      "layer": "I-FURN"
+    },
+    {
+      "id": "PAD-01-v1-F09",
+      "padKind": "counter",
+      "type": "Counter",
+      "name": "Counter",
+      "centre": [
+        2.24,
+        6.33
+      ],
+      "width": 1.83,
+      "depth": 0.64,
+      "rotationDeg": 90,
+      "roomId": "R5",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Kitchen - Countertop - 610mm",
+      "layer": "Q-CASE-HDLN"
+    },
+    {
+      "id": "PAD-01-v1-F10",
+      "padKind": "counter",
+      "type": "Counter",
+      "name": "Counter",
+      "centre": [
+        0.71,
+        7.09
+      ],
+      "width": 1.24,
+      "depth": 0.64,
+      "rotationDeg": 90,
+      "roomId": "R5",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Kitchen - Countertop - 610mm",
+      "layer": "Q-CASE-HDLN"
+    },
+    {
+      "id": "PAD-01-v1-F11",
+      "padKind": "counter",
+      "type": "Counter",
+      "name": "Counter",
+      "centre": [
+        0.71,
+        5.46
+      ],
+      "width": 0.64,
+      "depth": 0.46,
+      "rotationDeg": 0,
+      "roomId": "R5",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Kitchen - Countertop - 610mm",
+      "layer": "Q-CASE-HDLN"
+    },
+    {
+      "id": "PAD-01-v1-F12",
+      "padKind": "closet",
+      "type": "Closet shelf and rod",
+      "name": "Closet",
+      "centre": [
+        3.09,
+        8.92
+      ],
+      "width": 1.11,
+      "depth": 0.46,
+      "rotationDeg": 90,
+      "roomId": "R7",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Closet Shelf - Closet Shelf With Rod _460mm_",
+      "layer": "Q-CASE-HDLN"
+    },
+    {
+      "id": "PAD-01-v1-F13",
+      "padKind": "closet",
+      "type": "Closet shelf and rod",
+      "name": "Closet",
+      "centre": [
+        5.48,
+        3.79
+      ],
+      "width": 1.54,
+      "depth": 0.46,
+      "rotationDeg": 0,
+      "roomId": "R10",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Closet Shelf - Closet Shelf With Rod _460mm_",
+      "layer": "Q-CASE-HDLN"
+    },
+    {
+      "id": "PAD-01-v1-F14",
+      "padKind": "van",
+      "type": "Vanity",
+      "name": "Vanity",
+      "centre": [
+        5.98,
+        5.51
+      ],
+      "width": 1.07,
+      "depth": 0.54,
+      "rotationDeg": 90,
+      "roomId": "R2",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Vanity - 3_-6_",
+      "layer": "Q-CASE"
+    },
+    {
+      "id": "PAD-01-v1-F15",
+      "padKind": "shower",
+      "type": "Shower base",
+      "name": "Shower",
+      "centre": [
+        5.49,
+        6.5
+      ],
+      "width": 1.53,
+      "depth": 0.92,
+      "rotationDeg": 0,
+      "roomId": "R2",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Shower Base - 5_ x 3_",
+      "layer": "P-SANR-FIXT"
+    },
+    {
+      "id": "PAD-01-v1-F16",
+      "padKind": "sink",
+      "type": "Kitchen sink",
+      "name": "Sink",
+      "centre": [
+        0.68,
+        7.41
+      ],
+      "width": 0.7,
+      "depth": 0.44,
+      "rotationDeg": 270,
+      "roomId": "R5",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Kitchen Sink - 21_",
+      "layer": "P-SANR-FIXT"
+    },
+    {
+      "id": "PAD-01-v1-F17",
+      "padKind": "cook",
+      "type": "Cooktop",
+      "name": "Cooktop",
+      "centre": [
+        0.72,
+        6.08
+      ],
+      "width": 0.6,
+      "depth": 0.54,
+      "rotationDeg": 270,
+      "roomId": "R5",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Oven - 762mm",
+      "layer": "Q-SPCQ"
+    },
+    {
+      "id": "PAD-01-v1-F18",
+      "padKind": "fridge",
+      "type": "Fridge",
+      "name": "Fridge",
+      "centre": [
+        1.05,
+        8.12
+      ],
+      "width": 0.74,
+      "depth": 0.7,
+      "rotationDeg": 270,
+      "roomId": "R9",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Fridge _Single Door_ - 760mm",
+      "layer": "Q-SPCQ"
+    },
+    {
+      "id": "PAD-01-v1-F19",
+      "padKind": "wd",
+      "type": "Washer and dryer",
+      "name": "Washer / dryer",
+      "centre": [
+        4.12,
+        6.52
+      ],
+      "width": 0.66,
+      "depth": 0.66,
+      "rotationDeg": 0,
+      "roomId": "R8",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Washer Dryer - UFS - WD Standard 686w x 802d",
+      "layer": "Q-SPCQ"
+    },
+    {
+      "id": "PAD-01-v1-F20",
+      "padKind": "wc",
+      "type": "Toilet",
+      "name": "Toilet",
+      "centre": [
+        5.87,
+        4.56
+      ],
+      "width": 0.4,
+      "depth": 0.7,
+      "rotationDeg": 90,
+      "roomId": "R2",
+      "revitBlock": null,
+      "revitBlockSuggested": "UFS - Toilet - UFS - Toilet",
+      "layer": "P-SANR-FIXT"
+    }
+  ],
+  "floors": [
+    {
+      "id": "F1",
+      "finish": "base",
+      "polygon": [
+        [
+          0.1,
+          0.3
+        ],
+        [
+          6.49,
+          0.3
+        ],
+        [
+          6.49,
+          9.47
+        ],
+        [
+          0.1,
+          9.47
+        ]
+      ],
+      "areaM2": 58.596,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F2",
+      "finish": "wood",
+      "polygon": [
+        [
+          3.5,
+          7.1
+        ],
+        [
+          6.2,
+          7.1
+        ],
+        [
+          6.2,
+          9.4
+        ],
+        [
+          3.5,
+          9.4
+        ]
+      ],
+      "areaM2": 6.21,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F3",
+      "finish": "tile",
+      "polygon": [
+        [
+          2.5,
+          4
+        ],
+        [
+          6.2,
+          4
+        ],
+        [
+          6.2,
+          6.8
+        ],
+        [
+          2.5,
+          6.8
+        ]
+      ],
+      "areaM2": 10.36,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F4",
+      "finish": "wood",
+      "polygon": [
+        [
+          3.1,
+          0.3
+        ],
+        [
+          6.2,
+          0.3
+        ],
+        [
+          6.2,
+          4
+        ],
+        [
+          3.1,
+          4
+        ]
+      ],
+      "areaM2": 11.47,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F5",
+      "finish": "wood",
+      "polygon": [
+        [
+          0.3,
+          0.3
+        ],
+        [
+          3.6,
+          0.3
+        ],
+        [
+          3.6,
+          4.2
+        ],
+        [
+          0.3,
+          4.2
+        ]
+      ],
+      "areaM2": 12.87,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F6",
+      "finish": "wood",
+      "polygon": [
+        [
+          0.4,
+          4
+        ],
+        [
+          2.4,
+          4
+        ],
+        [
+          2.4,
+          8.1
+        ],
+        [
+          0.4,
+          8.1
+        ]
+      ],
+      "areaM2": 8.2,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F7",
+      "finish": "tile",
+      "polygon": [
+        [
+          2.4,
+          5.7
+        ],
+        [
+          4.5,
+          5.7
+        ],
+        [
+          4.5,
+          7.9
+        ],
+        [
+          2.4,
+          7.9
+        ]
+      ],
+      "areaM2": 4.62,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F8",
+      "finish": "tile",
+      "polygon": [
+        [
+          0.5,
+          7.6
+        ],
+        [
+          2.3,
+          7.6
+        ],
+        [
+          2.3,
+          9.7
+        ],
+        [
+          0.5,
+          9.7
+        ]
+      ],
+      "areaM2": 3.78,
+      "layer": "A-FLOR"
+    },
+    {
+      "id": "F9",
+      "finish": "tile",
+      "polygon": [
+        [
+          0.3,
+          0
+        ],
+        [
+          3.48,
+          0
+        ],
+        [
+          3.48,
+          1.2
+        ],
+        [
+          0.3,
+          1.2
+        ]
+      ],
+      "areaM2": 3.816,
+      "bumpId": "B1",
+      "layer": "A-FLOR"
+    }
+  ],
+  "balconies": [
+    {
+      "id": "B1",
+      "kind": "loggia",
+      "label": "Recessed balcony",
+      "polygon": [
+        [
+          0.3,
+          0.3
+        ],
+        [
+          3.48,
+          0.3
+        ],
+        [
+          3.48,
+          1.2
+        ],
+        [
+          0.3,
+          1.2
+        ]
+      ],
+      "areaM2": 2.862,
+      "width": 3.18,
+      "depth": 0.9,
+      "outdoor": true,
+      "countedInNet": false,
+      "effectOnNet": "takes its area out of the net area",
+      "note": "A bump-in. It takes floor area out of the unit and gives an outdoor space."
+    }
+  ],
+  "dimensions": []
+}

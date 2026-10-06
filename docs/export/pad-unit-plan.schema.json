@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://padufs.netlify.app/schema/pad-unit-plan-0.1.json",
+  "title": "PAD unit plan export",
+  "description": "DRAFT 0.1. One unit plan exported from PAD (Patry Analysis & Design). Metres. x runs left to right; y runs down the page from the window wall (y = 0) to the corridor (y = depth). To draw in DXF, use x' = x and y' = depth - y, and negate rotations. Sample: sample-A1-4.1.pad.json. Field notes: EXPORT.md.",
+  "type": "object",
+  "required": ["schema", "version", "units", "coordinateSystem", "plan", "rooms", "walls", "doors", "windows", "furniture", "floors", "balconies"],
+  "properties": {
+    "schema": { "const": "pad-unit-plan" },
+    "version": { "type": "string", "description": "Schema version. Breaking changes raise the first number." },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "generator": { "type": "string" },
+    "units": { "const": "metres" },
+    "coordinateSystem": {
+      "type": "object",
+      "required": ["origin", "xAxis", "yAxis", "toDxf", "depth", "width"],
+      "properties": {
+        "origin": { "type": "string" }, "xAxis": { "type": "string" }, "yAxis": { "type": "string" }, "toDxf": { "type": "string" },
+        "depth": { "type": "number", "description": "Unit depth, window wall to corridor. Use it for y' = depth - y." },
+        "width": { "type": "number" }
+      }
+    },
+    "project": { "type": "object", "properties": { "name": { "type": ["string", "null"] } } },
+    "plan": {
+      "type": "object",
+      "required": ["id", "name", "unitType", "bedrooms", "variation", "areas", "footprint"],
+      "properties": {
+        "id": { "type": "string", "description": "Unit name plus version, for example PAD-01-v2. Unique inside one project." },
+        "name": { "type": "string", "description": "The unit's name in PAD, for example PAD-01." },
+        "unitType": { "type": "string", "description": "For example 1 BED, 2 BED CORNER, MIN. STUDIO." },
+        "bedrooms": { "type": "integer", "minimum": 0 },
+        "corner": { "enum": ["L", "R", null], "description": "Corner unit: the side with the extra exterior wall." },
+        "variation": {
+          "type": "object",
+          "required": ["version", "name", "isOriginal"],
+          "properties": {
+            "version": { "type": "integer", "minimum": 1, "description": "1 is the original layout; each saved change adds one." },
+            "name": { "type": "string", "description": "What was asked for or changed, in words." },
+            "savedAt": { "type": ["string", "null"], "format": "date-time" },
+            "isOriginal": { "type": "boolean" }
+          }
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "catalogId": { "type": ["string", "null"], "description": "The baseline layout this unit started from, when it started from one." },
+            "catalogName": { "type": ["string", "null"] },
+            "printedNetFt2": { "type": ["number", "null"], "description": "Net area printed on the source drawing, ft2." }
+          }
+        },
+        "areas": {
+          "type": "object",
+          "required": ["netM2", "netFt2", "unitGrossM2", "corridorShareM2", "grossWithCorridorM2", "efficiencyPct", "footprintM2"],
+          "properties": {
+            "netM2": { "type": "number", "description": "PAD net area. Sum of PAD room areas less area taken out by bump-ins (a recessed balcony or vestibule)." },
+            "netFt2": { "type": "integer" },
+            "unitGrossM2": { "type": "number", "description": "Unit to its wall centrelines, with bump-outs added and bump-ins taken out." },
+            "corridorShareM2": { "type": "number", "description": "Half of a 1.6 m shared corridor across the unit's width." },
+            "grossWithCorridorM2": { "type": "number" },
+            "grossWithCorridorFt2": { "type": "integer" },
+            "efficiencyPct": { "type": "number", "description": "net / grossWithCorridor." },
+            "footprintM2": { "type": "number", "description": "Width x depth, outer faces." },
+            "basis": { "type": "string" }
+          }
+        },
+        "footprint": { "type": "object", "required": ["width", "depth"], "properties": { "width": { "type": "number" }, "depth": { "type": "number" } } }
+      }
+    },
+    "layerMap": {
+      "type": "object",
+      "description": "Layer names from the Revit DXF export that each kind of object is meant to land on.",
+      "additionalProperties": { "type": "string" }
+    },
+    "rooms": { "type": "array", "items": { "$ref": "#/$defs/room" } },
+    "walls": { "type": "array", "items": { "$ref": "#/$defs/wall" } },
+    "doors": { "type": "array", "items": { "$ref": "#/$defs/door" } },
+    "windows": { "type": "array", "items": { "$ref": "#/$defs/window" } },
+    "furniture": { "type": "array", "items": { "$ref": "#/$defs/piece" } },
+    "floors": { "type": "array", "items": { "$ref": "#/$defs/floor" } },
+    "balconies": { "type": "array", "items": { "$ref": "#/$defs/balcony" } },
+    "dimensions": { "type": "array", "items": { "$ref": "#/$defs/dimension" }, "description": "Only dimensions a person added in PAD." }
+  },
+  "$defs": {
+    "point": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+    "polygon": { "type": "array", "items": { "$ref": "#/$defs/point" }, "minItems": 3, "description": "Closed ring, first point not repeated. Clockwise on the page." },
+    "room": {
+      "type": "object",
+      "required": ["id", "name", "tag", "polygon", "areaM2", "areaSF", "polygonAreaM2"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^R[0-9]+$" },
+        "name": { "type": "string", "description": "PAD's name for the room." },
+        "tag": { "type": "string", "description": "The Revit room tag it maps to: LIVING, KITCHEN, BEDROOM, DEN, W/C, HALL, CLOSET, LAUNDRY, HVAC, DINING, WALK-IN, STUDY, ENTRY." },
+        "tagMatchesRevit": { "type": "boolean", "description": "False when PAD has a name the Revit tags do not have; the tag is then the PAD name in capitals." },
+        "polygon": { "$ref": "#/$defs/polygon" },
+        "holes": { "type": "array", "items": { "$ref": "#/$defs/polygon" }, "description": "Rings to cut out of the polygon, such as a closet standing inside the room." },
+        "extraParts": { "type": "array", "items": { "$ref": "#/$defs/polygon" }, "description": "Further separate pieces of the same room, when walls split it." },
+        "areaM2": { "type": "number", "description": "PAD's area. This is the area PAD adds up for the net area. Use it for area text." },
+        "areaSF": { "type": "integer", "description": "areaM2 in ft2, rounded, as the Revit area labels show it (for example 107 SF)." },
+        "polygonAreaM2": { "type": "number", "description": "Area of polygon minus holes, 50 mm resolution. Differs from areaM2 on plans imported from a drawing: see EXPORT.md." },
+        "areaNote": { "type": "string" },
+        "labelPoint": { "$ref": "#/$defs/point", "description": "Where PAD puts the room name; use it for the A-AREA-IDEN text." },
+        "labelHidden": { "type": "boolean" },
+        "isBumpRoom": { "type": "boolean", "description": "A den or nook that sticks out of the front wall." },
+        "layers": { "type": "object", "properties": { "outline": { "type": "string" }, "label": { "type": "string" } } }
+      }
+    },
+    "wall": {
+      "type": "object",
+      "required": ["id", "kind", "thickness", "start", "end", "orientation", "segments"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^W[0-9]+$" },
+        "kind": { "enum": ["exterior", "demising", "partition", "guard"], "description": "exterior: window wall and balcony, bump-out or recess walls, plus the side wall of a corner unit. demising: the corridor wall and the side walls shared with the next unit. partition: every other wall. guard: a balcony railing. PAD does not model structure: no wall is marked bearing." },
+        "kindBasis": { "type": "string" },
+        "structural": { "const": "not modelled" },
+        "thickness": { "type": "number" },
+        "start": { "$ref": "#/$defs/point", "description": "Centreline start." },
+        "end": { "$ref": "#/$defs/point", "description": "Centreline end." },
+        "orientation": { "enum": ["horizontal", "vertical"] },
+        "segments": {
+          "type": "array",
+          "description": "The solid pieces of this wall. Doorways and window gaps lie between them.",
+          "items": { "type": "object", "required": ["start", "end", "polygon"], "properties": { "start": { "$ref": "#/$defs/point" }, "end": { "$ref": "#/$defs/point" }, "polygon": { "$ref": "#/$defs/polygon" } } }
+        },
+        "jamb": { "type": "boolean", "description": "A short piece beside a door, under 300 mm." },
+        "addedByUser": { "type": "boolean" },
+        "bumpId": { "type": "string" }
+      }
+    },
+    "door": {
+      "type": "object",
+      "required": ["id", "kind", "width", "centre", "swing"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^D[0-9]+$" },
+        "wallId": { "type": ["string", "null"], "description": "The wall the door sits in. Null when the PAD plan has no wall run there (see wallNote)." },
+        "wallNote": { "type": "string" },
+        "kind": { "enum": ["entry", "interior"] },
+        "width": { "type": "number", "description": "Clear opening width." },
+        "centre": { "$ref": "#/$defs/point", "description": "Centre of the opening on the wall centreline." },
+        "offsetAlongWall": { "type": ["number", "null"], "description": "From the wall's start (left end of a horizontal wall, top end of a vertical one) to the centre of the opening." },
+        "swing": {
+          "type": "object",
+          "required": ["hinge", "hingeSide", "closedDirection", "openDirection", "arc"],
+          "properties": {
+            "hinge": { "$ref": "#/$defs/point" },
+            "hingeSide": { "enum": ["start", "end"], "description": "Which end of the opening the hinge is at, along the wall direction (left to right, or top to bottom)." },
+            "closedDirection": { "type": "array", "items": { "type": "integer" }, "description": "Unit vector from the hinge along the closed leaf." },
+            "openDirection": { "type": "array", "items": { "type": "integer" }, "description": "Unit vector from the hinge along the open leaf. Which side of the wall the door swings into." },
+            "opensToward": { "type": "string" },
+            "arc": {
+              "type": "object",
+              "properties": {
+                "centre": { "$ref": "#/$defs/point" }, "radius": { "type": "number" },
+                "from": { "$ref": "#/$defs/point", "description": "End of the closed leaf." },
+                "to": { "$ref": "#/$defs/point", "description": "End of the open leaf." },
+                "clockwiseOnPage": { "type": "boolean", "description": "Direction from -> to as drawn with y down the page. Reverse it after flipping y for DXF." }
+              }
+            }
+          }
+        },
+        "fromRoomId": { "type": ["string", "null"], "description": "Room on the hinge side, null for the corridor. Approximate on plans imported from a drawing." },
+        "intoRoomId": { "type": ["string", "null"], "description": "Room the door swings into." },
+        "revitBlock": { "type": ["string", "null"], "description": "Block name when the door came from a Revit block. Null for now: PAD does not keep block names." },
+        "revitBlockSuggested": { "type": ["string", "null"], "description": "Block name stem from the Revit sample (without the trailing element id) that suits this door." },
+        "layer": { "type": "string" }
+      }
+    },
+    "window": {
+      "type": "object",
+      "required": ["id", "from", "to", "width"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^N[0-9]+$" },
+        "wallId": { "type": ["string", "null"] },
+        "from": { "$ref": "#/$defs/point" }, "to": { "$ref": "#/$defs/point" },
+        "width": { "type": "number" },
+        "offsetAlongWall": { "type": ["number", "null"], "description": "May be negative when the glass starts before the wall run does." },
+        "centre": { "$ref": "#/$defs/point" },
+        "sideWall": { "type": "boolean", "description": "On the side wall of a corner unit." },
+        "layer": { "type": "string" }
+      }
+    },
+    "piece": {
+      "type": "object",
+      "required": ["id", "padKind", "type", "name", "centre", "width", "depth", "rotationDeg"],
+      "properties": {
+        "id": { "type": "string", "description": "Unit name, version and a number, for example PAD-01-v1-F07. Stable for one saved version. A layout change places furniture afresh, so the numbers start again." },
+        "padKind": { "type": "string", "description": "PAD's internal kind, for example bed, wc, counter." },
+        "type": { "type": "string" },
+        "name": { "type": "string" },
+        "centre": { "$ref": "#/$defs/point" },
+        "width": { "type": "number", "description": "Along the piece's own x axis before rotation." },
+        "depth": { "type": "number", "description": "Along its own y axis before rotation. Clearance zones, such as the chairs of a table, are not included." },
+        "rotationDeg": { "type": "number", "description": "Degrees clockwise on the page, 0 to 359. 0 puts the back of the piece to y smaller (the window wall); negate it for DXF after flipping y." },
+        "roomId": { "type": ["string", "null"] },
+        "revitBlock": { "type": ["string", "null"], "description": "Block name when the piece came from a Revit block. Null for now." },
+        "revitBlockSuggested": { "type": ["string", "null"], "description": "Block name stem from the Revit sample that suits this piece, or null where the sample has none." },
+        "layer": { "type": "string", "description": "I-FURN, P-SANR-FIXT, Q-CASE, Q-CASE-HDLN or Q-SPCQ." }
+      }
+    },
+    "floor": {
+      "type": "object",
+      "required": ["id", "finish", "polygon"],
+      "properties": {
+        "id": { "type": "string" }, "finish": { "enum": ["wood", "tile", "base"] }, "polygon": { "$ref": "#/$defs/polygon" }, "areaM2": { "type": "number" }, "bumpId": { "type": "string" }, "layer": { "type": "string" }
+      }
+    },
+    "balcony": {
+      "type": "object",
+      "required": ["id", "kind", "polygon", "areaM2"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^B[0-9]+$" },
+        "kind": { "enum": ["balcony", "den", "nook", "loggia", "vestibule"] },
+        "label": { "type": "string" },
+        "polygon": { "$ref": "#/$defs/polygon" },
+        "areaM2": { "type": "number" }, "width": { "type": "number" }, "depth": { "type": "number" },
+        "outdoor": { "type": "boolean" },
+        "countedInNet": { "type": "boolean" },
+        "effectOnNet": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "required": ["id", "from", "to", "lengthM"],
+      "properties": { "id": { "type": "string" }, "from": { "$ref": "#/$defs/point" }, "to": { "$ref": "#/$defs/point" }, "orientation": { "enum": ["horizontal", "vertical"] }, "lengthM": { "type": "number" }, "layer": { "type": "string" } }
+    }
+  }
+}

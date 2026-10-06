@@ -212,6 +212,40 @@ try {
       if (r.a || r.b || Math.abs(r.w - 0.4) > 0.001) errs.push(c.id + ' walking check: ' + JSON.stringify(r));
       if (!r.c) errs.push(c.id + ': with a wall across the unit the walking person should find rooms it cannot reach');
     }
+    // Dimensions: none are drawn until a person adds one with two clicks in Drafting, and they show on the combined layout
+    await ai.evaluate(() => { document.getElementById('iClose') && document.getElementById('iClose').click(); window.__pad.openEditor(window.__pad.units()[0]); });
+    await ai.waitForTimeout(500);
+    await ai.click('#edModes [data-mode="draft"]');
+    await ai.click('#edSide [data-act="dimtool"]');
+    const wp = await ai.evaluate(() => { const E = window.__pad.edState(), w = E.P.walls.find(q => q.w > 1.2 && q.h < 0.4 && q.y > 0.6 && q.y < E.P.D - 0.6 && !q.rail), r = document.getElementById('edSvg').getBoundingClientRect(); if (!w) return null; const px = (x, y) => [r.left + E.x0 + x * E.Sc, r.top + E.y0 + y * E.Sc]; return { a: px(w.x, w.y + w.h / 2), b: px(w.x + w.w, w.y + w.h / 2), mm: Math.round(w.w * 1000) }; });
+    if (!wp) errs.push('dimensions: no wall to dimension');
+    else {
+      await ai.mouse.click(wp.a[0], wp.a[1]); await ai.mouse.click(wp.b[0], wp.b[1]); await ai.waitForTimeout(200);
+      const dm = await ai.evaluate(() => { const E = window.__pad.edState(); return { n: (E.P.dms || []).length, used: E.used, txt: [...document.querySelectorAll('#edSvg .udt')].map(t => t.textContent) }; });
+      if (dm.n !== 1 || dm.txt.length !== 1) errs.push('two clicks should add one dimension: ' + JSON.stringify(dm));
+      else if (Math.abs(+dm.txt[0] - wp.mm) > 150) errs.push('the dimension reads ' + dm.txt[0] + ' but the wall is about ' + wp.mm + ' mm');
+      if (dm.used !== 0) errs.push('a dimension should not use up one of the five changes');
+      await ai.click('#edDone'); await ai.click('#ecOk'); await ai.waitForTimeout(400);
+      const st2 = await ai.evaluate(() => ({ udt: document.querySelectorAll('#strip .udt').length, auto: document.querySelectorAll('#strip .wdt, #strip .dt, #strip .dim2, #strip .ext, #strip .ht').length }));
+      if (st2.udt < 1) errs.push('an added dimension should show on the combined layout');
+      if (st2.auto) errs.push('the combined layout should show no dimensions that were not added, it shows ' + st2.auto);
+    }
+    // Export: every catalog layout exports as JSON that matches the draft schema, with the areas PAD shows
+    {
+      const { validateExport } = await import('../tools/validate-export.mjs');
+      let nExp = 0;
+      for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
+        const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); return { j: JSON.parse(JSON.stringify(pad.padExport(u))), net: pad.netArea(u.plan) }; }, c);
+        const ve = validateExport(r.j);
+        ve.slice(0, 3).forEach(m => errs.push(c.id + ' export: ' + m));
+        if (Math.abs(r.j.plan.areas.netM2 - r.net) > 0.01) errs.push(c.id + ' exported net area ' + r.j.plan.areas.netM2 + ' differs from PAD ' + r.net);
+        if (!r.j.rooms.length || !r.j.walls.length || !r.j.furniture.length || !r.j.doors.length) errs.push(c.id + ' export is missing rooms, walls, doors or furniture');
+        if (new Set(r.j.furniture.map(p => p.id)).size !== r.j.furniture.length) errs.push(c.id + ' furniture ids are not unique');
+        nExp++;
+      }
+      if (nExp !== 12) errs.push('expected to export 12 catalog layouts, exported ' + nExp);
+      if (!(await ai.locator('#iExp').count())) errs.push('the unit panel should have an Export JSON button');
+    }
     // Circulation steps and the clean-up pass: a second corridor door opens a gap in the corridor wall, a hall gives space to a room, and nothing is left overlapping
     let grew = 0;
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {

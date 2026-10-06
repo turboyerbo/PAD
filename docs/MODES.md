@@ -41,3 +41,9 @@ The clean-up pass (`cleanPlan`)
 - Names: a name on a wall, a door swing or another name moves to the nearest clear spot in its room. If none exists the size text is dropped, then the area, and for a closet too small for any name the name is hidden.
 - Dimension text on top of a name is hidden for that door or window.
 - Whatever cannot be fixed is listed in the panel. In Drafting, click a wall (Tidy this wall, trim, delete, then add one again), a door (delete it or hide its dimension) or a room name (hide the size text, move it to a clear spot, drag it) to fix it by hand.
+
+Dimensions
+- The combined layout and the editor draw no dimensions of their own: no unit width line, wall lengths, door and window sizes or room size text. Only dimensions a person adds are drawn. The phone shows them too. Its "Show details" button (it was "Show dimensions") now only shows the extra text under a unit, such as area and efficiency.
+- To add one, open Drafting, press Add a dimension, and click two points on walls (a corner, or a point along a wall edge, which snaps within 300 mm). A dimension runs along the longer of the two directions, sits 400 mm outside, and shows its length in millimetres.
+- Click a dimension in Drafting to flip it to the other side or delete it (or press Delete). It does not use up one of the five changes.
+- A dimension is kept as two points on walls (`dms`). If a wall moves away from either point, the dimension is hidden and Drafting offers to remove it; confirming drops it.
