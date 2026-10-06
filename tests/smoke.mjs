@@ -237,9 +237,10 @@ try {
       else if (Math.abs(+dm.txt[0] - wp.mm) > 150) errs.push('the dimension reads ' + dm.txt[0] + ' but the wall is about ' + wp.mm + ' mm');
       if (dm.used !== 0) errs.push('a dimension should not use up one of the five changes');
       await ai.click('#edDone'); await ai.click('#ecOk'); await ai.waitForTimeout(400);
-      const st2 = await ai.evaluate(() => ({ udt: document.querySelectorAll('#strip .udt').length, auto: document.querySelectorAll('#strip .wdt, #strip .dt, #strip .dim2, #strip .ext, #strip .ht').length }));
+      const st2 = await ai.evaluate(() => ({ udt: document.querySelectorAll('#strip .udt').length, auto: document.querySelectorAll('#strip .wdt, #strip .dim2, #strip .ht').length, units: document.querySelectorAll('#strip .unit').length, wdims: document.querySelectorAll('#strip .dt').length, ldims: document.querySelectorAll('#strip .dtv').length }));
       if (st2.udt < 1) errs.push('an added dimension should show on the combined layout');
-      if (st2.auto) errs.push('the combined layout should show no dimensions that were not added, it shows ' + st2.auto);
+      if (st2.auto) errs.push('the combined layout should show no wall, door or room dimensions that were not added, it shows ' + st2.auto);
+      if (st2.wdims < st2.units || st2.ldims < st2.units) errs.push('every unit should show its overall width and length: ' + JSON.stringify(st2));
     }
     // Export: every catalog layout exports as JSON that matches the draft schema, with the areas PAD shows
     {
@@ -285,6 +286,18 @@ try {
     }
     if (okv < nv2 - 1) errs.push('Suggest a variation worked on only ' + okv + ' of ' + nv2 + ' layouts');
   await ai.close();
+
+  // phone: the overall width and length of a unit are shown there too, without opening Show details
+  {
+    const dp = await browser.newPage({ viewport: { width: 390, height: 800 }, reducedMotion: 'reduce' });
+    dp.on('pageerror', e => errs.push('phone dimensions page script error: ' + e.message));
+    await dp.goto(`http://localhost:${PORT}/?debug`); await dp.click('#lStart'); await dp.fill('#pName', 'Dims'); await dp.click('#pNew');
+    await dp.waitForSelector('body.view-app', { timeout: 5000 }); await dp.keyboard.press('Escape'); await dp.waitForTimeout(300);
+    await dp.evaluate(() => window.__pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-01_1' })); await dp.waitForTimeout(600);
+    const pd = await dp.evaluate(() => ({ w: [...document.querySelectorAll('#strip .dt')].filter(e => getComputedStyle(e).display !== 'none').length, l: [...document.querySelectorAll('#strip .dtv')].filter(e => getComputedStyle(e).display !== 'none').length, y: Math.min(...[...document.querySelectorAll('#strip .dt')].map(e => e.getBoundingClientRect().top)) }));
+    if (pd.w < 1 || pd.l < 1 || !(pd.y > 40)) errs.push('phone: each unit should show its overall width and length, fully on screen: ' + JSON.stringify(pd));
+    await dp.close();
+  }
 
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).
   const signUp = async (page, email, name) => {

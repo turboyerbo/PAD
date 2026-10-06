@@ -377,6 +377,7 @@ body.chat-open .info{right:356px}
 .amt{display:flex;align-items:center;gap:10px}
 .amt input{flex:1;min-width:0;accent-color:var(--draw)}
 .amt output{min-width:44px;text-align:right;font-family:var(--narrow);font-size:14px}
+.dtv{font-family:var(--narrow);fill:var(--draw);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3px;stroke-linejoin:round;font-variant-numeric:tabular-nums;pointer-events:none}
 .udm{fill:none;stroke:var(--draw);stroke-width:.9;pointer-events:none}
 .udm.on{stroke:var(--accent);stroke-width:1.8}
 .udt{font-family:var(--narrow);font-weight:600;fill:var(--draw);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3.2px;stroke-linejoin:round;font-variant-numeric:tabular-nums;pointer-events:none}
@@ -412,7 +413,7 @@ body.manual .modes{display:none}
 @media (prefers-reduced-motion:reduce){.ed{transition:none}}
 /* phones: no dimensions and only room names and areas, so the plans stay readable */
 .ed-handle{display:none}
-body.mob:not(.detail) :is(#strip,#edSvg) :is(.ht,.htl,.dim2,.wdt,.dim,.dt,.ext,.lb1,.lb2,.lb3,.mark-a,.mark-b,.ra[style]){display:none}
+body.mob:not(.detail) :is(#strip,#edSvg) :is(.ht,.htl,.dim2,.wdt,.lb1,.lb2,.lb3,.mark-a,.mark-b,.ra[style]){display:none}
 /* phones: the editor takes the whole screen, a two-line header and the tools in a pull-up sheet */
 body.mob .ed{inset:0}
 body.mob .ed .tape{display:none}
@@ -1625,7 +1626,7 @@ const svg=$('strip'),scroller=$('scroller'),addBtn=$('add');
 let S=40,PADL=36,TOP=70;
 function computeScale(){
   document.body.classList.toggle('detail',detail);
-  const h=scroller.clientHeight;TOP=isMob?(lite()?14:60):(grouped?88:70);
+  const h=scroller.clientHeight;TOP=isMob?(lite()?38:60):(grouped?88:70);
   const avail=h-TOP-(isMob?(lite()?8:66):66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)));
   if(isMob)s=Math.max(12,Math.min(s,scroller.clientWidth*0.82/6.5,scroller.clientWidth*0.94/Math.max(1,...units.map(u=>u.plan.W+0.4))));   // phone: the middle unit takes about 80% of the width, and the widest unit always fits
@@ -1661,7 +1662,7 @@ function render(){
   const {list,runs,total}=layout();
   DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);BM=Math.max(0,...units.map(u=>outTop(u.plan)));
   computeScale();
-  const dmPad=list.some(u=>(u.plan.dms||[]).length)?Math.ceil(0.9*S):0,W=PADL+total*S+dmPad+(isMob&&list.length?Math.max(12,(scroller.clientWidth-list[list.length-1].plan.W*S)/2):12), Hc=TOP+(DM+CORR+0.2)*S, H=Hc+(isMob?10:80);
+  const dmPad=Math.max(32,list.some(u=>(u.plan.dms||[]).length)?Math.ceil(0.9*S):0),W=PADL+total*S+dmPad+(isMob&&list.length?Math.max(12,(scroller.clientWidth-list[list.length-1].plan.W*S)/2):12), Hc=TOP+(DM+CORR+0.2)*S, H=Hc+(isMob?10:80);
   svg.setAttribute('width',Math.ceil(W));svg.setAttribute('height',Math.ceil(H));svg.setAttribute('viewBox',`0 0 ${Math.ceil(W)} ${Math.ceil(H)}`);
   let o=`<defs>
 <pattern id="wood" width="2.4" height="0.4" patternUnits="userSpaceOnUse"><path class="grain" stroke-width="0.012" d="M0 0.2H2.4M0 0.4H2.4M0.3 0V0.2M1.5 0.2V0.4"/></pattern>
@@ -1678,6 +1679,7 @@ function render(){
     runWalls+=`<g transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})">${wallsSVG(ws)}</g>`;
     if(grouped){const c=rn.us.length;o+=`<text class="gh" x="${f(PADL+rn.x0*S)}" y="16">${TYPE(rn.n)}${rn.n===0?'S':''} · ${c} UNIT${c>1?'S':''}</text>`;}
   });
+  const depthLayer=[];
   list.forEach(u=>{
     const X=PADL+u.ox*S,Wp=u.plan.W*S,mm=Math.round(u.plan.W*1000);
     let t='';
@@ -1695,7 +1697,8 @@ function render(){
     t+=`<text class="lb2" x="${cxp}" y="${ly+41}" font-size="${fs}">${eff(u).toFixed(0)}% efficient</text>`;
     t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${escapeHtml(priText(u))}</text>`;
     }
-    t+=dmSVG(u.plan,X,uy,S,Wp<64||S<26?9:11);   // the only dimensions drawn are the ones a person added
+    t+=overallDims(u.plan,X,uy,S,fs,TOP-42-bmPx,[d1,d2],lite(),depthLayer);   // the unit's overall width and length are always shown
+    t+=dmSVG(u.plan,X,uy,S,Wp<64||S<26?9:11);   // every other dimension is one a person added
     t+=roomLabels(u,X,uy,null,S,null,true);
     const cfs=Math.max(7,Math.min(10.5,S*0.21));
     if(!lite())t+=`<text class="cl" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S-1)}" font-size="${f(cfs)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S+cfs)}" font-size="${f(cfs)}">${(u.plan.W*CORR).toFixed(1)} m²</text>`;
@@ -1703,7 +1706,7 @@ function render(){
     const sel=u===selected?`<rect class="sel" x="${f(X-4)}" y="${f(uy-4)}" width="${f(Wp+8)}" height="${f(u.plan.D*S+8)}"/>`:'';
     o+=`<g class="unit${u===lastNew?' new':''}" data-idx="${u.idx}"><g transform="translate(${f(X)} ${f(uy)}) scale(${f(S)})">${unitSVG(u)}</g>${t}${sel}${hit}</g>`;
   });
-  o+=runWalls;
+  o+=runWalls;o+=depthLayer.join('');
   list.forEach(u=>{if(u.plan.sideWins)o+=`<g transform="translate(${f(PADL+u.ox*S)} ${f(TOP+u.oy*S)}) scale(${f(S)})">${sideWinSVG(u.plan)}</g>`;});
   // people
   let pp='';
@@ -2185,6 +2188,20 @@ function quickAdd(n){
 
 /* ---------- unit editor: move walls and doors, add and remove furniture, fixtures and walls ---------- */
 const EDKEYS=['walls','doors','wins','furn','floors','rooms','marks','bumps','dim','nd','pref','dms'];
+/* Overall width (above the unit) and length (beside it) in millimetres, with feet and inches under them except on a phone. Always drawn: every other dimension is one a person added.
+   ox,oy: the unit's top left in pixels; sc: pixels per metre; ys: the extension line start and the rows for the width, y of the unit's top. */
+function overallDims(P,ox,oy,sc,fs,extTop,rows,small,depthOut){
+  const W=Math.round(P.W*1000),D=Math.round(P.D*1000),x1=ox+P.W*sc,y1=oy+P.D*sc,d1=rows[0],d2=rows[1],tk=4;
+  let s=`<path class="ext" d="M${f(ox)} ${f(extTop)}V${f(oy-3)}M${f(x1)} ${f(extTop)}V${f(oy-3)}"/>`;
+  s+=`<path class="dim" d="M${f(ox)} ${f(d1)}H${f(x1)}M${f(ox-tk)} ${f(d1+tk)}l${2*tk} ${-2*tk}M${f(x1-tk)} ${f(d1+tk)}l${2*tk} ${-2*tk}${small?'':`M${f(ox)} ${f(d2)}H${f(x1)}M${f(ox-tk)} ${f(d2+tk)}l${2*tk} ${-2*tk}M${f(x1-tk)} ${f(d2+tk)}l${2*tk} ${-2*tk}`}"/>`;
+  s+=`<text class="dt" x="${f((ox+x1)/2)}" y="${f(d1-5)}" font-size="${fs}">${W}</text>`+(small?'':`<text class="dt" x="${f((ox+x1)/2)}" y="${f(d2-5)}" font-size="${fs}">${ftin(W)}</text>`);
+  // the length runs down the right face, a little outside it
+  const dx=x1+0.22*sc+10;let v='';
+  v+=`<path class="dim" d="M${f(x1+0.22*sc)} ${f(oy)}H${f(dx+4)}M${f(x1+0.22*sc)} ${f(y1)}H${f(dx+4)}M${f(dx)} ${f(oy)}V${f(y1)}M${f(dx-tk)} ${f(oy+tk)}l${2*tk} ${-2*tk}M${f(dx-tk)} ${f(y1+tk)}l${2*tk} ${-2*tk}"/>`;
+  v+=`<text class="dtv" transform="translate(${f(dx)} ${f((oy+y1)/2)}) rotate(-90)" font-size="${fs}">${D}${small?'':` \u00B7 ${ftin(D)}`}</text>`;
+  if(depthOut)depthOut.push(v);else s+=v;   // on the layout the lengths are drawn over every unit, so a neighbour never hides them
+  return s;
+}
 /* Dimensions are drawn only when a person adds one (Drafting, Dimension: two clicks on walls). Each is {id,x1,y1,x2,y2,hor,side} in unit metres. */
 const dmRects=P=>P.walls.filter(w=>!w.rail).map(w=>[w.x,w.y,w.x+w.w,w.y+w.h]).concat([[-0.2,0,0,P.D],[P.W,0,P.W+0.2,P.D]]);
 const dmOk=(P,d)=>{const R=dmRects(P),on=(x,y)=>R.some(r=>x>=r[0]-0.04&&x<=r[2]+0.04&&y>=r[1]-0.04&&y<=r[3]+0.04);return on(d.x1,d.y1)&&on(d.x2,d.y2);};   // a dimension whose wall has moved away is hidden
@@ -2780,7 +2797,7 @@ function edRender(){
   if(E.ai)g+=`<g id="rmOv">${rmOverlay()}</g>`+edWalkerSVG();
   const fs=Math.max(8,Math.min(12,Sc*0.22));
   $('edSvg').setAttribute('width',cw);$('edSvg').setAttribute('height',ch);$('edSvg').setAttribute('viewBox',`0 0 ${cw} ${ch}`);
-  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide())+(E.mode!=='layout'?dmSVG(P,x0,y0,Sc,fs,E.sel&&E.sel.t==='m'?E.sel.id:null):'')+'<g id="dmOv"></g>';
+  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide())+overallDims(P,x0,y0,Sc,fs,y0-outTop(P)*Sc-30,[y0-outTop(P)*Sc-16,y0-outTop(P)*Sc-16],true)+(E.mode!=='layout'?dmSVG(P,x0,y0,Sc,fs,E.sel&&E.sel.t==='m'?E.sel.id:null):'')+'<g id="dmOv"></g>';
   if(E.ai){edWalkPlace();if(!wkRaf&&!reduce){wkT=0;wkRaf=requestAnimationFrame(edWalkLoop);}}
   edBubbles(cw);
 }
