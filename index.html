@@ -87,6 +87,10 @@ main::-webkit-scrollbar{display:none}
 .nav svg{width:46px;height:46px}
 .nav:hover{background:#B31212}
 .nav[hidden]{display:none}
+.nav.turn{z-index:6}
+#wingTag{position:absolute;left:92px;top:10px;z-index:4;font:600 11px var(--narrow);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);background:var(--paper);border:1px solid var(--rule);padding:4px 8px;border-radius:2px;pointer-events:none}
+#wingTag[hidden]{display:none}
+#strip{will-change:transform}
 .nav.l{left:0;border-radius:0 8px 8px 0}.nav.r{right:0;border-radius:8px 0 0 8px}
 @media (max-width:520px){.nav{width:56px;font-size:10px}.nav svg{width:36px;height:36px}}
 #track{display:flex;align-items:flex-start;width:max-content;padding-right:48px}
@@ -709,6 +713,9 @@ body.no-ai:not(.manual) .cust{display:none}
 </aside>
 <button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
 <button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button>
+<button class="nav l turn" id="turnL" aria-label="Back to the previous wing" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20v-8a5 5 0 0 0-5-5H5M9 3L5 7l4 4"/></svg><span id="turnLTxt">Back</span></button>
+<button class="nav r turn" id="turnR" aria-label="Turn to the next wing" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8a5 5 0 0 1 5-5h9M15 3l4 4-4 4"/></svg><span id="turnRTxt">Turn right</span></button>
+<div id="wingTag" role="status" hidden></div>
 <main id="scroller">
   <div id="track">
     <button class="add addl" id="addL" aria-label="Add a unit at the left end">
@@ -1552,7 +1559,7 @@ function makeUnit(spec){
 }
 const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
-function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
+function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,order:units.map(u=>u.idx),removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
   try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpOpen}));}catch(e){}
   if(!PROJ)return;
@@ -1568,29 +1575,45 @@ function loadData(d){
   d=d||{};bldgLen=+d.plate>=10?+d.plate:100;initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
   (d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{try{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);}catch(e){}});
   (d.custom||[]).forEach(c=>{try{const u=units.find(x=>x.idx===c.idx);if(!u)return;if(c.iters){u.iters=c.iters;u.cur=c.cur;}if(c.d)applyCustom(u,c.d);}catch(e){}});
+  if(Array.isArray(d.order)){const by=new Map(units.map(u=>[u.idx,u])),ord=d.order.map(i=>by.get(i)).filter(Boolean);units=ord.concat(units.filter(u=>!ord.includes(u)));}   // the order along the building, which wings depend on
 }
 /* ---------- keyplan ----------
    The designed units on one side of a 1.6 m corridor, mirrored on the other side. The corridor is drawn only here.
    It sets how much of the building is designed and the efficiency: both rows' net area over both rows' gross area plus the corridor. */
 function keyplanFigures(){
-  const L=ordered(),row=L.reduce((s,u)=>s+u.plan.W,0),net=L.reduce((s,u)=>s+netA(u),0),gu=L.reduce((s,u)=>s+grossArea(u.plan),0);
+  const L=allUnits(),row=L.reduce((s,u)=>s+u.plan.W,0),net=L.reduce((s,u)=>s+netA(u),0),gu=L.reduce((s,u)=>s+grossArea(u.plan),0);
   const g2=2*gu+KEYCORR*row,n2=2*net;
   return{L,row,net2:n2,gross2:g2,eff:g2?n2/g2*100:0,units:L.length*2};
 }
 function drawKeyplan(){
   const el=$('keyplan');if(!el)return;
   el.classList.toggle('open',kpOpen);$('hKeyplan').setAttribute('aria-expanded',String(kpOpen));
-  const k=keyplanFigures(),tot=Math.max(bldgLen,k.row),dep=k.L.length?Math.max(...k.L.map(u=>u.plan.D)):8.4,pad=0.6;
-  const vw=tot+2*pad,vh=2*dep+KEYCORR+2*pad,cy=pad+dep;
+  const k=keyplanFigures(),W=grouped?[{units:k.L,turn:null}]:wingsOf(),dep=k.L.length?Math.max(...k.L.map(u=>u.plan.D)):8.4,pad=0.6;
   const pct=Math.min(100,k.row/bldgLen*100);
   $('hKpTxt').textContent=k.L.length?`${k.row.toFixed(0)}/${bldgLen} m`:'';
   $('kpPct').textContent=k.L.length?`${k.row.toFixed(0)} of ${bldgLen} m`:`0 of ${bldgLen} m`;
-  let s=`<rect class="kp-t" x="${pad}" y="${pad}" width="${f(tot)}" height="${f(2*dep+KEYCORR)}"/><rect class="kp-c" x="${pad}" y="${cy}" width="${f(Math.max(0,k.row))}" height="${KEYCORR}"/>`;
-  let x=pad;
-  k.L.forEach(u=>{const W=u.plan.W,D=u.plan.D,sel=selected===u?' sel':'';
-    s+=`<rect class="kp-m" x="${f(x)}" y="${f(cy-D)}" width="${f(W)}" height="${f(D)}"/><rect class="kp-u${sel}" data-idx="${u.idx}" x="${f(x)}" y="${f(cy+KEYCORR)}" width="${f(W)}" height="${f(D)}"><title>${tagOf(u)}</title></rect>`;x+=W;});
-  $('kpSvg').setAttribute('viewBox',`0 0 ${f(vw)} ${f(vh)}`);$('kpSvg').innerHTML=s;
-  $('kpStats').innerHTML=k.L.length?`<b>${k.eff.toFixed(1)}%</b> efficient \u00B7 ${k.units} units both sides<br>${k.net2.toFixed(0)} m\u00B2 net of ${k.gross2.toFixed(0)} m\u00B2 gross, corridor included<br>${pct.toFixed(0)}% of the building${k.row>bldgLen+0.01?' (over the length set)':''}`:'Add a unit to start the keyplan.';
+  /* Each wing is drawn straight in its own frame (x along the wing, the corridor from y = 0 to the corridor width, the mirrored units on one side, the designed units on the other),
+     then placed with a matrix so a corner turns the building a quarter turn to the right or left. */
+  const mul=(m,n)=>[m[0]*n[0]+m[2]*n[1],m[1]*n[0]+m[3]*n[1],m[0]*n[2]+m[2]*n[3],m[1]*n[2]+m[3]*n[3],m[0]*n[4]+m[2]*n[5]+m[4],m[1]*n[4]+m[3]*n[5]+m[5]];
+  const ap=(m,x,y)=>[m[0]*x+m[2]*y+m[4],m[1]*x+m[3]*y+m[5]];
+  let M=[1,0,0,1,0,0],s='',px=[];
+  const single=W.length===1;
+  W.forEach((w,wi)=>{
+    const Lk=w.units.reduce((a2,u)=>a2+u.plan.W,0);
+    if(wi>0){const pl=W[wi-1].units.reduce((a2,u)=>a2+u.plan.W,0);M=mul(M,w.turn==='R'?[0,1,-1,0,pl+dep+KEYCORR,-dep]:[0,-1,1,0,pl+dep,KEYCORR+dep]);}
+    const len=single?Math.max(bldgLen,Lk):Lk;
+    let g=`<rect class="kp-c" x="0" y="0" width="${f(Lk)}" height="${KEYCORR}"/>`;
+    if(single)g=`<rect class="kp-t" x="0" y="${f(-dep)}" width="${f(len)}" height="${f(2*dep+KEYCORR)}"/>`+g;
+    let x=0;
+    w.units.forEach(u=>{const Wu=u.plan.W,D=u.plan.D,sel=selected===u?' sel':'';
+      g+=`<rect class="kp-m" x="${f(x)}" y="${f(-D)}" width="${f(Wu)}" height="${f(D)}"/><rect class="kp-u${sel}" data-idx="${u.idx}" x="${f(x)}" y="${f(KEYCORR)}" width="${f(Wu)}" height="${f(D)}"><title>${tagOf(u)}</title></rect>`;x+=Wu;});
+    s+=`<g class="kp-w${!single&&wi===curWing?" cur":""}" transform="matrix(${M.map(f).join(" ")})">${g}</g>`;
+    [[0,-dep],[len,-dep],[len,KEYCORR+dep],[0,KEYCORR+dep]].forEach(([qx,qy])=>px.push(ap(M,qx,qy)));
+  });
+  const x0=Math.min(...px.map(p=>p[0]))-pad,y0=Math.min(...px.map(p=>p[1]))-pad,x1=Math.max(...px.map(p=>p[0]))+pad,y1=Math.max(...px.map(p=>p[1]))+pad;
+  $('kpSvg').setAttribute('viewBox',`${f(x0)} ${f(y0)} ${f(x1-x0)} ${f(y1-y0)}`);$('kpSvg').innerHTML=s;
+  const shape=W.length<2?'':`<br>${W.length} wings: ${W.slice(1).map(w=>w.turn==="L"?"left":"right").join(", ")} turn${W.length>2?"s":""}`;
+  $('kpStats').innerHTML=k.L.length?`<b>${k.eff.toFixed(1)}%</b> efficient · ${k.units} units both sides<br>${k.net2.toFixed(0)} m² net of ${k.gross2.toFixed(0)} m² gross, corridor included<br>${pct.toFixed(0)}% of the building${k.row>bldgLen+0.5?" (over the "+bldgLen+" m set)":""}${shape}`:'Add a unit to start the keyplan.';
 }
 $('hKeyplan').onclick=e=>{e.stopPropagation();kpOpen=!kpOpen;drawKeyplan();save();};
 $('mKeyplan').onclick=()=>{$('mMenu').hidden=true;kpOpen=!kpOpen;drawKeyplan();save();};
@@ -1601,7 +1624,7 @@ $('kpEdit').onclick=()=>{const f2=$('kpForm');f2.hidden=!f2.hidden;if(!f2.hidden
 $('kpForm').addEventListener('submit',e=>{e.preventDefault();const v=Math.round(+$('kpLen').value);if(!(v>=10&&v<=300)){toast('Use a building length between 10 and 300 m.');return;}bldgLen=v;$('kpForm').hidden=true;drawKeyplan();save();});
 $('kpSvg').addEventListener('click',e=>{
   const r=e.target.closest('[data-idx]');if(!r)return;const u=units.find(x=>x.idx===+r.dataset.idx);if(!u)return;
-  showInfo(u);
+  showInfo(u);noAutoUntil=Date.now()+1500;showWingOf(u);
   if(isMob){mobIdx=mobList().indexOf(u);mobGo(mobIdx,true);}else{const {list}=layout();scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120),behavior:reduce?'auto':'smooth'});}
   drawKeyplan();
 });
@@ -1648,7 +1671,36 @@ function unitSVG(u,o){
   return s;
 }
 const cK=u=>u.corner==='L'?-1:u.corner==='R'?1:0;
-function ordered(){return grouped?units.slice().sort((a,b)=>cK(a)-cK(b)||a.n-b.n||units.indexOf(a)-units.indexOf(b)):units;}
+/* ---------- wings ----------
+   A corner unit turns the building. The units run in a line until a corner, then the building goes round it and carries on in a new direction,
+   which makes an L, a U, a C or a longer path. The screen shows one straight run (a wing) at a time. When the strip is scrolled to its end on a corner
+   unit with more building beyond it, the view turns 90 degrees and shows the next wing, still reading left to right. A corner on the right
+   (windows on its right) ends its wing and the building turns right. A corner on the left starts a wing and the building turns left. */
+let curWing=0,turning=false,autoT=0,lastLeft=0,noAutoUntil=0;
+const sortedUnits=()=>units.slice().sort((a,b)=>cK(a)-cK(b)||a.n-b.n||units.indexOf(a)-units.indexOf(b));
+function wingsOf(){
+  const W=[{units:[],turn:null}];
+  units.forEach((u,i)=>{
+    const cur=W[W.length-1];
+    if(!grouped&&u.corner==='L'&&cur.units.length){W.push({units:[u],turn:'L'});return;}
+    cur.units.push(u);
+    if(!grouped&&u.corner==='R'&&i<units.length-1)W.push({units:[],turn:'R'});
+  });
+  return W;
+}
+function wingInfo(){const W=wingsOf(),H=[0];W.forEach((w,i)=>{if(i>0)H[i]=(H[i-1]+(w.turn==='R'?90:270))%360;});return{W,H};}
+const allUnits=()=>grouped?sortedUnits():units;
+function ordered(){
+  if(grouped)return sortedUnits();   // grouping by bedrooms shows the whole building in one strip, so wings are not used
+  const W=wingsOf();curWing=Math.max(0,Math.min(W.length-1,curWing));return W[curWing].units;
+}
+/* Put a new unit beside the wing on screen: after its last unit at the right, before its first at the left. */
+function insertUnit(u,side){
+  if(grouped){if(side==='L')units.unshift(u);else units.push(u);return;}
+  const W=wingsOf(),w=W[Math.max(0,Math.min(curWing,W.length-1))];
+  if(side==='L')units.splice(Math.max(0,units.indexOf(w.units[0])),0,u);else units.splice(units.indexOf(w.units[w.units.length-1])+1,0,u);
+}
+function showWingOf(u){const W=wingsOf(),i=W.findIndex(w=>w.units.includes(u));if(i>=0&&i!==curWing&&!grouped){curWing=i;render();}}
 function layout(){
   const list=ordered();
   let x=0,run=null,prev=null;const runs=[];
@@ -1657,6 +1709,7 @@ function layout(){
 }
 function render(){
   if(view!=='app')return;
+  noAutoUntil=Date.now()+600;
   drawKeyplan();
   const {list,runs,total}=layout();
   DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);BM=Math.max(0,...units.map(u=>outTop(u.plan)));
@@ -2068,7 +2121,7 @@ function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;units.forEach(u=>{u
 /* ---------- dialog ---------- */
 const modal=$('modal');let pick={n:0};
 let place='R';
-const endCorner=side=>{const e=side==='L'?units[0]:units[units.length-1];return !!(e&&e.corner===side);};
+const endCorner=()=>false;   // a corner unit no longer closes its end: a unit added beyond it starts the next wing
 function setPlace(p){place=p;$('segP').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));}
 function openModal(side){let sd=side==='L'?'L':'R';if(endCorner(sd)&&!endCorner(sd==='L'?'R':'L'))sd=sd==='L'?'R':'L';setPlace(sd);$('fCorner').checked=false;['fA','fW','fL'].forEach(id=>$(id).value='');pick={n:0};$('s1').hidden=false;$('s2').hidden=true;$('s3').hidden=true;$('mStep').textContent='Step 1 of 3';$('otherBox').hidden=true;$('gen').hidden=true;$('otherTxt').value='';
   document.querySelectorAll('#priOpts .opt').forEach(b=>b.setAttribute('aria-pressed','false'));
@@ -2154,17 +2207,18 @@ $('lay').addEventListener('click',e=>{if(e.target===$('lay'))$('lay').hidden=tru
 $('layF').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;layFilter=+b.dataset.f;drawLayouts();});
 $('layG').addEventListener('click',e=>{
   const c=e.target.closest('.lcard');if(!c)return;const id=c.dataset.id,L=LAYOUTS[id];if(!L)return;
-  const u=makeUnit({n:L.n,pri:'balanced',seed:5,layout:id,side:'R'});units.push(u);$('lay').hidden=true;afterAdd(u,'R');
+  const u=makeUnit({n:L.n,pri:'balanced',seed:5,layout:id,side:'R'});insertUnit(u,'R');$('lay').hidden=true;afterAdd(u,'R');
 });
 function generate(r){
   const lay=useCatalog(r)?catalogPick(r.n,r.seed):null;   // a size or corner request builds from scratch instead
   const u=makeUnit({n:r.n,pri:r.pri,other:r.other,seed:r.seed,layout:lay,W:lay?null:r.fit,D:lay?null:r.D,maxA:r.maxA,Wt:r.Wt,Lt:r.Lt,side:r.side,corner:r.corner});
-  if(r.side==='L')units.unshift(u);else units.push(u);modal.hidden=true;
+  insertUnit(u,r.side);modal.hidden=true;
   afterAdd(u,r.side);
 }
 /* Show a unit that was just added: scroll to it (or step to it on a phone) and save. */
 function afterAdd(u,side){
-  lastNew=u;
+  lastNew=u;noAutoUntil=Date.now()+1500;
+  if(!grouped){const W=wingsOf();curWing=Math.max(0,W.findIndex(w=>w.units.includes(u)));}
   if(isMob){mobIdx=mobList().indexOf(u);render();mobGo(mobIdx,true);save();return;}
   render();save();
   const {list}=layout();const x=PADL+u.ox*S;
@@ -4370,10 +4424,48 @@ $('grp').onclick=()=>{grouped=!grouped;render();save();};
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};
 $('zout').onclick=()=>{zoom=Math.max(0.4,zoom/1.2);render();save();};
 const navL=$('navL'),navR=$('navR');
-function navUpdate(){const m=scroller.scrollWidth-scroller.clientWidth;navL.hidden=scroller.scrollLeft<4;navR.hidden=m<=4||scroller.scrollLeft>=m-4;}
+const turnL=$('turnL'),turnR=$('turnR'),wingTag=$('wingTag'),HEAD=['east','south','west','north'];
+function navUpdate(){
+  const m=scroller.scrollWidth-scroller.clientWidth,atStart=scroller.scrollLeft<4,atEnd=m<=4||scroller.scrollLeft>=m-4;
+  const{W,H}=wingInfo(),hasNext=!grouped&&curWing<W.length-1,hasPrev=!grouped&&curWing>0;
+  navL.hidden=atStart;navR.hidden=atEnd;
+  turnR.hidden=!(atEnd&&hasNext);turnL.hidden=!(atStart&&hasPrev);
+  if(hasNext)$('turnRTxt').textContent='Turn '+(W[curWing+1].turn==='L'?'left':'right');
+  if(hasPrev)$('turnLTxt').textContent='Back to wing '+curWing;
+  wingTag.hidden=grouped||W.length<2;
+  if(!wingTag.hidden)wingTag.textContent=`Wing ${curWing+1} of ${W.length} · heading ${HEAD[H[Math.min(curWing,W.length-1)]/90]}`;
+}
+/* Turn the view to the next wing (d = 1) or back to the one before (d = -1). The strip swings 90 degrees: anticlockwise for a right turn. */
+function turnWing(d){
+  const{W}=wingInfo(),to=curWing+d;
+  if(turning||grouped||to<0||to>=W.length)return;
+  turning=true;clearTimeout(autoT);
+  const turn=d>0?W[to].turn:W[curWing].turn,sgn=(turn==='L'?1:-1)*d;
+  const swap=()=>{curWing=to;render();scroller.scrollLeft=d>0?0:scroller.scrollWidth;noAutoUntil=Date.now()+1200;navUpdate();};
+  if(reduce){swap();turning=false;return;}
+  svg.style.transformOrigin=`${scroller.scrollLeft+scroller.clientWidth/2}px 50%`;
+  svg.style.transition='transform .3s ease-in,opacity .3s';svg.style.transform=`rotate(${sgn*90}deg) scale(.6)`;svg.style.opacity='0';
+  setTimeout(()=>{
+    swap();
+    svg.style.transition='none';svg.style.transformOrigin=`${scroller.scrollLeft+scroller.clientWidth/2}px 50%`;svg.style.transform=`rotate(${-sgn*90}deg) scale(.6)`;
+    void svg.getBoundingClientRect();
+    svg.style.transition='transform .3s ease-out,opacity .3s';svg.style.transform='none';svg.style.opacity='1';
+    setTimeout(()=>{svg.style.transition='';svg.style.transformOrigin='';turning=false;},330);
+  },300);
+}
+turnR.onclick=()=>turnWing(1);turnL.onclick=()=>turnWing(-1);
 const navGo=d=>scroller.scrollBy({left:d*scroller.clientWidth*0.8,behavior:reduce?'auto':'smooth'});
 navL.onclick=()=>navGo(-1);navR.onclick=()=>navGo(1);
-scroller.addEventListener('scroll',navUpdate,{passive:true});
+scroller.addEventListener('scroll',()=>{
+  navUpdate();
+  const m=scroller.scrollWidth-scroller.clientWidth,l=scroller.scrollLeft,{W}=wingInfo();
+  clearTimeout(autoT);
+  if(!turning&&!grouped&&m>4&&Date.now()>noAutoUntil){   // scrolled to the end of a wing: the view turns by itself
+    if(l>lastLeft&&l>=m-2&&curWing<W.length-1)autoT=setTimeout(()=>turnWing(1),450);
+    else if(l<lastLeft&&l<=2&&curWing>0)autoT=setTimeout(()=>turnWing(-1),450);
+  }
+  lastLeft=l;
+},{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
 
@@ -4552,7 +4644,7 @@ $('shCopy').onclick=async()=>{try{await navigator.clipboard.writeText(location.o
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={BE,wingsOf,turnWing,wing:()=>curWing,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);

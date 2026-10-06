@@ -286,6 +286,40 @@ try {
     if (okv < nv2 - 1) errs.push('Suggest a variation worked on only ' + okv + ' of ' + nv2 + ' layouts');
   await ai.close();
 
+  // Wings: a corner unit turns the building. The screen shows one wing, and turns 90 degrees to the next when the strip is scrolled to its end on a corner
+  {
+    const wp = await browser.newPage({ viewport: { width: 1500, height: 860 }, reducedMotion: 'reduce' });
+    wp.on('pageerror', e => errs.push('wings page script error: ' + e.message));
+    await wp.goto(`http://localhost:${PORT}/?debug`); await wp.click('#lStart'); await wp.fill('#pName', 'Wings'); await wp.click('#pNew');
+    await wp.waitForSelector('body.view-app', { timeout: 5000 }); await wp.keyboard.press('Escape'); await wp.waitForTimeout(300);
+    const w0 = await wp.evaluate(() => { const pad = window.__pad, A = (n, seed, extra) => pad.addUnit(Object.assign({ n, pri: 'balanced', seed }, extra));
+      A(1, 1, { layout: '1B-01_1' }); A(1, 2, { layout: '1B-02_1' }); A(1, 3, { side: 'R', corner: 'R' }); A(2, 4, { layout: 'A2-1.1_1' }); A(2, 5, { layout: 'A2-1.2_1' }); A(1, 6, { side: 'R', corner: 'R' }); A(1, 7, { layout: '1B-03_1' });
+      return { w: pad.wingsOf().map(w => [w.turn, w.units.length]), cur: pad.wing(), shown: document.querySelectorAll('#strip .unit').length }; });
+    if (JSON.stringify(w0.w) !== JSON.stringify([[null, 3], ['R', 3], ['R', 1]]) || w0.cur !== 0 || w0.shown !== 3) errs.push('wings: expected 3 wings of 3, 3 and 1 units with the first on screen: ' + JSON.stringify(w0));
+    await wp.waitForTimeout(300);
+    if (!(await wp.isVisible('#turnR'))) errs.push('wings: a Turn button should show at the end of a wing that ends on a corner');
+    if (await wp.isVisible('#turnL')) errs.push('wings: the first wing has nothing to go back to');
+    await wp.click('#turnR'); await wp.waitForTimeout(300);
+    const w1 = await wp.evaluate(() => ({ cur: window.__pad.wing(), shown: [...document.querySelectorAll('#strip .unit')].map(g => g.dataset.idx).join(), tag: document.getElementById('wingTag').textContent }));
+    if (w1.cur !== 1 || w1.shown !== '4,5,6' || !/Wing 2 of 3/.test(w1.tag) || !/south/.test(w1.tag)) errs.push('wings: Turn right should show wing 2 heading south: ' + JSON.stringify(w1));
+    if (!(await wp.isVisible('#turnL'))) errs.push('wings: a Back button should show at the start of wing 2');
+    await wp.click('#turnL'); await wp.waitForTimeout(300);
+    if ((await wp.evaluate(() => window.__pad.wing())) !== 0) errs.push('wings: Back did not return to wing 1');
+    // adding at the right end of wing 1 puts the new unit first in wing 2 and shows it
+    await wp.evaluate(() => document.getElementById('add').click()); await wp.waitForTimeout(250);
+    await wp.evaluate(() => document.querySelector('#quickOpts [data-n="1"]').click()); await wp.waitForTimeout(400);
+    const w2 = await wp.evaluate(() => ({ w: window.__pad.wingsOf().map(w => w.units.length), cur: window.__pad.wing(), n: window.__pad.units().length, saved: Object.keys(localStorage).filter(k => k.startsWith('pad.proj.')).map(k => (JSON.parse(localStorage.getItem(k)).order || []).length) }));
+    if (JSON.stringify(w2.w) !== JSON.stringify([3, 4, 1]) || w2.cur !== 1) errs.push('wings: a unit added beyond a corner should start the next wing and show it: ' + JSON.stringify(w2));
+    if (!w2.saved.includes(w2.n)) errs.push('wings: the order along the building should be saved: ' + JSON.stringify(w2));
+    // scrolling to the end of a wing on a narrow screen turns the view by itself
+    await wp.setViewportSize({ width: 700, height: 860 }); await wp.waitForTimeout(900);
+    await wp.evaluate(() => { const w = window.__pad; if (w.wing() !== 0) w.turnWing(-1); }); await wp.waitForTimeout(900);
+    const sc = await wp.evaluate(() => { const s = document.getElementById('scroller'); return { max: s.scrollWidth - s.clientWidth, wing: window.__pad.wing() }; });
+    if (sc.wing === 0 && sc.max > 20) { await wp.evaluate(() => { const s = document.getElementById('scroller'); s.scrollLeft = s.scrollWidth; }); await wp.waitForTimeout(1000); if ((await wp.evaluate(() => window.__pad.wing())) !== 1) errs.push('wings: scrolling to the end on a corner should turn the view to the next wing'); }
+    else errs.push('wings: expected a scrolling strip on a narrow screen: ' + JSON.stringify(sc));
+    await wp.close();
+  }
+
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).
   const signUp = async (page, email, name) => {
     await page.waitForSelector('#land', { state: 'visible', timeout: 5000 });
