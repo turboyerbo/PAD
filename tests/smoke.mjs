@@ -5,6 +5,7 @@ import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import fs from 'node:fs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = 8137;
@@ -171,6 +172,43 @@ try {
     const net = await ai.evaluate(() => { const T = window.__pad, L = T.units(), u = L[L.length - 2]; return Math.round(T.netArea(u.plan) / 0.092903); });
     if (![668, 678, 670, 547].includes(net)) errs.push('catalog unit net area should match the printed drawing, got ' + net + ' ft2');
   }
+    // Edit modes: Furniture, Drafting and Layout (AI) each offer their own tools
+    await ai.evaluate(() => window.__pad.openEditor(window.__pad.units()[0]));
+    await ai.waitForTimeout(700);
+    const modeTxt = (await ai.locator('#edModes [data-mode]').allTextContents()).map(s => s.trim()).join('|');
+    if (modeTxt !== 'Furniture|Drafting|Layout (AI)') errs.push('edit modes should be Furniture, Drafting and Layout (AI), got ' + modeTxt);
+    const st = () => ai.evaluate(() => { const E = window.__pad.edState(); return { mode: E.mode, W: E.P.W, D: E.P.D, walls: E.P.walls.length, furn: document.querySelectorAll('#edSvg [class^="m-"]').length, walker: !!document.getElementById('edWk'), stuck: (E.wk ? E.wk.stuck.join() : ''), chips: [...document.querySelectorAll('#edSide .chip')].map(c => c.textContent), btns: [...document.querySelectorAll('#edSide [data-act]')].map(c => c.dataset.act) }; });
+    let s = await st();
+    if (s.mode !== 'layout' || !s.walker || s.furn) errs.push('Layout (AI) should start with a walking person and no furniture: ' + JSON.stringify({ m: s.mode, w: s.walker, f: s.furn }));
+    await ai.click('#edModes [data-mode="furn"]'); s = await st();
+    if (s.mode !== 'furn' || !s.furn || s.walker) errs.push('Furniture mode should show furniture and no walker');
+    if (!s.chips.includes('Double bed') || s.chips.includes('Interior alcove') || s.chips.includes('Balcony')) errs.push('Furniture mode should offer furniture only: ' + s.chips.slice(0, 4));
+    await ai.click('#edModes [data-mode="draft"]'); s = await st();
+    if (s.mode !== 'draft' || s.furn) errs.push('Drafting should hide furniture');
+    if (s.chips.includes('Double bed') || !s.chips.includes('Interior alcove') || !s.chips.includes('Balcony') || !s.btns.includes('fp')) errs.push('Drafting should offer walls, alcoves, bump-outs and footprint: ' + s.chips.join());
+    const w0 = s.W, d0 = s.D, nw0 = s.walls;
+    await ai.click('#edSide [data-act="fp"][data-ax="W"][data-d="0.1"]'); s = await st();
+    if (Math.abs(s.W - w0 - 0.1) > 0.001) errs.push('Wider did not widen the footprint: ' + w0 + ' to ' + s.W);
+    await ai.click('#edSide [data-act="fp"][data-ax="D"][data-d="0.1"]'); s = await st();
+    if (Math.abs(s.D - d0 - 0.1) > 0.001) errs.push('Deeper did not deepen the footprint');
+    await ai.click('#edUndo'); await ai.click('#edUndo'); s = await st();
+    if (Math.abs(s.W - w0) > 0.001 || Math.abs(s.D - d0) > 0.001) errs.push('Undo did not restore the footprint');
+    await ai.evaluate(() => { const b = [...document.querySelectorAll('#edSide .chip')].find(c => c.textContent === 'Interior alcove'); b.click(); }); s = await st();
+    if (s.walls !== nw0 + 3) errs.push('Interior alcove should add three walls: ' + nw0 + ' to ' + s.walls);
+    await ai.click('#edModes [data-mode="layout"]'); await ai.waitForTimeout(400); s = await st();
+    if (s.mode !== 'layout' || !s.walker || s.furn) errs.push('back in Layout (AI) the walking person should show');
+    // close every door but the entry: the person cannot reach the rooms and the panel says so
+    await ai.evaluate(() => { const E = window.__pad.edState(); E.P.doors = E.P.doors.filter(d => d.hy >= E.P.D - 0.45); });
+    await ai.click('#edModes [data-mode="furn"]'); await ai.click('#edModes [data-mode="layout"]'); await ai.waitForTimeout(300); s = await st();
+    if (!s.stuck || !/cannot walk to/.test(await ai.locator('#edSide').innerText())) errs.push('rooms without doors should be reported as unreachable');
+    await ai.click('#edCancel'); await ai.click('#edCancel'); await ai.waitForTimeout(200);
+    // every catalog layout is walkable from the entry to every room, also after the footprint grows
+    for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
+      const r = await ai.evaluate(c => { const pad = window.__pad, u = pad.addUnit({ n: c.n, pri: 'balanced', seed: 1, layout: c.id }); pad.openEditor(u); const E = pad.edState(), out = { a: pad.edRoute(E.P).stuck.join() };
+        document.querySelector('#edModes [data-mode="draft"]').click(); for (let i = 0; i < 4; i++) { document.querySelector('#edSide [data-act="fp"][data-ax="W"][data-d="0.1"]').click(); document.querySelector('#edSide [data-act="fp"][data-ax="D"][data-d="0.1"]').click(); }
+        document.querySelector('#edModes [data-mode="layout"]').click(); out.b = pad.edRoute(E.P).stuck.join(); out.w = E.P.W - E.orig.W; document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); return out; }, c);
+      if (r.a || r.b || Math.abs(r.w - 0.4) > 0.001) errs.push(c.id + ' walking check: ' + JSON.stringify(r));
+    }
   await ai.close();
 
   // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).

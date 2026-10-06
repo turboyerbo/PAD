@@ -374,6 +374,14 @@ body.chat-open .info{right:356px}
 .meter .pip{width:12px;height:12px;border-radius:50%;border:2px solid var(--draw);background:transparent;box-sizing:border-box}
 .meter .pip.on{background:var(--draw)}
 .meter .mcnt{font-family:var(--narrow);font-size:13px;margin-left:4px}
+.modes{display:flex}
+.modes .tb{display:inline-flex;align-items:center;gap:6px;border-radius:0;margin-left:-1px;padding:7px 12px}
+.modes .tb:first-child{border-radius:2px 0 0 2px;margin-left:0}
+.modes .tb:last-child{border-radius:0 2px 2px 0}
+.modes svg{width:15px;height:15px;flex:none}
+.ed-top .modes .tb[aria-pressed="true"]{background:var(--draw);color:#fff}
+body.manual .modes{display:none}
+.wkroute{fill:none;stroke:var(--person);stroke-width:.04;stroke-dasharray:.12 .12;opacity:.55;pointer-events:none}
 .ghost{opacity:.75}
 .ghost *{fill:none!important;stroke:#8FA3B5!important;stroke-width:.7!important}
 .ghost .wF{fill:rgba(143,163,181,.18)!important;stroke:none!important}
@@ -409,7 +417,11 @@ body.mob .ed-top>div:first-child{min-width:0}
 body.mob .meter .mlbl{display:none}
 body.mob .meter .pip{width:9px;height:9px;border-width:1.5px}
 body.mob .meter .mcnt{font-size:12px}
-body.mob .ed-act{grid-column:1/-1;flex-wrap:nowrap;gap:5px}
+body.mob .ed-top>.meter{grid-row:1;grid-column:2}
+body.mob .modes{grid-row:2;grid-column:1/-1}
+body.mob .modes .tb{flex:1;justify-content:center;gap:4px;padding:7px 4px;font-size:11px;letter-spacing:.02em;white-space:nowrap}
+body.mob .modes svg{width:13px;height:13px}
+body.mob .ed-act{grid-row:3;grid-column:1/-1;flex-wrap:nowrap;gap:5px}
 body.mob .ed-act .tb{flex:1;padding:6px 4px;font-size:11px;letter-spacing:.02em;white-space:nowrap}
 body.mob .ed-act .tb.primary{flex:1.3}
 body.mob .ed-body{flex-direction:column}
@@ -852,6 +864,11 @@ body.no-ai:not(.manual) .cust{display:none}
   <i class="tape tl" aria-hidden="true"></i><i class="tape tr" aria-hidden="true"></i>
   <div class="ed-top">
     <div><span class="step">Tracing paper</span><h2 id="edTitle">PAD-01</h2></div>
+    <div class="modes" id="edModes" role="group" aria-label="Edit mode">
+      <button class="tb" type="button" data-mode="furn" aria-pressed="false" title="Move, replace, add or delete furniture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11V8a2 2 0 012-2h10a2 2 0 012 2v3"/><path d="M3 15a2 2 0 012-2h14a2 2 0 012 2v3H3z"/><path d="M5 18v2M19 18v2"/></svg>Furniture</button>
+      <button class="tb" type="button" data-mode="draft" aria-pressed="false" title="Edit walls, doors, bump-outs and the footprint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4l6 6L9 21H3v-6z"/><path d="M12 6l6 6"/></svg>Drafting</button>
+      <button class="tb" type="button" data-mode="layout" aria-pressed="true" title="Resize rooms by typing or describe a change. The plan is regenerated to stay walkable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 11h10M13 3v18M13 15h8"/></svg>Layout (AI)</button>
+    </div>
     <div class="meter" id="edMeter" role="status"></div>
     <div class="ed-act"><button class="tb" id="edUndo" type="button">Undo</button><button class="tb" id="edReset" type="button">Start over</button><button class="tb" id="edCancel" type="button">Discard</button><button class="tb primary" id="edDone" type="button">Review changes</button></div>
   </div>
@@ -1844,7 +1861,7 @@ const FDIM={ns:[.44,.44],arm:[.8,.8],sink:[.7,.44],cook:[.6,.54],fridge:[.74,.7]
 function gridOf(P){
   if(P.grid)return P.grid;
   // rad = body half-width (0.23 m shoulders) + half a cell diagonal (0.07 m): anywhere inside a free cell the body stays clear of walls and furniture.
-  const cs=0.1,nx=Math.max(1,Math.ceil(P.W/cs)),ny=Math.max(1,Math.ceil(P.D/cs)),blk=new Uint8Array(nx*ny),rad=0.3,R=[],C=[];
+  const cs=0.1,nx=Math.max(1,Math.ceil(P.W/cs)),ny=Math.max(1,Math.ceil(P.D/cs)),blk=new Uint8Array(nx*ny),rad=P.walkRad||0.3,R=[],C=[];   // walkRad: the room editor tests the route with a slimmer body and open doors
   P.walls.forEach(w=>R.push([w.x,w.y,w.x+w.w,w.y+w.h]));
   P.furn.forEach(p=>{const k=p.k;if(k==='rug')return;
     if(k==='rtable'){C.push([p.x,p.y,(p.r||0.45)+0.45]);return;}
@@ -1855,7 +1872,7 @@ function gridOf(P){
     let cx=p.x,cy=p.y;
     if(k==='desk'){const a=p.rot*Math.PI/180;cx+=-Math.sin(a)*0.3;cy+=Math.cos(a)*0.3;}
     R.push([cx-w/2,cy-d/2,cx+w/2,cy+d/2]);});
-  P.doors.forEach(dr=>{const ex=dr.hx+dr.ox*dr.w,ey=dr.hy+dr.oy*dr.w;R.push([Math.min(dr.hx,ex)-0.03,Math.min(dr.hy,ey)-0.03,Math.max(dr.hx,ex)+0.03,Math.max(dr.hy,ey)+0.03]);});
+  if(!P.walkRad)P.doors.forEach(dr=>{const ex=dr.hx+dr.ox*dr.w,ey=dr.hy+dr.oy*dr.w;R.push([Math.min(dr.hx,ex)-0.03,Math.min(dr.hy,ey)-0.03,Math.max(dr.hx,ex)+0.03,Math.max(dr.hy,ey)+0.03]);});
   for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
     const x=(i+0.5)*cs,y=(j+0.5)*cs;
     if(x<rad||y<rad||x>P.W-rad||y>P.D-rad||R.some(q=>x>q[0]-rad&&x<q[2]+rad&&y>q[1]-rad&&y<q[3]+rad)||C.some(q=>Math.hypot(x-q[0],y-q[1])<q[2]+rad))blk[j*nx+i]=1;
@@ -2161,13 +2178,16 @@ function quickAdd(n){
 
 /* ---------- unit editor: move walls and doors, add and remove furniture, fixtures and walls ---------- */
 const EDKEYS=['walls','doors','wins','furn','floors','rooms','marks','bumps','dim','nd','pref'];
+/* The editor has three modes. Furniture: move, replace, add, delete. Drafting: walls, doors, bump-outs, alcoves, footprint (furniture hidden).
+   Layout (AI): rooms only, resized by typing or by a prompt, and a person walks the plan to show every room can be reached.
+   Leaving Layout, or confirming, places furniture afresh to fit. Leaving Drafting drops any furniture a wall now cuts through. */
 const KN={bed:'Bed',ns:'Nightstand',sofa:'Sofa',arm:'Armchair',ctable:'Coffee table',rtable:'Round table',ltable:'Dining table',desk:'Desk',dresser:'Dresser',closet:'Closet',shelf:'Shelving',tv:'TV',rug:'Rug',plant:'Plant',wd:'Washer / dryer',counter:'Counter',sink:'Sink',cook:'Cooktop',fridge:'Fridge',island:'Island',wc:'Toilet',van:'Vanity',tub:'Tub',shower:'Shower',dog:'Dog bed'};
 const PAL=[
   {g:'Washroom',it:[{n:'Toilet',k:'wc'},{n:'Vanity',k:'van',w:0.85,d:0.52},{n:'Double vanity',k:'van',w:1.4,d:0.52},{n:'Tub 60×30 in',k:'tub',w:1.524,d:0.762},{n:'Tub 60×32 in',k:'tub',w:1.524,d:0.813},{n:'Shower',k:'shower',w:1,d:1},{n:'Roll-in shower',k:'shower',w:1.5,d:1}]},
   {g:'Bedroom',it:[{n:'Double bed',k:'bed',w:1.4,d:2},{n:'Queen bed',k:'bed',w:1.55,d:2},{n:'Twin bed',k:'bed',w:0.95,d:2},{n:'Nightstand',k:'ns'},{n:'Dresser',k:'dresser',w:1.1,d:0.48},{n:'Closet',k:'closet',w:1.2,d:0.62},{n:'Desk',k:'desk',w:1,d:0.5}]},
   {g:'Living',it:[{n:'Sofa',k:'sofa',w:2.1,d:0.9},{n:'Armchair',k:'arm'},{n:'Coffee table',k:'ctable',w:0.55,d:1},{n:'Round table',k:'rtable',r:0.45,c:4},{n:'Dining table',k:'ltable',w:1.6,d:0.9,c:3},{n:'TV',k:'tv',w:1.7,d:0.42},{n:'Shelving',k:'shelf',w:1,d:0.4},{n:'Rug',k:'rug',w:1.5,d:2.3},{n:'Plant',k:'plant',s:0.45}]},
   {g:'Kitchen and laundry',it:[{n:'Counter',k:'counter',w:1.2,d:0.62},{n:'Sink',k:'sink'},{n:'Cooktop',k:'cook'},{n:'Fridge',k:'fridge'},{n:'Island',k:'island',w:0.9,d:1.6},{n:'Washer / dryer',k:'wd'}]},
-  {g:'Walls',it:[{n:'Wall, horizontal',wall:'h'},{n:'Wall, vertical',wall:'v'}]},
+  {g:'Walls',it:[{n:'Wall, horizontal',wall:'h'},{n:'Wall, vertical',wall:'v'},{n:'Interior alcove',alcove:1}]},
   {g:'Balcony and bump-outs',it:[{n:'Balcony',bump:'balcony'},{n:'Den (bump-out)',bump:'den'},{n:'Nook (bump-out)',bump:'nook'},{n:'Recessed balcony (bump-in)',bump:'loggia'},{n:'Entry vestibule (bump-in)',bump:'vestibule'}]}
 ];
 const DEAD_END=1.5;                 // a hall may run this far past its last door before it counts as a dead end, m
@@ -2306,7 +2326,7 @@ function edOverlaps(P){
   return set;
 }
 function edIssues(P,u,full){
-  const o=[],wc=P.furn.filter(p=>p.k==='wc'),fur=!E.ai||full;   // while tracing, furniture is hidden and rebuilt on accepting, so only the layout is checked
+  const o=[],wc=P.furn.filter(p=>p.k==='wc'),fur=!edHide()||full;   // while tracing, furniture is hidden and rebuilt on accepting, so only the layout is checked
   P.rooms.forEach(q=>{(q.red||[]).forEach(m=>o.push(['bad',m]));});
   if(fur){
   if(!wc.length)o.push(['bad','No toilet in this unit.']);
@@ -2328,9 +2348,9 @@ function openEditor(u){
   const P=edClone(u.plan);let mx=0;P.furn.forEach(p=>{if(p.id>mx)mx=p.id;});P.furn.forEach(p=>{if(p.id===undefined)p.id=++mx;});
   let dm=0;P.doors.forEach(d=>{if(d.id>dm)dm=d.id;});P.doors.forEach(d=>{if(d.id===undefined)d.id=++dm;});
   let mr=0;P.rooms.forEach(q=>{if(q.rid>mr)mr=q.rid;});P.rooms.forEach(q=>{if(q.rid===undefined)q.rid=++mr;});
-  E={u,P,orig:edClone(P),sel:null,hist:[],drag:null,nid:Math.max(mx,dm),base:null,dirty:false,dis:new Set(),msg:'',used:0,last:null,review:false,ai:!MANUAL,aiRun:false,busy:false,prompts:[],log:[],draft:'',rm:null,rsel:null,rd:null,rmEdited:false};E.base=edOverlaps(P);
+  E={mode:MANUAL?'all':'layout',rsig:'',u,P,orig:edClone(P),sel:null,hist:[],drag:null,nid:Math.max(mx,dm),base:null,dirty:false,dis:new Set(),msg:'',used:0,last:null,review:false,ai:!MANUAL,aiRun:false,busy:false,prompts:[],log:[],draft:'',rm:null,rsel:null,rd:null,rmEdited:false};E.base=edOverlaps(P);
   $('edTitle').textContent=tagOf(u)+' \u00B7 '+(u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'')+' \u00B7 Iteration '+nextIter(u);
-  $('edCancel').textContent='Discard';
+  $('edCancel').textContent='Discard';E.rsig=roomSig(P);edModesSync();
   document.documentElement.style.setProperty('--hbar',((isMob?(document.querySelector('.mtop')||{}).offsetHeight:(document.querySelector('.bar')||{}).offsetHeight)||80)+'px');
   const el=$('ed');el.hidden=false;document.body.classList.add('tracing');
   if(E.ai&&isMob)el.classList.add('tools');
@@ -2612,6 +2632,7 @@ function edMeter(){
 /* What differs between the sheet underneath and the sheet on top, in plain words. */
 function edSummary(o,n){
   const L=[],mm=v=>Math.round(v*1000),nm=k=>KN[k]||k;
+  if(Math.abs(n.W-o.W)>0.01||Math.abs(n.D-o.D)>0.01)L.push(`Changed the footprint to ${Math.round(n.W*1000)} by ${Math.round(n.D*1000)} mm`);
   const om=new Map(o.furn.map(p=>[p.id,p])),nmap=new Map(n.furn.map(p=>[p.id,p]));
   n.furn.forEach(p=>{const q=om.get(p.id);if(!q){L.push('Added '+nm(p.k));return;}
     const d=Math.hypot(p.x-q.x,p.y-q.y);if(d>0.02)L.push(`Moved ${nm(p.k)} ${mm(d)} mm`);if(((p.rot-q.rot)%360+360)%360)L.push('Rotated '+nm(p.k));});
@@ -2642,13 +2663,14 @@ function edCompare(){
 /* Ask for confirmation before the sheet becomes the unit's new layout. */
 function edReview(){
   if(!E||!E.dirty)return;
-  const L=edChanges(),o=E.orig,P=E.P,bk=E.base;if(E.ai)E.base=new Set();const iss=edIssues(E.ai?rmFurnished(P,E.u):P,E.u,true).filter(x=>x[0]!=='ok'),no=netOf(o),nn=netOf(P);E.base=bk;
+  edFinalize();
+  const L=edChanges(),o=E.orig,P=E.P,iss=edIssues(P,E.u,true).filter(x=>x[0]!=='ok'),no=netOf(o),nn=netOf(P);
   $('ecTitle').textContent=tagOf(E.u)+' · Iteration '+nextIter(E.u);
   $('ecBody').innerHTML=`<h3 class="sub">What changed</h3><ul class="eclist">${(L.length?L:['Small adjustments']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><h3 class="sub">Effect</h3><dl class="edl"><dt>Net area</dt><dd>${no.toFixed(1)} → ${nn.toFixed(1)} m²</dd><dt>Efficiency</dt><dd>${(no/grossOf(o)*100).toFixed(1)}% → ${(nn/grossOf(P)*100).toFixed(1)}%</dd></dl>${E.ai?'<p class="note">Furniture and appliances are placed fresh to fit the new layout when you save.</p>':''}<h3 class="sub">Code check</h3>`+(iss.length?iss.map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join(''):'<p class="chk-ok">Meets the code limits checked here.</p>');
   $('ecNote').value=E.ai?E.prompts.join('. ').slice(0,140):'';E.review=true;$('edConfirm').hidden=false;$('ecOk').focus();
 }
 $('ecOk').onclick=()=>{
-  if(!E)return;if(E.ai)rmFurnish(E.P,E.u);const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
+  if(!E)return;edFinalize();const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
   const changes=edChanges(),note=$('ecNote').value.trim().slice(0,140);
   ensureIters(u);const n=nextIter(u);
   u.iters.push({n,note,at:Date.now(),d,changes});u.cur=n;
@@ -2657,7 +2679,7 @@ $('ecOk').onclick=()=>{
 };
 /* The sheet becomes a new unit beside the others, a variation of this one. The original stays as it was. */
 $('ecNew').onclick=()=>{
-  if(!E)return;if(E.ai)rmFurnish(E.P,E.u);const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
+  if(!E)return;edFinalize();const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
   const changes=edChanges(),note=($('ecNote').value.trim()||('Variation of '+tagOf(u))).slice(0,140);
   const nu=makeUnit({n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null,side:'R',corner:u.corner||null,minimal:u.minimal});
   nu.iters=[{n:1,note,at:Date.now(),d,changes}];nu.cur=1;units.push(nu);
@@ -2699,22 +2721,24 @@ function edRender(){
   const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P))*Sc)/2+outTop(P)*Sc;
   Object.assign(E,{Sc,x0,y0});
   const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
-  let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:E.ai})}</g>`+unitSVG(fu,{noFloor:true,noFurn:E.ai})+wallsSVG(ws)+sideWinSVG(P);
+  let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,noFurn:edHide()})+wallsSVG(ws)+sideWinSVG(P);
   const s=E.sel;
   if(s&&s.t==='f'){const p=P.furn.find(x=>x.id===s.id);if(p){const[w,d]=dimsOf(p);g+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})"><rect class="sel" x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/></g>`;}}
   if(s&&s.t==='d'){const d=P.doors.find(x=>x.id===s.id);if(d){const[lo,hi]=doorRng(d);g+=doorHor(d)?`<rect class="wsel" x="${f(lo)}" y="${f(d.hy-0.15)}" width="${f(hi-lo)}" height="0.3"/>`:`<rect class="wsel" x="${f(d.hx-0.15)}" y="${f(lo)}" width="0.3" height="${f(hi-lo)}"/>`;}}
   if(s&&s.t==='b'){const b=bumpsOf(P).find(x=>x.id===s.id);if(b){const r=bumpRect(P,b);g+=`<rect class="sel" x="${f(r[0])}" y="${f(r[1])}" width="${f(r[2]-r[0])}" height="${f(r[3]-r[1])}"/>`;}}
   if(s&&s.t==='w'){const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);if(gr)gr.idxs.forEach(i=>{const w=P.walls[i];g+=`<rect class="wsel" x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"/>`;});}
-  if(E.ai)g+=`<g id="rmOv">${rmOverlay()}</g>`;
+  if(s&&s.t==='w'){const w0=P.walls[s.wi];if(w0&&w0.ag)P.walls.forEach(v=>{if(v.ag===w0.ag&&v!==w0)g+=`<rect class="wsel" x="${f(v.x)}" y="${f(v.y)}" width="${f(v.w)}" height="${f(v.h)}"/>`;});}
+  if(E.ai)g+=`<g id="rmOv">${rmOverlay()}</g>`+edWalkerSVG();
   const fs=Math.max(8,Math.min(12,Sc*0.22));
   $('edSvg').setAttribute('width',cw);$('edSvg').setAttribute('height',ch);$('edSvg').setAttribute('viewBox',`0 0 ${cw} ${ch}`);
-  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,E.ai);
+  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide());
+  if(E.ai){edWalkPlace();if(!wkRaf&&!reduce){wkT=0;wkRaf=requestAnimationFrame(edWalkLoop);}}
   edBubbles(cw);
 }
 /* Comment bubbles over each dead-end hall. */
 function edBubbles(cw){
   const box=$('edBub');let h='';
-  if(E.ai){box.innerHTML='';return;}
+  if(E.ai||E.mode==='furn'){box.innerHTML='';return;}
   let shown=0;
   deadEnds(E.P).forEach((de,i)=>{
     const k=deKey(de);if(E.dis.has(k))return;
@@ -2729,11 +2753,13 @@ function edBubbles(cw){
 }
 function edHit(pt){
   const P=E.P,G=wallGroups(P),wallAt=m=>{for(const gr of G)for(const i of gr.idxs){const w=P.walls[i];if(pt.x>=w.x-m&&pt.x<=w.x+w.w+m&&pt.y>=w.y-m&&pt.y<=w.y+w.h+m)return{t:'w',wi:gr.idxs[0]};}return null;};
-  let h=wallAt(0);if(h)return h;
-  for(const d of P.doors)if(inDoor(d,pt,true))return{t:'d',id:d.id};
-  for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k!=='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
-  for(const d of P.doors)if(inDoor(d,pt,false))return{t:'d',id:d.id};
-  for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k==='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
+  const FU=E.mode!=='draft',DR=E.mode!=='furn';   // furniture mode only touches furniture, drafting only touches the building
+  let h=DR?wallAt(0):null;if(h)return h;
+  if(DR)for(const d of P.doors)if(inDoor(d,pt,true))return{t:'d',id:d.id};
+  if(FU)for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k!=='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
+  if(DR)for(const d of P.doors)if(inDoor(d,pt,false))return{t:'d',id:d.id};
+  if(FU)for(let i=P.furn.length-1;i>=0;i--){const p=P.furn[i];if(p.k==='rug'&&inItem(p,pt))return{t:'f',id:p.id};}
+  if(!DR)return null;
   const bh=bumpAt(P,pt);if(bh)return{t:'b',id:bh.id};
   return wallAt(0.12);
 }
@@ -2756,7 +2782,7 @@ $('edSvg').addEventListener('pointermove',e=>{
   else if(s.t==='b'){const b=bumpsOf(P).find(x=>x.id===s.id);if(b)nudgeBump(P,b,dx);}
   else if(s.t==='d'){const d=P.doors.find(x=>x.id===s.id);moveDoor(P,d,doorHor(d)?dx:dy);}
   else{const gr=wallGroups(P).find(q=>q.idxs[0]===s.wi);
-    if(gr&&isUser(P,gr)){const w=P.walls[gr.idxs[0]];w.x=f(Math.max(0.1,Math.min(P.W-0.1-w.w,w.x+sn(dx))));w.y=f(Math.max(YT,Math.min(P.D-0.2-w.h,w.y+sn(dy))));}
+    if(gr&&isUser(P,gr))moveUser(P,P.walls[gr.idxs[0]],sn(dx),sn(dy));
     else if(gr)moveWall(P,gr,gr.hor?dy:dx);}
   edRender();
 });
@@ -2764,6 +2790,11 @@ const edEnd=e=>{if(E&&E.ai){rmUp(e);return;}if(!E||!E.drag)return;const D=E.drag
 $('edSvg').addEventListener('pointerup',edEnd);$('edSvg').addEventListener('pointercancel',edEnd);
 function edAdd(it){
   if(it.bump)return addBump(it.bump);
+  if(it.alcove){   // three short walls that move together, to drag against a wall
+    if(!edPush('a'+(++E.nid)))return edBlock();const P=E.P,cx=f(P.W/2-0.6),cy=f(P.D/2-0.5),id=++E.nid;
+    P.walls.push({x:cx,y:cy,w:1.2,h:0.1,u:1,ag:id},{x:cx,y:f(cy+0.1),w:0.1,h:0.5,u:1,ag:id},{x:f(cx+1.1),y:f(cy+0.1),w:0.1,h:0.5,u:1,ag:id});
+    E.sel={t:'w',wi:P.walls.length-3};edRender();edPanel();return;
+  }
   if(!edPush('a'+(++E.nid)))return edBlock();const P=E.P;
   if(it.wall){P.walls.push(it.wall==='h'?{x:f(P.W/2-0.5),y:f(P.D/2),w:1,h:0.1,u:1}:{x:f(P.W/2),y:f(P.D/2-0.5),w:0.1,h:1,u:1});E.sel={t:'w',wi:P.walls.length-1};edRender();edPanel();return;}
   const p=Object.assign({id:++E.nid,x:f(P.W/2),y:f(Math.min(P.D-1,P.D/2)),rot:0},it);delete p.n;P.furn.push(p);
@@ -2779,10 +2810,12 @@ function edAct(a,b){
   else if(a==='del'&&p){if(!edPush())return edBlock();P.furn=P.furn.filter(x=>x!==p);E.sel=null;}
   else if(a==='fnudge'&&p){if(!edPush())return edBlock();p.x=clampX(P,p.x+(+b.dx));p.y=clampY(P,p.y+(+b.dy));}
   else if(a==='wnudge'&&gr){if(!edPush())return edBlock();if(!moveWall(P,gr,+b.d))edUnpush();}
-  else if(a==='wdel'&&gr){if(!edPush())return edBlock();const rm=new Set(gr.idxs);P.walls=P.walls.filter((w,i)=>!rm.has(i));P.doors=P.doors.filter(dr=>!(doorHor(dr)===gr.hor&&doorOn(dr,gr,gr.a-0.15,gr.b+0.15)));E.sel=null;}
-  else if(a==='unudge'&&uw){if(!edPush())return edBlock();uw.x=f(Math.max(0.1,Math.min(P.W-0.1-uw.w,uw.x+(+b.dx))));uw.y=f(Math.max(YT,Math.min(P.D-0.2-uw.h,uw.y+(+b.dy))));}
+  else if(a==='wtrim'&&gr){if(!edPush())return edBlock();if(!trimWall(P,gr,b.end,+b.d))edUnpush();}
+  else if(a==='fp'){if(!edPush('fp'))return edBlock();if(!fpMove(P,b.ax,+b.d))edUnpush();}
+  else if(a==='wdel'&&gr){if(!edPush())return edBlock();const rm=new Set(gr.idxs);{const w0=P.walls[gr.idxs[0]];if(w0&&w0.ag)P.walls.forEach((v,i)=>{if(v.ag===w0.ag)rm.add(i);});}P.walls=P.walls.filter((w,i)=>!rm.has(i));P.doors=P.doors.filter(dr=>!(doorHor(dr)===gr.hor&&doorOn(dr,gr,gr.a-0.15,gr.b+0.15)));E.sel=null;}
+  else if(a==='unudge'&&uw){if(!edPush())return edBlock();moveUser(P,uw,+b.dx,+b.dy);}
   else if(a==='ulen'&&uw){if(!edPush())return edBlock();if(uw.w>=uw.h)uw.w=f(Math.max(0.3,uw.w+(+b.d)));else uw.h=f(Math.max(0.3,uw.h+(+b.d)));}
-  else if(a==='urot'&&uw){if(!edPush())return edBlock();const cx=uw.x+uw.w/2,cy=uw.y+uw.h/2,t=uw.w;uw.w=uw.h;uw.h=t;uw.x=f(cx-uw.w/2);uw.y=f(cy-uw.h/2);}
+  else if(a==='urot'&&uw){if(uw.ag){E.msg='An alcove cannot be rotated. Delete it and add another.';return edBlock();}if(!edPush())return edBlock();const cx=uw.x+uw.w/2,cy=uw.y+uw.h/2,t=uw.w;uw.w=uw.h;uw.h=t;uw.x=f(cx-uw.w/2);uw.y=f(cy-uw.h/2);}
   else if(a==='dnudge'&&d){if(!edPush())return edBlock();if(!moveDoor(P,d,+b.d))edUnpush();}
   else if(a==='dflip'&&d){if(!edPush())return edBlock();if(doorHor(d)){d.hx=f(d.hx+d.cx*d.w);d.cx=-d.cx;}else{d.hy=f(d.hy+d.cy*d.w);d.cy=-d.cy;}}
   else if(a==='dswing'&&d){const g=doorGroup(P,d);if(g){if(!edPush())return edBlock();if(doorHor(d)){d.oy=-d.oy;d.hy=f(d.oy>0?g.pos+g.t:g.pos);}else{d.ox=-d.ox;d.hx=f(d.ox>0?g.pos+g.t:g.pos);}}}
@@ -2815,6 +2848,95 @@ function edHandleSync(p,d,gr,usr,bp){
 }
 function edToggleTools(on){const ed=$('ed');ed.classList.toggle('tools',on===undefined?!ed.classList.contains('tools'):on);edPanel();requestAnimationFrame(()=>{if(E)edRender();});}
 $('edHandle').onclick=()=>edToggleTools();
+const edHide=()=>E.mode==='layout'||E.mode==='draft';   // furniture is hidden while the building itself is edited
+const roomSig=P=>JSON.stringify(P.rooms.filter(q=>!q.bk).map(q=>[q.n,q.x,q.y,q.w,q.h]));
+const edPalOk=gp=>{const dr=/^(Walls|Balcony)/.test(gp.g);return E.mode==='all'||(E.mode==='draft')===dr;};
+/* Make the furniture match the building: after Layout, place it afresh to fit; after Drafting, drop what a wall now cuts through. */
+function edFinalize(){
+  const P=E.P;
+  if(E.mode==='layout'){if(roomSig(P)!==E.rsig){rmFurnish(P,E.u);E.rsig=roomSig(P);E.base=edOverlaps(P);}}
+  else if(E.mode==='draft'){
+    const bad=new Set();edOverlaps(P).forEach(k=>{if(E.base.has(k))return;const[a,b]=k.split('|');if(b[0]==='w')bad.add(+a);});
+    P.furn=P.furn.filter(p=>!bad.has(p.id)&&p.x>0.1&&p.x<P.W-0.1&&p.y>0.2&&p.y<P.D-0.1);
+  }
+}
+function edSetMode(m){
+  if(!E||E.review||E.busy||E.mode===m||E.mode==='all')return;
+  edFinalize();E.mode=m;E.ai=m==='layout';E.sel=null;E.rm=null;E.rsel=null;E.rd=null;E.drag=null;E.msg='';E.rsig=roomSig(E.P);E.wkKey='';
+  edModesSync();edRender();edPanel();
+}
+function edModesSync(){
+  document.querySelectorAll('#edModes [data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===E.mode)));
+  $('ed').dataset.mode=E.mode;
+}
+$('edModes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)edSetMode(b.dataset.mode);});
+/* A wall from an added alcove moves with its two sides. */
+function moveUser(P,w,dx,dy){
+  const G=w.ag?P.walls.filter(v=>v.ag===w.ag):[w];
+  const x0=Math.min(...G.map(v=>v.x)),x1=Math.max(...G.map(v=>v.x+v.w)),y0=Math.min(...G.map(v=>v.y)),y1=Math.max(...G.map(v=>v.y+v.h));
+  dx=Math.max(0.1-x0,Math.min(P.W-0.1-x1,dx));dy=Math.max(YT-y0,Math.min(P.D-0.2-y1,dy));
+  G.forEach(v=>{v.x=f(v.x+dx);v.y=f(v.y+dy);});
+}
+/* Shorten (d below 0) or lengthen (d above 0) one end of a wall, 100 mm at a time. */
+function trimWall(P,gr,end,d){
+  const S=gr.idxs.map(i=>P.walls[i]),st=w=>gr.hor?w.x:w.y,ln=w=>gr.hor?w.w:w.h,ax=gr.hor?['x','w']:['y','h'];
+  const w=end==='a'?S.reduce((m,q)=>st(q)<st(m)?q:m):S.reduce((m,q)=>st(q)+ln(q)>st(m)+ln(m)?q:m);
+  const nl=ln(w)+d;if(nl<0.1){E.msg='That is as short as this wall can go. Delete it instead.';return false;}
+  const lim=gr.hor?P.W:P.D;
+  if(end==='a'){const ns=st(w)-d;if(ns<0.1){E.msg='The wall cannot go past the unit edge.';return false;}w[ax[0]]=f(ns);}
+  else if(st(w)+nl>lim-0.1){E.msg='The wall cannot go past the unit edge.';return false;}
+  w[ax[1]]=f(nl);return true;
+}
+/* Move the right side (W) or the corridor side (D) of the footprint. Walls, floors and rooms that touch that side stretch with it. */
+function fpMove(P,ax,dd){
+  const o=E.orig,nv=f(P[ax]+dd);
+  if(Math.abs(nv-o[ax])>1+1e-6){E.msg='The footprint can change by 1 m at most from the original.';return false;}
+  if(nv<(ax==='W'?2.6:5)){E.msg='That is as small as this unit can get.';return false;}
+  const L=P[ax],p0=ax==='W'?'x':'y',sz=ax==='W'?'w':'h',T=0.45,mid=ax==='W'?'lx':'ly';
+  P.walls.forEach(w=>{if(w.bw)return;if(w[p0]>=L-T&&w[sz]<=T)w[p0]=f(w[p0]+dd);else if(w[p0]+w[sz]>=L-0.3)w[sz]=f(w[sz]+dd);});
+  P.doors.forEach(d=>{if(d[ax==='W'?'hx':'hy']>=L-0.3)d[ax==='W'?'hx':'hy']=f(d[ax==='W'?'hx':'hy']+dd);});
+  [P.rooms,P.floors].forEach(A=>A.forEach(r=>{if(r.bk||r.bf)return;if(r[p0]+r[sz]>=L-0.3){r[sz]=f(r[sz]+dd);if(r.a!==undefined){r.a=r.w*r.h;if(r[mid]!==undefined)r[mid]=f(r[mid]+dd/2);}}}));
+  P[ax]=nv;P.dim=[{W:P.W,D:P.D}];delete P.grid;
+  bumpsOf(P).forEach(b=>{if(bTop(b))b.x=f(Math.max(0.3,Math.min(P.W-0.3-b.w,b.x)));});
+  syncBumps(P);return true;
+}
+/* The person who walks the plan: from the entry to every room and back, along real paths around the walls. */
+let wkRaf=0,wkT=0;
+function edRoute(P){
+  const key=JSON.stringify([P.walls,P.doors,P.W,P.D,P.rooms.map(q=>[q.n,q.x,q.y,q.w,q.h])]);
+  if(E.wk&&E.wkKey===key)return E.wk;
+  const dr=P.doors.filter(d=>doorHor(d)&&d.hy>=P.D-0.45).sort((a,b)=>b.w-a.w)[0],rg=dr?doorRng(dr):[P.W/2-0.4,P.W/2+0.4];
+  const entry={x:(rg[0]+rg[1])/2,y:P.D-0.75},Pw={W:P.W,D:P.D,walls:P.walls,doors:P.doors,furn:[],nodes:{entry},walkRad:0.2};
+  const left=P.rooms.filter(q=>!q.bk&&q.w*q.h>=3).map(q=>({x:q.x+q.w/2,y:q.y+q.h/2,n:q.n,q})),pts=[entry],stuck=[];let cur=entry;   // closets and laundry are too narrow to stand in, so only rooms of 3 m² or more are visited
+  while(left.length){
+    left.sort((a,b)=>Math.hypot(a.x-cur.x,a.y-cur.y)-Math.hypot(b.x-cur.x,b.y-cur.y));
+    const s=left.shift(),r=s.q;
+    const seg=findPath(Pw,cur,s),end=seg.length?seg[seg.length-1]:cur,tol=0.1;
+    if(!(end.x>=r.x-tol&&end.x<=r.x+r.w+tol&&end.y>=r.y-tol&&end.y<=r.y+r.h+tol)){stuck.push(s.n);continue;}   // the nearest place a person can stand is not in that room
+    pts.push(...seg);cur=end;
+  }
+  const back=findPath(Pw,cur,entry);pts.push(...back);
+  const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y));
+  E.wkKey=key;return E.wk={pts,cum,tot:cum[cum.length-1],stuck,s:E.wk?E.wk.s:0};
+}
+function edWalkerSVG(){
+  const W=edRoute(E.P);if(W.pts.length<2)return'';
+  return `<path class="wkroute" d="${W.pts.map((q,i)=>(i?'L':'M')+f(q.x)+' '+f(q.y)).join('')}"/><g class="pp w" id="edWk"><ellipse class="ft" cx="-0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="ft" cx="0.09" cy="0" rx="0.05" ry="0.085"/><ellipse class="bd" cx="0" cy="0" rx="0.19" ry="0.12"/><ellipse class="hr" cx="0" cy="0.05" rx="0.115" ry="0.14"/><circle class="hd" cx="0" cy="-0.01" r="0.09"/></g>`;
+}
+function edWalkPlace(){
+  const W=E&&E.wk,el=$('edWk');if(!W||!el||W.tot<=0)return;
+  let i=1;while(i<W.cum.length-1&&W.cum[i]<W.s)i++;
+  const a=W.pts[i-1],b=W.pts[i],seg=W.cum[i]-W.cum[i-1]||1,t=Math.max(0,Math.min(1,(W.s-W.cum[i-1])/seg)),sw=Math.sin(W.s*9)*0.11;
+  el.setAttribute('transform',`translate(${f(a.x+(b.x-a.x)*t)} ${f(a.y+(b.y-a.y)*t)}) rotate(${f(faceAng(b.x-a.x,b.y-a.y))})`);
+  el.children[0].setAttribute('cy',f(-sw));el.children[1].setAttribute('cy',f(sw));
+}
+function edWalkLoop(ts){
+  wkRaf=0;if(!E||!E.ai||!E.wk||!(E.wk.tot>0)||$('ed').hidden)return;
+  const dt=Math.min(0.1,(ts-(wkT||ts))/1000);wkT=ts;E.wk.s=(E.wk.s+dt*1.1)%E.wk.tot;
+  edWalkPlace();wkRaf=requestAnimationFrame(edWalkLoop);
+}
+const fpHtml=P=>`<h3 class="sub">Footprint</h3><dl class="edl"><dt>Width</dt><dd>${Math.round(P.W*1000)} mm</dd><dt>Depth</dt><dd>${Math.round(P.D*1000)} mm</dd></dl><div class="edbtns"><button class="tb" data-act="fp" data-ax="W" data-d="-0.1">Narrower</button><button class="tb" data-act="fp" data-ax="W" data-d="0.1">Wider</button><button class="tb" data-act="fp" data-ax="D" data-d="-0.1">Shallower</button><button class="tb" data-act="fp" data-ax="D" data-d="0.1">Deeper</button></div><p class="note">Moves the side and corridor walls 100 mm at a time, up to 1 m from the original.</p>`;
+const trimHtml=gr=>`<h3 class="sub">Trim</h3><div class="edbtns"><button class="tb" data-act="wtrim" data-end="a" data-d="-0.1">${gr.hor?'Left':'Top'} end shorter</button><button class="tb" data-act="wtrim" data-end="a" data-d="0.1">${gr.hor?'Left':'Top'} end longer</button><button class="tb" data-act="wtrim" data-end="b" data-d="-0.1">${gr.hor?'Right':'Bottom'} end shorter</button><button class="tb" data-act="wtrim" data-end="b" data-d="0.1">${gr.hor?'Right':'Bottom'} end longer</button></div>`;
 function edPanel(){
   if(E.ai)return aiPanel();
   const P=E.P,s=E.sel,u=E.u;let h='';
@@ -2829,9 +2951,11 @@ function edPanel(){
   }
   else if(gr&&usr){const w=P.walls[gr.idxs[0]];h+=`<h3 class="sub">Added wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round(Math.max(w.w,w.h)*1000)} mm</dd></dl><div class="edbtns"><button class="tb" data-act="ulen" data-d="-0.1">Shorter</button><button class="tb" data-act="ulen" data-d="0.1">Longer</button><button class="tb" data-act="urot">Rotate 90°</button><button class="tb" data-act="wdel">Remove wall</button></div>${nudge('unudge',0.05)}<div class="edbtns"><button class="tb" data-act="dadd">Add door</button></div><p class="note">Drag it anywhere, or nudge 50 mm at a time.</p>`;}
   else if(gr){h+=`<h3 class="sub">${gr.hor?'Horizontal':'Vertical'} wall</h3><dl class="edl"><dt>Length</dt><dd>${Math.round((gr.b-gr.a)*1000)} mm</dd><dt>Position</dt><dd>${Math.round(gr.pos*1000)} mm from the ${gr.hor?'window wall':'left wall'}</dd></dl><div class="edbtns"><button class="tb" data-act="wnudge" data-d="-0.1">${gr.hor?'▲ 100':'◀ 100'}</button><button class="tb" data-act="wnudge" data-d="-0.05">${gr.hor?'▲ 50':'◀ 50'}</button><button class="tb" data-act="wnudge" data-d="0.05">${gr.hor?'▼ 50':'▶ 50'}</button><button class="tb" data-act="wnudge" data-d="0.1">${gr.hor?'▼ 100':'▶ 100'}</button></div><div class="edbtns"><button class="tb" data-act="dadd">Add door</button><button class="tb" data-act="wdel">Remove wall</button></div><p class="note">Drag the wall, or nudge it in millimetres. Doors and room areas follow.</p>`;}
-  else h+=`<p class="note">Click a wall to move it, or a door to slide it. Click an item to move, rotate or delete it. Add items below.</p>`;
-  if(kRoom(P))h+=`<h3 class="sub">Kitchen layouts</h3><div class="ktpl">${Object.keys(KINDS).map(k=>{const r=kTemplate(P,k);return `<div class="kt"><button class="ktp" type="button" data-act="kitchen" data-kind="${k}"${r.ok?'':' disabled'}>${kIcon(k)}<span>${KINDS[k]}</span></button>${r.ok?'':`<small>${escapeHtml(r.reason)}</small>`}</div>`;}).join('')}</div><p class="note">Start from a template, then change it. A template counts as one change.</p>`;
-  h+=PAL.map((gp,gi)=>`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
+  else h+=`<p class="note">${E.mode==='furn'?'Click an item to move, rotate or delete it, or add one below.':E.mode==='draft'?'Click a wall to move or trim it, or a door to slide, flip or delete it. Add walls, doors, alcoves and bump-outs below. Furniture is hidden while you draft.':'Click a wall to move it, or a door to slide it. Click an item to move, rotate or delete it. Add items below.'}</p>`;
+  if(gr&&!usr&&E.mode!=='furn')h+=trimHtml(gr);
+  if(E.mode==='draft'||E.mode==='all')h+=fpHtml(P);
+  if(E.mode!=='draft'&&kRoom(P))h+=`<h3 class="sub">Kitchen layouts</h3><div class="ktpl">${Object.keys(KINDS).map(k=>{const r=kTemplate(P,k);return `<div class="kt"><button class="ktp" type="button" data-act="kitchen" data-kind="${k}"${r.ok?'':' disabled'}>${kIcon(k)}<span>${KINDS[k]}</span></button>${r.ok?'':`<small>${escapeHtml(r.reason)}</small>`}</div>`;}).join('')}</div><p class="note">Start from a template, then change it. A template counts as one change.</p>`;
+  h+=PAL.map((gp,gi)=>!edPalOk(gp)?'':`<h3 class="sub">${gp.g}</h3><div class="pal">${gp.it.map((it,ii)=>`<button class="chip" data-act="add" data-g="${gi}" data-i="${ii}">${it.n}</button>`).join('')}</div>`).join('');
   h+=`<h3 class="sub">Code check</h3>`+edIssues(P,u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('');
   h+=edCompare();
   $('edSide').innerHTML=h;edHandleSync(p,d,gr,usr,bp);$('edUndo').disabled=!E.hist.length;$('edDone').disabled=!E.dirty;edMeter();
@@ -2959,6 +3083,8 @@ function aiPanel(){
   const P=E.P,busy=E.busy;let h='<div class="aip">';
   if(E.msg)h+=`<p class="chk-warn">${escapeHtml(E.msg)}</p>`;
   h+=rmPanel();
+  h+=`<p class="note">The person walking the plan shows the route to every room. Resize a room or describe a change and the layout is regenerated so it stays walkable.</p>`;
+  if(E.wk&&E.wk.stuck.length)h+=`<p class="chk-bad">The person cannot walk to: ${escapeHtml(E.wk.stuck.join(', '))}. Add a door or open a wall to it.</p>`;
   h+=`<h3 class="sub">Describe a change</h3><textarea id="aiText" rows="4" maxlength="600" aria-label="Describe a change to this unit" placeholder="e.g. Add a balcony and make the kitchen an L-shape"${busy?' disabled':''}>${escapeHtml(E.draft)}</textarea>`;
   h+=`<button class="tb primary go" id="aiGo" type="button"${busy?' disabled':''}>${busy?'Updating the plan':'Update the plan'}${busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</button>`;
   if(!E.log.length)h+=`<div class="pal ex">${AIEX.map(x=>`<button class="chip" type="button" data-ex="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join('')}</div><p class="note">Small changes work best. Each request makes a slight variation of this unit, and the code checks run on every one.</p>`;
@@ -3838,7 +3964,7 @@ $('shCopy').onclick=async()=>{try{await navigator.clipboard.writeText(location.o
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,rm:{rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,rm:{rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
