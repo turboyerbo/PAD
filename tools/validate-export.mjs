@@ -1,7 +1,8 @@
 // Checks a PAD unit plan export against docs/export/pad-unit-plan.schema.json (the parts of JSON Schema it uses).
 // node tools/validate-export.mjs file.pad.json [more files]
 import fs from 'node:fs';
-const schema = JSON.parse(fs.readFileSync(new URL('../docs/export/pad-unit-plan.schema.json', import.meta.url), 'utf8'));
+const here = new URL('./pad-unit-plan.schema.json', import.meta.url);   // next to this file when shared on its own, else in the repo
+const schema = JSON.parse(fs.readFileSync(fs.existsSync(here) ? here : new URL('../docs/export/pad-unit-plan.schema.json', import.meta.url), 'utf8'));
 const typeOf = v => v === null ? 'null' : Array.isArray(v) ? 'array' : Number.isInteger(v) ? 'integer' : typeof v;
 const isType = (v, t) => t === 'number' ? typeof v === 'number' : t === 'integer' ? Number.isInteger(v) : typeOf(v) === t;
 function check(s, v, path, errs) {
