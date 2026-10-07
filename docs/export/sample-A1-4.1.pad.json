@@ -18,6 +18,7 @@
   "plan": {
     "id": "PAD-01-v1",
     "name": "PAD-01",
+    "brief": null,
     "unitType": "1 BED",
     "bedrooms": 1,
     "corner": null,

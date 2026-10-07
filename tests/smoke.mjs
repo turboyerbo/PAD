@@ -30,14 +30,20 @@ try {
   await g.fill('#pName', 'Guest Building'); await g.click('#pNew');
   await g.waitForSelector('body.view-app', { timeout: 5000 }).catch(() => errs.push('guest could not create a building'));
   for (const sel of ['#hShare', '#hChat']) if (await g.isVisible(sel)) errs.push(`${sel} should be hidden without the shared service`);
+  // Every new unit says who it is for: nothing is added until the brief is filled in
+  await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(150);
+  if (!(await g.isVisible('#briefMsg'))) errs.push('adding a unit without saying who it is for should ask first');
+  if ((await g.evaluate(() => window.__pad.units().length)) !== 0) errs.push('a unit was added without a brief');
+  await g.click('#briefChips .chip');
   await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(300);
+  if ((await g.evaluate(() => (window.__pad.units()[0] || {}).brief)) !== 'Two construction worker roommates') errs.push('the brief was not kept on the new unit');
   await g.reload();
   await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('guest reload did not return to the building list'));
   if (!/Guest Building/.test((await g.textContent('#pList')) || '')) errs.push('guest building was not kept');
   // Home is one click away from the building list and from a building, and the landing page then offers a way back in
   // Keyplan: both rows of units either side of a 1.6 m corridor, and the efficiency taken from it
   await g.click('.pitem'); await g.waitForSelector('body.view-app', { timeout: 5000 });
-  await g.click('#add'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.waitForTimeout(300);
+  await g.click('#add'); await g.fill('#fBrief', 'A young couple and their elderly mother'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.waitForTimeout(300);
   if (await g.isVisible('#keyplan')) errs.push('the keyplan should be closed until it is opened from the navbar');
   await g.click('#hKeyplan');
   if (!(await g.isVisible('#keyplan'))) errs.push('the Keyplan button in the navbar did not open the keyplan');
@@ -155,7 +161,7 @@ try {
     }
     // Baseline layouts gallery
     await ai.evaluate(() => document.getElementById('iClose').click());
-    await ai.evaluate(() => document.getElementById('add').click()); await ai.waitForTimeout(300); await ai.evaluate(() => document.getElementById('browseLay').click());
+    await ai.evaluate(() => document.getElementById('add').click()); await ai.waitForTimeout(300); await ai.evaluate(() => { document.getElementById('fBrief').value = 'Test household'; document.getElementById('browseLay').click(); });
     const cards = await ai.locator('.lcard').count();
     if (cards !== 18) errs.push('the catalog gallery should show the 18 catalog layouts, it shows ' + cards);
     await ai.click('#layF [data-f="2"]');
@@ -166,8 +172,8 @@ try {
     if (lay.layout == null || lay.n !== nv.n + 1 || !lay.bed || lay.rooms < 5) errs.push('adding a baseline layout failed: ' + JSON.stringify(lay));
     // A new unit with a catalog bedroom count starts from a catalog layout; one without a catalog stays generated
     await ai.evaluate(() => document.getElementById('lay').hidden = true);
-    await ai.click('#add'); await ai.click('#quickOpts [data-n="1"]'); await ai.waitForTimeout(250);
-    await ai.click('#add'); await ai.click('#quickOpts [data-n="3"]'); await ai.waitForTimeout(250);
+    await ai.click('#add'); await ai.fill('#fBrief', 'Test household'); await ai.click('#quickOpts [data-n="1"]'); await ai.waitForTimeout(250);
+    await ai.click('#add'); await ai.fill('#fBrief', 'Test household'); await ai.click('#quickOpts [data-n="3"]'); await ai.waitForTimeout(250);
     const q2 = await ai.evaluate(() => { const L = window.__pad.units(), a = L[L.length - 2], b = L[L.length - 1]; return { a: a.n + ':' + a.layout, b: b.n + ':' + b.layout }; });
     if (/^1:null$/.test(q2.a) || !/^1:/.test(q2.a) || !/^3:null$/.test(q2.b)) errs.push('quick add should start 1 bed from the catalog and leave 3 bed generated: ' + JSON.stringify(q2));
     // printed net area carries over: the catalog layouts show 668, 678 or 670 ft2
@@ -316,7 +322,7 @@ try {
 
   const add = async (n, pri, side = 'R', corner = false, other = '') => {
     if (!(await p.isVisible('#modal'))) await p.click(side === 'L' ? '#addL' : '#add');
-    await p.click(`#bedOpts [data-n="${n}"]`);
+    await p.fill('#fBrief', `Household for a ${n} bed ${pri} unit`); await p.click(`#bedOpts [data-n="${n}"]`);
     await p.click(`#priOpts [data-p="${pri}"]`);
     if (pri === 'other') { await p.fill('#otherTxt', other); await p.click('#gen'); }
     await p.click(`#segP [data-p="${side}"]`);
@@ -327,7 +333,7 @@ try {
   };
   // Quick add: one click builds a standard unit
   const before = await p.evaluate(() => window.__pad.units().length);
-  await p.click('#quickOpts [data-n="2"]');
+  await p.fill('#fBrief', 'A family with two young kids'); await p.click('#quickOpts [data-n="2"]');
   await p.waitForTimeout(150);
   if ((await p.evaluate(() => window.__pad.units().length)) !== before + 1) errs.push('quick add did not add a unit');
 
@@ -553,6 +559,12 @@ try {
   await p.waitForTimeout(400);
   const after =await p.evaluate(() => window.__pad.units().map(u => (u.corner || '') + u.n));
   if (after.join() !== order.join()) errs.push('added units did not survive a reload');
+  if (!(await p.evaluate(() => window.__pad.units().some(u => u.brief === 'A family with two young kids')))) errs.push('the brief did not survive a reload');
+  // The brief shows in the unit panel and can be edited there
+  const bu = await p.evaluate(() => { const T = window.__pad, u = T.units().find(x => x.brief === 'A family with two young kids'); T.showInfo(u); return u.idx; });
+  if (!/two young kids/.test(await p.textContent('#iBrief'))) errs.push('the unit panel does not show who the unit is for');
+  await p.click('#iBriefEd'); await p.fill('#iBriefIn', 'A family with three kids'); await p.press('#iBriefIn', 'Enter');
+  if ((await p.evaluate(i => window.__pad.units().find(u => u.idx === i).brief, bu)) !== 'A family with three kids') errs.push('editing the brief in the unit panel did not save');
   if (!(await p.evaluate(i => !!window.__pad.units().find(u => u.idx === i).custom, edit.idx))) errs.push('customized layout did not survive a reload');
 
   // Phone

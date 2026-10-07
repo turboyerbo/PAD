@@ -27,6 +27,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unit name plus version, for example PAD-01-v2. Unique inside one project." },
         "name": { "type": "string", "description": "The unit's name in PAD, for example PAD-01." },
+        "brief": { "type": ["string", "null"], "description": "Who the unit is for, in the owner's words, for example Two construction worker roommates. Null for baseline units." },
         "unitType": { "type": "string", "description": "For example 1 BED, 2 BED CORNER, MIN. STUDIO." },
         "bedrooms": { "type": "integer", "minimum": 0 },
         "corner": { "enum": ["L", "R", null], "description": "Corner unit: the side with the extra exterior wall." },
