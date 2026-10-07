@@ -602,6 +602,43 @@ try {
   if ((await p.evaluate(i => window.__pad.units().find(u => u.idx === i).brief, bu)) !== 'A family with three kids') errs.push('editing the brief in the unit panel did not save');
   if (!(await p.evaluate(i => !!window.__pad.units().find(u => u.idx === i).custom, edit.idx))) errs.push('customized layout did not survive a reload');
 
+  // Layout guard: a change that leaves walls in doorways, furniture in walls, rooms out of reach (800 mm clear) or rooms out of step
+  // with the walls is never saved. Find a layout that works rearranges the rooms; a saved unit with problems can be fixed from its panel.
+  {
+    const gp = await browser.newPage({ viewport: { width: 1400, height: 860 } });
+    gp.on('pageerror', e => errs.push('guard page error: ' + e.message));
+    await gp.goto(`http://localhost:${PORT}/?debug`); await gp.click('#lStart'); await gp.fill('#pName', 'Guard'); await gp.click('#pNew');
+    await gp.waitForSelector('#s1:not([hidden])'); await gp.keyboard.press('Escape');
+    const r = await gp.evaluate(async () => {
+      const T = window.__pad, out = [], wait = ms => new Promise(r => setTimeout(r, ms));
+      for (const [layout, ops] of [['1B-02_1', [{ op: 'set_footprint', width: 'W', keep_area: true }]], ['1B-04_1', [{ op: 'add_corridor_door', room: 'Bath' }, { op: 'grow_room', room: 'Bath', d: 0.4 }]]]) {
+        const u = T.addUnit({ n: 1, pri: 'balanced', seed: 3, layout }), base = T.guBase(u.plan, u);
+        T.openEditor(u); const E = T.edState(); T.aiPlan();
+        T.aiOps(JSON.parse(JSON.stringify(ops).replace('"W"', String(E.P.W - 0.6)))); E.dirty = true;
+        const done = document.getElementById('edDone'); done.disabled = false; done.click();
+        const ok = document.getElementById('ecOk');
+        if (ok.disabled && document.getElementById('ecFix')) { document.getElementById('ecFix').click(); for (let i = 0; i < 140 && ok.disabled; i++) await wait(500); }
+        const blocked = ok.disabled; if (!blocked) ok.click(); else document.getElementById('ecDiscard').click();
+        out.push({ layout, blocked, left: T.guAudit(u.plan, u).filter(x => !base.has(x.key)).map(x => x.m) });
+      }
+      // a saved unit with a bed pushed into a wall offers a fix, and the fix leaves no problems
+      const u = T.addUnit({ n: 1, pri: 'balanced', seed: 3, layout: '1B-03_1' }), d = {};
+      ['walls', 'doors', 'wins', 'furn', 'floors', 'rooms', 'marks', 'bumps', 'dim', 'nd', 'pref', 'dms'].forEach(k => d[k] = JSON.parse(JSON.stringify(u.plan[k] || [])));
+      const bed = d.furn.find(p => p.k === 'bed'); if (bed) bed.x = 0.2;
+      T.applyCustom(u, d); T.showInfo(u);
+      const offered = !document.getElementById('iFixBox').hidden;
+      if (offered) { document.getElementById('iFix').click(); for (let i = 0; i < 120 && !document.getElementById('iFixBox').hidden; i++) await wait(500); }
+      out.push({ fix: true, offered, left: T.unitProblems(u).map(x => x.m) });
+      return out;
+    });
+    r.forEach(x => {
+      if (x.fix) { if (!x.offered) errs.push('a saved unit with a bed in a wall did not offer Fix layout problems'); else if (x.left.length) errs.push('Fix layout problems left: ' + x.left.slice(0, 3).join(' ')); }
+      else if (x.left.length) errs.push(`${x.layout}: a saved plan still has problems: ${x.left.slice(0, 3).join(' ')}`);
+    });
+    if (r.filter(x => !x.fix).every(x => x.blocked)) errs.push('the layout guard blocked every change instead of finding a layout that works');
+    await gp.close();
+  }
+
   // Phone
   const m = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   m.on('pageerror', e => errs.push('phone script error: ' + e.message));

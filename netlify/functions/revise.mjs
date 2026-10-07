@@ -91,6 +91,12 @@ Rules the result must keep (Ontario Building Code and the owner's standards):
 - No wall shorter than 2 m. No dead-end halls longer than 1.5 m past the last door.
 - Items must not overlap walls or each other, and door swings must stay clear.
 - Do not move outer walls. Do not remove windows. Never remove the toilet, sink or the entry door.
+- Every room must be reachable from the entry door with 800 mm clear to walk (600 mm is enough inside a bath, laundry or closet). Halls at least 860 mm wide.
+- Never put a wall in a door opening or inside the swing of a door.
+- Keep the rooms rectangles that agree with the walls. Change rooms with grow_room, add_room, set_footprint and move_wall; use add_wall only for a wall that runs cleanly from wall to wall.
+- Furniture is placed afresh after your steps, so leave room for it: a bed with space on both sides, a sofa, a kitchen run, a tub or shower, toilet and vanity.
+- When a change does not fit, taking out a closet or another small room is better than squeezing rooms. Say so.
+- The outline does not have to stay a plain rectangle: a den or nook bump-out, a recessed balcony or an entry vestibule gives an L-shape or a stepped outline.
 
 How to work:
 - The request comes with a change amount from 1 to 100 percent. At 1 to 10, change almost nothing: one or two steps, the rooms stay where they are, net area within that percent. At 11 to 40, a few steps and rooms may swap sides. At 41 to 89, several steps and a different footprint are fine. At 90 or more, a full reorganisation is allowed, but every room must stay reachable from the entry door.
