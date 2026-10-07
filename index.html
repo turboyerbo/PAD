@@ -23,7 +23,7 @@
   --wall:#C6C5BD; --wall-edge:#3D3C36; --fx:#2BA6DC; --fx-fill:#FAFDFF;
   --furn:#2BA6DC; --furn-fill:#EAF7FC; --rug:#DDF1F9; --plant:#6CB23D; --plant-fill:#DCEFC8;
   --grain:#E3E6E8; --tile:#DADEE0; --dots:#C7CBCD;
-  --person:#F07A1A; --person-fill:#FFD2A8; --accent:#0274BE;
+  --person:#F07A1A; --person-fill:#FFD2A8; --accent:#0274BE; --markup:#B3261E;
   --display:'Poppins','Helvetica Neue',Arial,sans-serif;
   --narrow:'Archivo Narrow','Arial Narrow','Helvetica Neue',sans-serif;
   color-scheme:light;
@@ -328,7 +328,7 @@ body.chat-open .info{right:356px}
   .projs-body{grid-template-columns:1fr}
 }
 @media (max-width:700px){
-  .chat{top:auto;left:0;width:100%;height:68%;border-left:0;border-top:1px solid var(--ink)}
+  .chat{top:auto;left:0;width:100%;height:46%;border-left:0;border-top:1px solid var(--ink)}
   body.chat-open .info{right:0;display:none}
 }
 /* quick add and unit editor */
@@ -398,6 +398,16 @@ body.chat-open .info{right:356px}
 .adh{fill:none;stroke:transparent;stroke-width:16px;pointer-events:stroke}
 .adim{pointer-events:none}.adim.live{pointer-events:auto;cursor:grab;touch-action:none}.adim.live .adt{pointer-events:all}
 .adim.on .adl{stroke:var(--accent);stroke-width:1.6}.adim.on .adt{fill:var(--accent)}
+.mkp{fill:none;stroke:var(--markup);stroke-width:2.4px;stroke-linecap:round;stroke-linejoin:round}
+#mk{pointer-events:none}.mkn rect{fill:var(--sheet);stroke:var(--markup);stroke-width:1.2px}.mkn circle{fill:var(--markup)}.mkn text{fill:var(--markup);font-family:var(--narrow);font-weight:600}.mkn .by{fill:var(--ink-2);font-weight:400}
+body.sketching #strip{touch-action:none;cursor:crosshair}
+.skbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:20;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;background:var(--sheet);border:1px solid var(--ink);padding:6px;box-shadow:0 8px 24px rgba(21,50,67,.2);max-width:calc(100vw - 24px);box-sizing:border-box}
+.skbar .tb[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+body.mob .skbar{bottom:calc(74px + env(safe-area-inset-bottom,0px))}
+body.sketching .toast{bottom:84px}body.mob.sketching .toast{bottom:calc(130px + env(safe-area-inset-bottom,0px))}body.mob .skbar{gap:4px;flex-wrap:nowrap}body.mob .skbar .tb{padding:7px 8px;font-size:12px}
+.sknote{position:fixed;z-index:41;display:flex;gap:6px;background:var(--sheet);border:1px solid var(--markup);padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.18)}.sknote input{width:200px;font:inherit;padding:6px 8px;border:1px solid var(--rule)}
+@media (min-width:701px){body.chat-open:not(.mob) .stage{margin-right:340px}}
+@media (max-width:1420px){.tools #hShare .lb{display:inline}}
 .dimbar{position:fixed;z-index:40;display:flex;gap:10px;align-items:center;background:var(--sheet);border:1px solid var(--ink);padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:12px;color:var(--ink-2)}
 .udm.on{stroke:var(--accent);stroke-width:1.8}
 .udt{font-family:var(--narrow);font-weight:600;fill:var(--draw);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3.2px;stroke-linejoin:round;font-variant-numeric:tabular-nums;pointer-events:none}
@@ -737,7 +747,7 @@ body.no-ai:not(.manual) .cust{display:none}
   <button class="homelink" id="hHome" type="button" aria-label="Home"><img class="logo" src="/patry-logo.png" alt="Patry Group" width="64" height="52"></button>
   <div class="id"><h1>Patry Analysis &amp; Design <span class="abbr">(PAD)</span></h1><p><b id="hProj">Building</b> <span id="hRole"></span> <span class="badge" id="badge">Placeholder baseline</span></p></div>
   <div class="stats" id="stats"></div>
-  <div class="tools"><button class="tb" id="hHomeBtn" type="button" title="Home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span class="lb">Home</span></button><button class="tb" id="hBuildings" type="button" title="Buildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span class="lb">Buildings</span></button><button class="tb" id="hShare" type="button" title="Share"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span class="lb">Share</span></button><button class="tb" id="hChat" type="button" title="Chat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lb">Chat</span><span class="cbadge" id="hCnt" hidden>0</span></button>
+  <div class="tools"><button class="tb" id="hHomeBtn" type="button" title="Home"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span class="lb">Home</span></button><button class="tb" id="hBuildings" type="button" title="Buildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span class="lb">Buildings</span></button><button class="tb" id="hShare" type="button" title="Invite people to this building"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span class="lb">Invite</span></button><button class="tb" id="hChat" type="button" title="Chat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span class="lb">Chat</span><span class="cbadge" id="hCnt" hidden>0</span></button><button class="tb" id="hSketch" type="button" title="Sketch and leave notes on the plan" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span class="lb">Sketch</span></button>
     <button class="tb" id="hKeyplan" type="button" title="Keyplan: how much of the building is designed" aria-expanded="false" aria-controls="keyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span class="lb">Keyplan</span><span class="kpn" id="hKpTxt"></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
     <button class="tb" id="grp" aria-pressed="false" title="Group by bedrooms"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span class="lb">Group by bedrooms</span></button>
     <button class="tb" id="undo" title="Undo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg><span class="lb">Undo</span></button>
@@ -785,7 +795,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 <aside class="msheet" id="mMenu" hidden aria-label="Menu">
   <div class="mstats" id="mStats"></div>
-  <button class="mi" id="mHome2"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Home</span></button><button class="mi" id="mBuildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span>Buildings</span></button><button class="mi" id="mShare"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span>Share building</span></button><button class="mi" id="mChat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Chat</span><span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mKeyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span>Keyplan</span></button><button class="mi" id="mZin"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6M11 8v6"/></svg><span>Zoom in</span></button><button class="mi" id="mZout"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/></svg><span>Zoom out</span></button><button class="mi" id="mDetail" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v10M21 7v10M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span id="mDetailTxt">Show details</span></button><button class="mi" id="mGrp" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span>Group by bedrooms</span></button>
+  <button class="mi" id="mHome2"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Home</span></button><button class="mi" id="mBuildings"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="7" height="18"/><rect x="13" y="9" width="7" height="12"/><path d="M7 7h1M7 11h1M7 15h1M16 13h1M16 17h1"/></svg><span>Buildings</span></button><button class="mi" id="mShare"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 11l7.6-4M8.2 13l7.6 4"/></svg><span>Invite to building</span></button><button class="mi" id="mSketch"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span>Sketch on the plan</span></button><button class="mi" id="mChat"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Chat</span><span class="cbadge" id="mCnt" hidden>0</span></button><button class="mi" id="mKeyplan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="6"/><rect x="3" y="15" width="18" height="6"/><path d="M8 3v6M13 3v6M8 15v6M13 15v6"/></svg><span>Keyplan</span></button><button class="mi" id="mZin"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6M11 8v6"/></svg><span>Zoom in</span></button><button class="mi" id="mZout"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M8 11h6"/></svg><span>Zoom out</span></button><button class="mi" id="mDetail" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7v10M21 7v10M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span id="mDetailTxt">Show details</span></button><button class="mi" id="mGrp" aria-pressed="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg><span>Group by bedrooms</span></button>
   <button class="mi" id="mUndo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-4"/></svg><span>Undo last added unit</span></button>
   <button class="mi" id="mReset"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg><span>Restore baseline</span></button>
   <button class="mi mclose" id="mClose2">Close</button>
@@ -910,6 +920,8 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 
 <div class="toast" id="toast" hidden role="status"></div>
+<div class="skbar" id="skBar" hidden role="toolbar" aria-label="Sketch tools"><button class="tb" data-t="pen" type="button" aria-pressed="true">Pen</button><button class="tb" data-t="note" type="button" aria-pressed="false">Note</button><button class="tb" data-t="erase" type="button" aria-pressed="false">Eraser</button><button class="tb" id="skShow" type="button">Hide sketches</button><button class="tb primary" id="skDone" type="button">Done</button></div>
+<form class="sknote" id="skNote" hidden><input id="skNoteIn" maxlength="140" placeholder="Write a note" autocomplete="off" aria-label="Note"><button class="tb primary" type="submit">Add</button></form>
 <div class="dimbar" id="dimBar" hidden><button class="tb danger" id="dimDel" type="button">Delete dimension</button><span>or drag it to move it</span></div>
 
 <div class="modal" id="lay" hidden role="dialog" aria-modal="true" aria-labelledby="layT">
@@ -967,7 +979,7 @@ const pubU=u=>({id:u.id,email:u.email,name:u.name});
 
 /* ----- demo backend: everything lives in localStorage ----- */
 const DK='pad.demo.db',SK='pad.demo.session';
-function db(){let d={};try{d=JSON.parse(localStorage.getItem(DK))||{};}catch(e){}['users','projects','members','invites','comments'].forEach(k=>d[k]=d[k]||[]);d.seq=d.seq||0;return d;}
+function db(){let d={};try{d=JSON.parse(localStorage.getItem(DK))||{};}catch(e){}['users','projects','members','invites','comments','markups'].forEach(k=>d[k]=d[k]||[]);d.seq=d.seq||0;return d;}
 const dbw=d=>localStorage.setItem(DK,JSON.stringify(d));
 async function hash(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pad-demo:'+s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
 const subs=new Set();
@@ -975,12 +987,16 @@ function poke(){
   const d=db();
   subs.forEach(s=>{
     d.comments.filter(c=>c.project_id===s.id&&c.id>s.lastC).forEach(c=>{s.lastC=c.id;s.h.onComment&&s.h.onComment(cmL(d,c));});
+    if(s.mk){const now=d.markups.filter(m=>m.project_id===s.id),ids=new Set(now.map(m=>m.id));
+      now.forEach(m=>{if(!s.mk.has(m.id)){s.mk.add(m.id);s.h.onMarkup&&s.h.onMarkup(mkL(d,m));}});
+      [...s.mk].forEach(id=>{if(!ids.has(id)){s.mk.delete(id);s.h.onMarkupDel&&s.h.onMarkupDel(id);}});}
     const p=d.projects.find(x=>x.id===s.id);
     if(p&&p.updated_at>s.lastU){s.lastU=p.updated_at;if(cur&&p.updated_by!==cur.id)s.h.onProject&&s.h.onProject({data:p.data,name:p.name,updated_by:p.updated_by,updated_at:p.updated_at});}
   });
 }
 addEventListener('storage',e=>{if(e.key===DK)poke();});
 const nameOf=(d,id)=>(d.users.find(u=>u.id===id)||{}).name||'Someone';
+const mkL=(d,m)=>({id:m.id,unit:m.unit,kind:m.kind,data:m.data,user_id:m.user_id,name:nameOf(d,m.user_id),at:m.created_at});
 const cmL=(d,c)=>({id:c.id,unit:c.unit,user_id:c.user_id,name:nameOf(d,c.user_id),body:c.body,at:c.created_at});
 function joinInvites(d,u){
   d.invites.filter(i=>i.email===u.email).forEach(i=>{if(!d.members.some(m=>m.project_id===i.project_id&&m.user_id===u.id))d.members.push({project_id:i.project_id,user_id:u.id,role:'editor'});});
@@ -1039,11 +1055,22 @@ const Local={
   },
   async deleteProject(id){
     const d=db(),p=d.projects.find(x=>x.id===id);if(!p||p.owner!==cur.id)throw new Error('Only the owner can delete this building.');
-    d.projects=d.projects.filter(x=>x.id!==id);d.members=d.members.filter(m=>m.project_id!==id);d.invites=d.invites.filter(i=>i.project_id!==id);d.comments=d.comments.filter(c=>c.project_id!==id);dbw(d);
+    d.projects=d.projects.filter(x=>x.id!==id);d.members=d.members.filter(m=>m.project_id!==id);d.invites=d.invites.filter(i=>i.project_id!==id);d.comments=d.comments.filter(c=>c.project_id!==id);d.markups=d.markups.filter(m=>m.project_id!==id);dbw(d);
   },
   async leaveProject(id){
     const d=db(),n=d.members.length;d.members=d.members.filter(m=>!(m.project_id===id&&m.user_id===cur.id&&m.role!=='owner'));
     if(d.members.length===n)throw new Error('Could not leave this building.');dbw(d);
+  },
+  async markups(id){const d=db();return d.markups.filter(m=>m.project_id===id).map(m=>mkL(d,m));},
+  async addMarkup(id,unit,kind,data){
+    const d=db();if(!d.members.some(m=>m.project_id===id&&m.user_id===cur.id))throw new Error('You do not have access to this building.');
+    const m={id:++d.seq,project_id:id,unit:+unit,kind,data,user_id:cur.id,created_at:new Date().toISOString()};d.markups.push(m);dbw(d);
+    subs.forEach(x=>{if(x.id===id&&x.mk)x.mk.add(m.id);});return mkL(d,m);
+  },
+  async delMarkup(mid){
+    const d=db(),m=d.markups.find(x=>x.id===mid);if(!m)return;const p=d.projects.find(x=>x.id===m.project_id);
+    if(m.user_id!==cur.id&&!(p&&p.owner===cur.id))throw new Error('You can erase only your own sketches.');
+    d.markups=d.markups.filter(x=>x.id!==mid);dbw(d);subs.forEach(x=>{if(x.mk)x.mk.delete(mid);});
   },
   async comments(id){const d=db();return d.comments.filter(c=>c.project_id===id).map(c=>cmL(d,c));},
   async postComment(id,unit,body){
@@ -1052,14 +1079,15 @@ const Local={
     const c={id:++d.seq,project_id:id,unit:unit==null?null:+unit,user_id:cur.id,body,created_at:new Date().toISOString()};d.comments.push(c);dbw(d);poke();return cmL(d,c);
   },
   subscribe(id,h){
-    const d=db(),s={id,h,lastC:d.comments.filter(c=>c.project_id===id).reduce((m,c)=>Math.max(m,c.id),0),lastU:(d.projects.find(p=>p.id===id)||{}).updated_at||''};
+    const d=db(),s={id,h,mk:new Set(d.markups.filter(m=>m.project_id===id).map(m=>m.id)),lastC:d.comments.filter(c=>c.project_id===id).reduce((m,c)=>Math.max(m,c.id),0),lastU:(d.projects.find(p=>p.id===id)||{}).updated_at||''};
     subs.add(s);return()=>subs.delete(s);
   }
 };
 
 /* ----- Supabase backend ----- */
 let sb=null;
-const SEL='id,unit,body,created_at,user_id,profiles(name,email)';
+const SEL='id,unit,body,created_at,user_id,profiles(name,email)',MSEL='id,unit,kind,data,created_at,user_id,profiles(name,email)';
+const mkS=r=>({id:r.id,unit:r.unit,kind:r.kind,data:r.data,user_id:r.user_id,name:(r.profiles&&(r.profiles.name||(r.profiles.email||'').split('@')[0]))||'Someone',at:r.created_at});
 const cmS=r=>({id:r.id,unit:r.unit,user_id:r.user_id,name:(r.profiles&&(r.profiles.name||(r.profiles.email||'').split('@')[0]))||'Someone',body:r.body,at:r.created_at});
 const mapU=u=>({id:u.id,email:u.email,name:(u.user_metadata&&(u.user_metadata.name||u.user_metadata.full_name))||(u.email||'').split('@')[0]});
 const fail=(e,fallback)=>{if(e)throw new Error(e.message||fallback);};
@@ -1114,6 +1142,9 @@ const Supa={
   async invite(id,email){email=norm(email);if(!okMail(email))throw new Error('Enter a valid email address.');const r=await sb.rpc('invite_to_project',{p_project:id,p_email:email});fail(r.error,'Could not send the invite.');return r.data;},
   async deleteProject(id){const r=await sb.from('projects').delete({count:'exact'}).eq('id',id);fail(r.error,'Could not delete the building.');if(r.count===0)throw new Error('Only the owner can delete this building.');},
   async leaveProject(id){const r=await sb.from('project_members').delete({count:'exact'}).eq('project_id',id).eq('user_id',cur.id);fail(r.error,'Could not leave this building.');if(r.count===0)throw new Error('Could not leave this building.');},
+  async markups(id){const r=await sb.from('markups').select(MSEL).eq('project_id',id).order('id');fail(r.error,'Could not load the sketches.');return r.data.map(mkS);},
+  async addMarkup(id,unit,kind,data){const r=await sb.from('markups').insert({project_id:id,unit:+unit,kind,data}).select(MSEL).single();fail(r.error,'Could not save the sketch.');return mkS(r.data);},
+  async delMarkup(mid){const r=await sb.from('markups').delete({count:'exact'}).eq('id',mid);fail(r.error,'Could not erase it.');if(r.count===0)throw new Error('You can erase only your own sketches.');},
   async comments(id){const r=await sb.from('comments').select(SEL).eq('project_id',id).order('id');fail(r.error,'Could not load comments.');return r.data.map(cmS);},
   async postComment(id,unit,body){
     body=String(body||'').trim();if(!body)throw new Error('Write a message first.');if(body.length>2000)throw new Error('Messages are limited to 2000 characters.');
@@ -1122,6 +1153,8 @@ const Supa={
   subscribe(id,h){
     const ch=sb.channel('pad-'+id)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'comments',filter:'project_id=eq.'+id},async p=>{const r=await sb.from('comments').select(SEL).eq('id',p.new.id).single();if(r.data&&h.onComment)h.onComment(cmS(r.data));})
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'markups',filter:'project_id=eq.'+id},async p=>{const r=await sb.from('markups').select(MSEL).eq('id',p.new.id).single();if(r.data&&h.onMarkup)h.onMarkup(mkS(r.data));})
+      .on('postgres_changes',{event:'DELETE',schema:'public',table:'markups',filter:'project_id=eq.'+id},p=>{if(p.old&&h.onMarkupDel)h.onMarkupDel(p.old.id);})
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'projects',filter:'id=eq.'+id},p=>{if(h.onProject&&cur&&p.new.updated_by!==cur.id)h.onProject({data:p.new.data,name:p.new.name,updated_by:p.new.updated_by,updated_at:p.new.updated_at});})
       .subscribe();
     return()=>{sb.removeChannel(ch);};
@@ -1784,7 +1817,7 @@ function render(){
   let pp='';
   list.forEach(u=>{pp+=occMarkup(u);});
   o+=`<g id="ppl" transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})">${pp}</g>`;
-  o+=`<g id="adims">${ADL}</g>`;
+  o+=`<g id="adims">${ADL}</g><g id="mk">${MK.show?markSVG(list):''}<path id="mkLive" class="mkp" d=""/></g>`;
   svg.innerHTML=o;
   bindOcc(svg);
   if(lastNew)svg.querySelectorAll(`.pp[data-u="${lastNew.idx}"]`).forEach(el=>el.classList.add('pnew'));
@@ -4530,6 +4563,81 @@ $('mDetail').onclick=()=>{detail=!detail;document.body.classList.toggle('detail'
 /* ---------- tools ---------- */
 $('undo').onclick=()=>{const ad=added();if(ad.length){const last=ad.reduce((m,x)=>x.idx>m.idx?x:m);units=units.filter(u=>u!==last);nextIdx=last.idx;if(selected===last)showInfo(null);render();save();}};
 $('reset').onclick=()=>{showInfo(null);initial(PROJ&&PROJ.base);render();save();scroller.scrollTo({left:0});};
+/* ---------- sketches and notes on the plan ----------
+   Sketch mode: Pen draws, Note pins a short note, Eraser removes your own (the owner can erase any).
+   Each one belongs to a unit and is kept in that unit's metres, so it moves with the unit. Everyone in the building sees them live. */
+let MK={items:[],seen:new Set(),show:true,tool:null},MKD=null,MKN=null;
+async function markInit(){MK.items=[];MK.seen=new Set();const id=PROJ&&PROJ.id;try{const L=await BE.markups(id);if(!PROJ||PROJ.id!==id)return;MK.items=L;L.forEach(m=>MK.seen.add(m.id));render();}catch(er){}}
+function markIncoming(m){
+  if(!PROJ||MK.seen.has(m.id))return;MK.seen.add(m.id);MK.items.push(m);render();
+  const me=BE.user();if(me&&m.user_id!==me.id){const u=units.find(x=>x.idx===m.unit);toast(m.name+(m.kind==='note'?' left a note on ':' sketched on ')+(u?tagOf(u):'a unit')+'.');}
+}
+function markGone(id){const n=MK.items.length;MK.items=MK.items.filter(m=>m.id!==id);if(MK.items.length!==n)render();}
+function wrapNote(t,n){const w=String(t).split(/\s+/),L=[];let l='';w.forEach(x=>{if((l+' '+x).trim().length>n&&l){L.push(l);l=x;}else l=(l+' '+x).trim();});if(l)L.push(l);return L.slice(0,5);}
+function markSVG(list){
+  let o='';const fs=11;
+  MK.items.forEach(m=>{
+    const u=list.find(x=>x.idx===m.unit);if(!u)return;const X=PADL+u.ox*S,Y=TOP+u.oy*S,d=m.data||{};
+    if(m.kind==='pen'&&Array.isArray(d.p)&&d.p.length>1)o+=`<path class="mkp" d="M${d.p.map(q=>f(X+q[0]*S)+' '+f(Y+q[1]*S)).join('L')}"><title>${escapeHtml(m.name)}</title></path>`;
+    else if(m.kind==='note'&&d.t){
+      const px=X+d.x*S,py=Y+d.y*S,L=wrapNote(d.t,26),w=Math.max(...L.map(l=>l.length),m.name.length*0.85)*fs*0.52+14,h=(L.length+1)*fs*1.25+8;
+      o+=`<g class="mkn"><circle cx="${f(px)}" cy="${f(py)}" r="4"/><rect x="${f(px+6)}" y="${f(py-h-2)}" width="${f(w)}" height="${f(h)}" rx="2"/>`+L.map((l,i)=>`<text x="${f(px+13)}" y="${f(py-h+4+(i+1)*fs*1.25)}" font-size="${fs}">${escapeHtml(l)}</text>`).join('')+`<text class="by" x="${f(px+13)}" y="${f(py-h+4+(L.length+1)*fs*1.25)}" font-size="${fs-2}">${escapeHtml(m.name)}</text></g>`;
+    }
+  });
+  return o;
+}
+function setTool(t){
+  const was=!!MK.tool;
+  if(isMob&&t&&!was&&!$('chat').hidden){MK.chatWas=true;$('chat').hidden=true;document.body.classList.remove('chat-open');}   // phones: the chat steps aside while you sketch
+  if(!t&&was&&MK.chatWas){MK.chatWas=false;if(PROJ)openChat(undefined,true);}
+  MK.tool=t||null;document.body.classList.toggle('sketching',!!t);$('skBar').hidden=!t;$('skNote').hidden=true;MKN=null;
+  $('skBar').querySelectorAll('[data-t]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.t===t)));$('hSketch').setAttribute('aria-pressed',String(!!t));
+  if(t){if(selected)showInfo(null);hideDimBar();if(!MK.show){MK.show=true;$('skShow').textContent='Hide sketches';if(view==='app')render();}}
+}
+const stripPt=e=>{const r=svg.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};};
+function unitAtPx(p){const {list}=layout();let best=null,bd=1e9;list.forEach(u=>{const X=PADL+u.ox*S,c=Math.max(0,X-p.x,p.x-(X+u.plan.W*S));if(c<bd){bd=c;best=u;}});return best;}
+const toUnit=(u,p)=>[Math.round((p.x-(PADL+u.ox*S))/S*100)/100,Math.round((p.y-(TOP+u.oy*S))/S*100)/100];
+function segDist(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy,t=l?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l)):0;return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);}
+async function markSave(u,kind,data){
+  if(!PROJ)return;
+  try{const m=await BE.addMarkup(PROJ.id,u.idx,kind,data);markIncoming(m);}catch(er){toast(er.message);render();}
+}
+async function markErase(p){
+  const u=unitAtPx(p);if(!u)return;const q=toUnit(u,p),me=BE.user(),own=PROJ&&PROJ.role==='owner';let hit=null,bd=0.35;
+  MK.items.forEach(m=>{if(m.unit!==u.idx||!(own||me&&m.user_id===me.id))return;const d=m.data||{};let dd=1e9;
+    if(m.kind==='pen'&&d.p)for(let i=1;i<d.p.length;i++)dd=Math.min(dd,segDist(q,d.p[i-1],d.p[i]));
+    else if(m.kind==='note')dd=Math.hypot(q[0]-d.x,q[1]-d.y)*0.6;
+    if(dd<bd){bd=dd;hit=m;}});
+  if(!hit){toast('Tap on one of your own sketches or notes to erase it.');return;}
+  try{await BE.delMarkup(hit.id);markGone(hit.id);}catch(er){toast(er.message);}
+}
+svg.addEventListener('pointerdown',e=>{
+  if(!MK.tool)return;e.preventDefault();e.stopPropagation();const p=stripPt(e),u=unitAtPx(p);if(!u)return;
+  if(MK.tool==='erase'){markErase(p);return;}
+  if(MK.tool==='note'){MKN={u,q:toUnit(u,p)};const b=$('skNote');b.hidden=false;b.style.left=Math.max(8,Math.min(innerWidth-280,e.clientX+8))+'px';b.style.top=Math.max(8,e.clientY-56)+'px';$('skNoteIn').value='';setTimeout(()=>$('skNoteIn').focus(),20);return;}
+  MKD={u,pts:[toUnit(u,p)],pid:e.pointerId};try{svg.setPointerCapture(e.pointerId);}catch(x){}
+},true);
+svg.addEventListener('pointermove',e=>{
+  if(!MKD||e.pointerId!==MKD.pid)return;e.preventDefault();const q=toUnit(MKD.u,stripPt(e)),l=MKD.pts[MKD.pts.length-1];
+  if(Math.hypot(q[0]-l[0],q[1]-l[1])<0.04)return;MKD.pts.push(q);
+  const X=PADL+MKD.u.ox*S,Y=TOP+MKD.u.oy*S,lv=$('mkLive');if(lv)lv.setAttribute('d','M'+MKD.pts.map(r=>f(X+r[0]*S)+' '+f(Y+r[1]*S)).join('L'));
+},true);
+function penEnd(){
+  const D=MKD;MKD=null;if(!D)return;let pts=D.pts;
+  if(pts.length<2){const lv=$('mkLive');if(lv)lv.setAttribute('d','');return;}
+  while(pts.length>500)pts=pts.filter((q,i)=>i%2===0||i===pts.length-1);
+  markSave(D.u,'pen',{p:pts});
+}
+svg.addEventListener('pointerup',e=>{if(MKD&&e.pointerId===MKD.pid){e.stopPropagation();penEnd();}},true);
+svg.addEventListener('pointercancel',()=>{if(MKD){MKD=null;render();}},true);
+$('skNote').addEventListener('submit',e=>{e.preventDefault();const t=$('skNoteIn').value.trim().replace(/\s+/g,' ').slice(0,140),N=MKN;$('skNote').hidden=true;MKN=null;if(t&&N)markSave(N.u,'note',{x:N.q[0],y:N.q[1],t});});
+$('skNoteIn').addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();$('skNote').hidden=true;MKN=null;}});
+$('skBar').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)setTool(b.dataset.t);});
+$('skDone').onclick=()=>setTool(null);
+$('skShow').onclick=()=>{MK.show=!MK.show;$('skShow').textContent=MK.show?'Hide sketches':'Show sketches';render();};
+$('hSketch').onclick=()=>{if(MK.tool)setTool(null);else{setTool('pen');toast('Draw on any unit. Everyone in the building sees it.');}};
+$('mSketch').onclick=()=>{$('mMenu').hidden=true;setTool('pen');toast('Draw on any unit. Everyone in the building sees it.');};
+document.addEventListener('keydown',e=>{if(MK.tool&&e.key==='Escape'&&$('skNote').hidden)setTool(null);});
 /* Dimensions on the plan: drag to move, tap to pick (then Delete). */
 let ADRAG=null,adEat=0;
 const dimxOf=u=>(u.dimx=u.dimx||{h:{},o:{}},u.dimx.h=u.dimx.h||{},u.dimx.o=u.dimx.o||{},u.dimx);
@@ -4563,7 +4671,7 @@ document.addEventListener('keydown',e=>{if(DSEL&&(e.key==='Delete'||e.key==='Bac
 document.addEventListener('pointerdown',e=>{if(DSEL&&!e.target.closest('#dimBar')&&!e.target.closest('.adim')){DSEL=null;hideDimBar();if(view==='app')render();}});
 scroller.addEventListener('scroll',hideDimBar,{passive:true});
 $('iDims').onclick=()=>{if(!selected)return;delete selected.dimx;render();save();showInfo(selected);toast('Dimensions restored.');};
-svg.addEventListener('click',e=>{if(Date.now()-adEat<400||e.target.closest('.adim'))return;const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);showInfo(selected===u?null:u);render();});
+svg.addEventListener('click',e=>{if(MK.tool)return;if(Date.now()-adEat<400||e.target.closest('.adim'))return;const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);showInfo(selected===u?null:u);render();});
 $('iClose').onclick=()=>{showInfo(null);if(!isMob)render();};
 $('grp').onclick=()=>{grouped=!grouped;render();save();};
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};
@@ -4683,9 +4791,10 @@ async function openProject(id,unit,quiet){
     try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
     showView('app');setMob();selected=null;
     $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
-    chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
+    chatInit();markInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject,onMarkup:markIncoming,onMarkupDel:markGone});
     render();
     const u=unit!=null&&unit!==''?units.find(x=>x.idx===+unit):null;
+    if(SOCIAL&&!u&&!chatHid())openChat(undefined,true);   // the conversation is open from the start; closing it keeps it closed until the next sign-in
     if(u){showInfo(u);if(isMob){mobIdx=mobList().indexOf(u);mobGo(mobIdx,false);}else scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120)});openChat(u.idx);}
     else if(!added().length&&PROJ.role==='owner')openModal('R');
     return true;
@@ -4696,7 +4805,7 @@ function closeProject(){
   if(unsub){unsub();unsub=null;}
   if(E)edClose(false);
   modal.hidden=true;$('share').hidden=true;$('chat').hidden=true;document.body.classList.remove('chat-open');$('info').hidden=true;$('mMenu').hidden=true;
-  PROJ=null;units=[];selected=null;pendingRemote=null;
+  PROJ=null;units=[];selected=null;pendingRemote=null;MK.items=[];setTool(null);
 }
 $('hBuildings').onclick=()=>showProjects();
 $('mBuildings').onclick=()=>{$('mMenu').hidden=true;showProjects();};
@@ -4733,13 +4842,17 @@ function chatIncoming(m){
   else if(!me||m.user_id!==me.id){CH.unread++;renderChatBtn();}
   if(selected)infoCount();
 }
-function openChat(thread){
+const CHK='pad-chat-hidden';
+const chatHid=()=>{try{return sessionStorage.getItem(CHK)==='1';}catch(e){return false;}};
+function openChat(thread,auto){
   if(thread!==undefined)CH.thread=String(thread);
-  $('chat').hidden=false;document.body.classList.add('chat-open');
+  if(!auto)try{sessionStorage.removeItem(CHK);}catch(e){}
+  const was=!$('chat').hidden;
+  $('chat').hidden=false;document.body.classList.add('chat-open');if(!was&&view==='app')render();
   document.documentElement.style.setProperty('--hbar',(document.querySelector('.bar').offsetHeight||80)+'px');
-  CH.unread=0;renderChatBtn();chatThreads();chatDraw();setTimeout(()=>$('chText').focus(),30);
+  CH.unread=0;renderChatBtn();chatThreads();chatDraw();if(!auto)setTimeout(()=>$('chText').focus(),30);
 }
-function closeChat(){$('chat').hidden=true;document.body.classList.remove('chat-open');}
+function closeChat(){try{sessionStorage.setItem(CHK,'1');}catch(e){}$('chat').hidden=true;document.body.classList.remove('chat-open');if(view==='app')render();}
 function toggleChat(){if($('chat').hidden)openChat();else closeChat();}
 $('hChat').onclick=toggleChat;
 $('mChat').onclick=()=>{$('mMenu').hidden=true;openChat();};
@@ -4778,9 +4891,9 @@ const shTag=()=>shUnit==null?null:unitTag(shUnit).split(' · ')[0];
 function shareLink(){return location.origin+location.pathname+'?b='+encodeURIComponent(PROJ.id)+(shUnit==null?'':'&u='+shUnit);}
 function openShare(unit){
   if(!PROJ)return;shUnit=unit==null?null:+unit;shTo='';const t=shTag();
-  $('shStep').textContent=t?'Share unit':'Share building';
-  $('shTitle').textContent=t?'Share '+t:'Share '+PROJ.name;
-  $('shLead').textContent=t?'Add their email, then send the link. It opens '+t+' and its discussion. They can see the whole building.':'Add their email, then send the link. Everyone added can edit units and chat.';
+  $('shStep').textContent=t?'Share unit':'Invite';
+  $('shTitle').textContent=t?'Share '+t:'Invite people to '+PROJ.name;
+  $('shLead').textContent=t?'Add their email, then send the link. It opens '+t+' and its discussion. They can see the whole building.':'Add their email, then send them the link. They get the whole building: every unit, the chat and the sketches.';
   $('shLink').value=shareLink();$('shMsg').hidden=true;$('shEmail').value='';$('share').hidden=false;drawMembers();setTimeout(()=>$('shEmail').focus(),30);
 }
 $('iShare').onclick=()=>{if(selected)openShare(selected.idx);};

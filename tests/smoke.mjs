@@ -324,6 +324,7 @@ try {
   // Desktop
   const ctx = await browser.newContext({ viewport: { width: 1500, height: 860 } });
   const p = await ctx.newPage();
+  await p.addInitScript(() => { try { sessionStorage.setItem('pad-chat-hidden', '1'); } catch (e) {} });   // this person closed the chat earlier, so it stays closed
   p.on('pageerror', e => errs.push('desktop script error: ' + e.message));
   await p.goto(URL);
   await p.waitForSelector('#land', { state: 'visible', timeout: 5000 }).catch(() => errs.push('landing page did not show'));
@@ -520,12 +521,32 @@ try {
   await signUp(q, 'bob@example.com', 'Bob').catch(() => errs.push('second user could not sign up'));
   if (!/Smoke Test/.test((await q.textContent('#pList')) || '')) errs.push('invited person did not see the shared building');
   await q.click('.pitem'); await q.waitForSelector('#strip', { state: 'visible', timeout: 5000 });
-  await q.click('#hChat'); await q.fill('#chText', 'Hello from Bob'); await q.click('#chSend');
+  if (!(await q.isVisible('#chat'))) errs.push('the chat should be open when a building opens');
+  await q.fill('#chText', 'Hello from Bob'); await q.click('#chSend');
   await p.waitForTimeout(400);
   if ((await p.textContent('#hCnt')) !== '1') errs.push('unread chat badge did not count the new message');
   await p.click('#hChat'); await p.waitForTimeout(200);
   if (!/Hello from Bob/.test(await p.textContent('#chMsgs'))) errs.push('chat message did not arrive for the other person');
   await p.click('#chClose');
+  // Sketch: Bob draws on a unit and pins a note; the owner sees both live and can erase them
+  await q.click('#hSketch');
+  if (!(await q.isVisible('#skBar'))) errs.push('Sketch did not show its tools');
+  const sb = await q.locator('#strip .unit .hit').first().boundingBox();
+  await q.mouse.move(sb.x + 60, sb.y + 220); await q.mouse.down(); await q.mouse.move(sb.x + 120, sb.y + 260, { steps: 6 }); await q.mouse.move(sb.x + 160, sb.y + 240, { steps: 6 }); await q.mouse.up();
+  await q.click('#skBar [data-t="note"]'); await q.mouse.click(sb.x + 80, sb.y + 320); await q.fill('#skNoteIn', 'Move this wall?'); await q.press('#skNoteIn', 'Enter');
+  await q.waitForTimeout(300);
+  if ((await q.locator('#mk .mkp').count()) < 1 || (await q.locator('#mk .mkn').count()) < 1) errs.push('a drawing or a note did not appear');
+  if (await q.isVisible('#info')) errs.push('drawing opened the unit panel');
+  await q.click('#skDone');
+  await p.waitForTimeout(500);
+  if ((await p.locator('#mk .mkp').count()) < 1 || !/Move this wall/.test(await p.textContent('#mk'))) errs.push('a sketch did not reach the other person');
+  await p.click('#hSketch'); await p.click('#skBar [data-t="erase"]');
+  { await p.locator('#mk .mkn circle').first().scrollIntoViewIfNeeded(); await p.waitForTimeout(200); const nb = await p.locator('#mk .mkn circle').first().boundingBox(); await p.mouse.click(nb.x + nb.width / 2, nb.y + nb.height / 2); }
+  await p.waitForTimeout(300);
+  await p.click('#skDone');
+  if (await p.locator('#mk .mkn').count()) errs.push('the owner could not erase a note');
+  await q.waitForTimeout(500);
+  if (await q.locator('#mk .mkn').count()) errs.push('an erased note stayed on the other screen');
   await q.close();
 
   // Share one unit by link: the link survives sign-up and opens that unit and its discussion
@@ -584,6 +605,7 @@ try {
   // Phone
   const m = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   m.on('pageerror', e => errs.push('phone script error: ' + e.message));
+  await m.addInitScript(() => { try { sessionStorage.setItem('pad-chat-hidden', '1'); } catch (e) {} });   // the phone checks below need the plan uncovered
   await m.goto(URL);
   await signUp(m, 'phone@example.com', 'Phone').catch(() => errs.push('phone sign up failed'));
   await newBuilding(m, 'Phone Test', true).catch(() => errs.push('phone could not create a building'));
