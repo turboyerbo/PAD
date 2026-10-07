@@ -286,7 +286,7 @@ try {
     if (okv < nv2 - 1) errs.push('Suggest a variation worked on only ' + okv + ' of ' + nv2 + ' layouts');
   await ai.close();
 
-  // Accounts: the landing page comes first. These run against the demo backend (no Supabase keys in the repo).
+  // Accounts: the landing page comes first. These run against the demo backend (localhost never uses the real service).
   const signUp = async (page, email, name) => {
     await page.waitForSelector('#land', { state: 'visible', timeout: 5000 });
     await page.click('#lTabs [data-m="up"]');
@@ -507,6 +507,39 @@ try {
   if (!/Hello from Bob/.test(await p.textContent('#chMsgs'))) errs.push('chat message did not arrive for the other person');
   await p.click('#chClose');
   await q.close();
+
+  // Share one unit by link: the link survives sign-up and opens that unit and its discussion
+  const uIdx = await p.evaluate(() => { const T = window.__pad, u = T.units().find(x => x.src === 'add') || T.units()[0]; T.showInfo(u); return u.idx; });
+  await p.click('#iShare');
+  const link = await p.inputValue('#shLink');
+  if (!new RegExp('[?&]u=' + uIdx + '$').test(link)) errs.push('unit share link does not point at the unit: ' + link);
+  await p.fill('#shEmail', 'carol@example.com'); await p.click('#shForm button');
+  await p.waitForSelector('#shMsg:not([hidden])', { timeout: 3000 }).catch(() => errs.push('unit invite did not confirm'));
+  await p.click('#shClose');
+  const c = await ctx.newPage();
+  c.on('pageerror', e => errs.push('third user script error: ' + e.message));
+  await c.goto(URL + link.slice(link.indexOf('?') + 1).replace(/^/, '&'));
+  await c.waitForSelector('#land', { state: 'visible', timeout: 5000 });
+  if (!(await c.isVisible('#lGoNote'))) errs.push('a shared link did not explain how to open it');
+  if (/[?&]b=/.test(c.url())) errs.push('the shared link stayed in the address bar');
+  if ((await c.textContent('#lGo')) !== 'Create account') errs.push('a shared link should start on Create account');
+  await c.fill('#lName', 'Carol'); await c.fill('#lEmail', 'carol@example.com'); await c.fill('#lPass', 'password123'); await c.click('#lGo');
+  await c.waitForSelector('#chat:not([hidden])', { timeout: 5000 }).catch(() => errs.push('unit link did not open the discussion'));
+  if (!(await c.isVisible('#info')) || (await c.evaluate(() => { const T = window.__pad; return T.PROJ() && document.getElementById('iTitle').textContent; })) === null) errs.push('unit link did not open the unit');
+  // Leave a shared building, then the empty list puts the cursor on the building name
+  await c.click('#hBuildings'); await c.waitForSelector('.pdel', { timeout: 3000 });
+  await c.click('.pdel'); await c.click('.pdel');
+  await c.waitForSelector('#pList .note', { timeout: 3000 }).catch(() => errs.push('leaving a shared building did not remove it from the list'));
+  await c.waitForTimeout(100);
+  if (!(await c.evaluate(() => document.activeElement && document.activeElement.id === 'pName'))) errs.push('with no buildings the name field is not ready to type');
+  // Create and delete a building from the list
+  await c.keyboard.type('Throwaway'); await c.keyboard.press('Enter');
+  await c.waitForSelector('#strip', { state: 'visible', timeout: 5000 }); await c.keyboard.press('Escape'); await c.waitForTimeout(300);
+  await c.click('#hBuildings'); await c.waitForSelector('.pdel', { timeout: 3000 });
+  if ((await c.textContent('.pdel')) !== 'Delete') errs.push('owner should see Delete');
+  await c.click('.pdel'); await c.click('.pdel');
+  await c.waitForSelector('#pList .note', { timeout: 3000 }).catch(() => errs.push('deleting a building did not remove it'));
+  await c.close();
 
   // Sign out returns to the landing page, and the building is still listed after signing back in
   await p.reload();
