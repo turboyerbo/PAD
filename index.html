@@ -393,6 +393,12 @@ body.chat-open .info{right:356px}
 .amt input{flex:1;min-width:0;accent-color:var(--draw)}
 .amt output{min-width:44px;text-align:right;font-family:var(--narrow);font-size:14px}
 .udm{fill:none;stroke:var(--draw);stroke-width:.9;pointer-events:none}
+.adl{fill:none;stroke:var(--draw);stroke-width:.8}
+.adt{font-family:var(--narrow);font-weight:600;fill:var(--draw);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3px;stroke-linejoin:round;font-variant-numeric:tabular-nums}
+.adh{fill:none;stroke:transparent;stroke-width:16px;pointer-events:stroke}
+.adim{pointer-events:none}.adim.live{pointer-events:auto;cursor:grab;touch-action:none}.adim.live .adt{pointer-events:all}
+.adim.on .adl{stroke:var(--accent);stroke-width:1.6}.adim.on .adt{fill:var(--accent)}
+.dimbar{position:fixed;z-index:40;display:flex;gap:10px;align-items:center;background:var(--sheet);border:1px solid var(--ink);padding:6px 8px;box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:12px;color:var(--ink-2)}
 .udm.on{stroke:var(--accent);stroke-width:1.8}
 .udt{font-family:var(--narrow);font-weight:600;fill:var(--draw);text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--sheet);stroke-width:3.2px;stroke-linejoin:round;font-variant-numeric:tabular-nums;pointer-events:none}
 .modes{display:flex}
@@ -791,6 +797,7 @@ body.no-ai:not(.manual) .cust{display:none}
   <div class="iters" id="iIters"></div>
   <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button><button class="tb" id="iShare" type="button">Share this unit</button></div>
   <div class="dels"><button class="tb" id="iExp" type="button" title="Walls, doors, windows, rooms, furniture and areas as JSON, in metres">Export JSON</button><button class="tb danger" id="iDel" type="button">Delete this unit</button></div>
+  <div class="cmt" id="iDimsBox" hidden><button class="tb" id="iDims" type="button">Restore dimensions</button></div>
   <dl id="iList"></dl>
   <h3 class="sub">Room areas</h3>
   <dl id="iRooms"></dl>
@@ -903,6 +910,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 
 <div class="toast" id="toast" hidden role="status"></div>
+<div class="dimbar" id="dimBar" hidden><button class="tb danger" id="dimDel" type="button">Delete dimension</button><span>or drag it to move it</span></div>
 
 <div class="modal" id="lay" hidden role="dialog" aria-modal="true" aria-labelledby="layT">
   <div class="sheet lays">
@@ -1614,7 +1622,7 @@ function makeUnit(spec){
 }
 const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
-function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,brief:u.brief||'',side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
+function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,brief:u.brief||'',side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),dimx:units.filter(u=>u.dimx&&(Object.keys(u.dimx.h||{}).length||Object.keys(u.dimx.o||{}).length)).map(u=>({idx:u.idx,x:u.dimx})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
   try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpOpen}));}catch(e){}
   if(!PROJ)return;
@@ -1629,6 +1637,7 @@ function initial(base){nextIdx=1;removedBase=[];units=base?BASELINE.map(b=>makeU
 function loadData(d){
   d=d||{};bldgLen=+d.plate>=10?+d.plate:100;initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
   (d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{try{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);}catch(e){}});
+  (d.dimx||[]).forEach(c=>{const u=units.find(x=>x.idx===c.idx);if(u&&c.x)u.dimx={h:Object.assign({},c.x.h),o:Object.assign({},c.x.o)};});
   (d.custom||[]).forEach(c=>{try{const u=units.find(x=>x.idx===c.idx);if(!u)return;if(c.iters){u.iters=c.iters;u.cur=c.cur;}if(c.d)applyCustom(u,c.d);}catch(e){}});
 }
 /* ---------- keyplan ----------
@@ -1685,13 +1694,15 @@ const lite=()=>isMob&&!detail;   // phones show room names and areas only, until
 /* ---------- render ---------- */
 const svg=$('strip'),scroller=$('scroller'),addBtn=$('add');
 let S=40,PADL=36,TOP=70;
+const AD_TOP=1.25;   // metres above the window wall kept for the overall width strings
+let ADL='';
 function computeScale(){
   document.body.classList.toggle('detail',detail);
   const h=scroller.clientHeight;TOP=isMob?(lite()?14:60):(grouped?88:70);
   const avail=h-TOP-(isMob?(lite()?8:66):66)-12;
-  let s=Math.max(18,Math.min(90,avail/(DM+BM+CORR+0.2)));
+  let s=Math.max(18,Math.min(90,avail/(DM+BM+AD_TOP+CORR+0.2)));
   if(isMob)s=Math.max(12,Math.min(s,scroller.clientWidth*0.82/6.5,scroller.clientWidth*0.94/Math.max(1,...units.map(u=>u.plan.W+0.4))));   // phone: the middle unit takes about 80% of the width, and the widest unit always fits
-  S=s*zoom;TOP+=BM*S;
+  S=s*zoom;TOP+=(BM+AD_TOP)*S;
   const first=ordered()[0];PADL=isMob&&first?Math.max(12,(scroller.clientWidth-first.plan.W*S)/2):36;
 }
 function wallsSVG(ws){let a='',b='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`;a+=`<rect class="wS" ${s}/>`;b+=`<rect class="wF" ${s}/>`;});return a+b;}
@@ -1722,7 +1733,7 @@ function render(){
   drawKeyplan();
   const {list,runs,total}=layout();
   DM=units.length?Math.max(...units.map(u=>u.plan.D)):8.4;list.forEach(u=>u.oy=DM-u.plan.D);BM=Math.max(0,...units.map(u=>outTop(u.plan)));
-  computeScale();
+  computeScale();ADL='';
   const dmPad=list.some(u=>(u.plan.dms||[]).length)?Math.ceil(0.9*S):0,W=PADL+total*S+dmPad+(isMob&&list.length?Math.max(12,(scroller.clientWidth-list[list.length-1].plan.W*S)/2):12), Hc=TOP+(DM+CORR+0.2)*S, H=Hc+(isMob?10:80);
   svg.setAttribute('width',Math.ceil(W));svg.setAttribute('height',Math.ceil(H));svg.setAttribute('viewBox',`0 0 ${Math.ceil(W)} ${Math.ceil(H)}`);
   let o=`<defs>
@@ -1758,7 +1769,8 @@ function render(){
     {const mx=Math.max(12,Math.floor(Wp/(fs*0.55))),bt=u.brief?(u.brief.length>mx?u.brief.slice(0,mx-1).trim()+'…':u.brief):priText(u);
     t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${u.brief?`<title>${escapeHtml(u.brief)}</title>`:''}${escapeHtml(bt)}</text>`;}
     }
-    t+=dmSVG(u.plan,X,uy,S,Wp<64||S<26?9:11);   // the only dimensions drawn are the ones a person added
+    t+=dmSVG(u.plan,X,uy,S,Wp<64||S<26?9:11);   // dimensions a person added in Drafting
+    ADL+=adSVG(u,u.plan,X,uy,S,f(Math.max(7,Math.min(10,S*0.2))),true);
     t+=roomLabels(u,X,uy,null,S,null,true);
     const cfs=Math.max(7,Math.min(10.5,S*0.21));
     if(!lite())t+=`<text class="cl" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S-1)}" font-size="${f(cfs)}">CORRIDOR</text><text class="ra" style="stroke:var(--paper)" x="${cxp}" y="${f(TOP+(DM+CORR/2)*S+cfs)}" font-size="${f(cfs)}">${(u.plan.W*CORR).toFixed(1)} m²</text>`;
@@ -1772,6 +1784,7 @@ function render(){
   let pp='';
   list.forEach(u=>{pp+=occMarkup(u);});
   o+=`<g id="ppl" transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})">${pp}</g>`;
+  o+=`<g id="adims">${ADL}</g>`;
   svg.innerHTML=o;
   bindOcc(svg);
   if(lastNew)svg.querySelectorAll(`.pp[data-u="${lastNew.idx}"]`).forEach(el=>el.classList.add('pnew'));
@@ -1898,6 +1911,7 @@ function showInfo(u){
   selected=u;drawKeyplan();const info=$('info');
   if(delArm){clearTimeout(delArm);delArm=0;}$('iDel').textContent='Delete this unit';
   if(!u){info.hidden=true;return;}
+  $('iDimsBox').hidden=!(u.dimx&&(Object.keys(u.dimx.h||{}).length||Object.keys(u.dimx.o||{}).length));
   $('iBriefBox').classList.remove('ed');$('iBriefBox').hidden=u.src!=='add';$('iBrief').textContent=u.brief||'Say who this unit is for.';
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=(u.layout?'Baseline layout · '+layoutName(u.layout):u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
@@ -2282,6 +2296,81 @@ function dmSVG(P,ox,oy,sc,fs,selId){
     const t=4,mm=Math.round(g.len*1000),on=d.id===selId?' on':'';
     s+=`<path class="udm${on}" d="${g.ext.map(e=>`M${px(e[0],e[1])}L${px(e[2],e[3])}`).join('')}M${px(g.a[0],g.a[1])}L${px(g.b[0],g.b[1])}${g.hor?`M${f(ox+g.a[0]*sc-t)} ${f(oy+g.a[1]*sc+t)}l${2*t} ${-2*t}M${f(ox+g.b[0]*sc-t)} ${f(oy+g.b[1]*sc+t)}l${2*t} ${-2*t}`:`M${f(ox+g.a[0]*sc-t)} ${f(oy+g.a[1]*sc+t)}l${2*t} ${-2*t}M${f(ox+g.b[0]*sc-t)} ${f(oy+g.b[1]*sc+t)}l${2*t} ${-2*t}`}"/>`;
     s+=g.hor?`<text class="udt" x="${f(ox+g.mid[0]*sc)}" y="${f(oy+g.mid[1]*sc)}" font-size="${fs}">${mm}</text>`:`<text class="udt" transform="translate(${px(g.mid[0],g.mid[1])}) rotate(-90)" font-size="${fs}">${mm}</text>`;
+  });
+  return s;
+}
+/* ---------- automatic dimensions ----------
+   Every plan gets its overall width (with a chain to each partition that meets the window wall), its overall depth,
+   and a length on every interior wall that has room for one. A person can drag one to move it or tap it to delete it.
+   Those changes are kept per unit in u.dimx: {h:{key:1} hidden, o:{key:offset in m}}. Keys come from the geometry,
+   so a dimension whose wall moves comes back in its default place. */
+function adRuns(P){
+  const W=P.W,D=P.D,L={h:[],v:[]};
+  P.walls.forEach(w=>{
+    if(w.rail)return;const hor=w.w>=w.h;
+    const r=hor?{p0:w.y,p1:w.y+w.h,a:w.x,b:w.x+w.w}:{p0:w.x,p1:w.x+w.w,a:w.y,b:w.y+w.h};
+    L[hor?'h':'v'].push(r);
+  });
+  const merge=A=>{
+    let out=A.map(r=>Object.assign({},r)),changed=true;
+    while(changed){changed=false;
+      for(let i=0;i<out.length&&!changed;i++)for(let j=i+1;j<out.length;j++){const p=out[i],q=out[j];
+        if(Math.min(p.p1,q.p1)-Math.max(p.p0,q.p0)>-0.03&&Math.min(p.b,q.b)-Math.max(p.a,q.a)>-0.06){p.p0=Math.min(p.p0,q.p0);p.p1=Math.max(p.p1,q.p1);p.a=Math.min(p.a,q.a);p.b=Math.max(p.b,q.b);out.splice(j,1);changed=true;break;}}}
+    return out.map(r=>Object.assign(r,{c:(r.p0+r.p1)/2,t:r.p1-r.p0}));
+  };
+  // the perimeter (window wall, corridor wall, demising walls and their linings) is covered by the overall dimensions
+  return{h:merge(L.h).filter(r=>r.c>0.45&&r.c<D-0.3),v:merge(L.v).filter(r=>r.c>0.4&&r.c<W-0.4)};
+}
+function autoDims(P){
+  const W=P.W,D=P.D,top=-outTop(P),L=[],R=adRuns(P);
+  const xs=[...new Set(R.v.filter(r=>r.a<0.55&&r.b-r.a>0.3).map(r=>Math.round(r.c*1000)/1000))].sort((a,b)=>a-b).filter((x,i,a)=>x>0.3&&x<W-0.3&&(!i||x-a[i-1]>0.25));
+  if(xs.length)L.push({k:'wc',hor:true,pts:[0,...xs,W],at:top-0.5,from:-0.06});
+  L.push({k:'w',hor:true,pts:[0,W],at:top-(xs.length?1.0:0.5),from:-0.06});
+  L.push({k:'d',hor:false,pts:[0,D],at:null,wall:false});
+  R.h.forEach(r=>{if(r.b-r.a>=0.6)L.push({k:'h'+Math.round(r.c*10)+'_'+Math.round(r.a*10)+'_'+Math.round(r.b*10),hor:true,pts:[r.a,r.b],c:r.c,t:r.t,wall:true});});
+  R.v.forEach(r=>{if(r.b-r.a>=0.6)L.push({k:'v'+Math.round(r.c*10)+'_'+Math.round(r.a*10)+'_'+Math.round(r.b*10),hor:false,pts:[r.a,r.b],c:r.c,t:r.t,wall:true});});
+  return L;
+}
+function adLayout(u,P,sc,fs){
+  const x=u&&u.dimx||{},hid=x.h||{},off=x.o||{},W=P.W,D=P.D,out=[];
+  const boxes=P.rooms.filter(q=>!q.bk&&q.lx!==undefined&&!q.hl).map(q=>lblBox(q));
+  const th=fs*1.2/sc,cw=fs*0.6/sc;
+  const tb=(hor,mx,my,txt)=>{const w=txt.length*cw+0.08;return hor?[mx-w/2,my-th/2,mx+w/2,my+th/2]:[mx-th/2,my-w/2,mx+th/2,my+w/2];};
+  const inside=b=>b[0]>0.08&&b[2]<W-0.08&&b[1]>0.3&&b[3]<D-0.2;
+  const free=b=>!boxes.some(o=>boxHit(b,o,0));
+  const texts=(d,at)=>{const r=[];for(let i=0;i+1<d.pts.length;i++){const a=d.pts[i],b=d.pts[i+1],t=String(Math.round((b-a)*1000)),m=(a+b)/2;r.push({t,m,box:d.hor?tb(true,m,at,t):tb(false,at,m,t),fit:t.length*cw+0.12<=b-a});}return r;};
+  autoDims(P).forEach(d=>{
+    if(hid[d.k])return;
+    let at,ref;
+    if(d.wall){
+      ref=d.c;const g=d.t/2+0.2;
+      if(off[d.k]!==undefined)at=ref+off[d.k];
+      else{at=[ref+g,ref-g].find(a=>texts(d,a).every(q=>q.fit&&inside(q.box)&&free(q.box)));if(at===undefined)return;}
+    }else if(d.k==='d'){
+      ref=0.5;const alt=W-0.5;
+      if(off.d!==undefined)at=ref+off.d;
+      else at=[ref,alt].find(a=>texts(d,a).every(q=>free(q.box)))??ref;
+    }else{ref=d.at;at=ref+(off[d.k]||0);}
+    const T=texts(d,at);T.forEach(q=>boxes.push(q.box));
+    out.push({k:d.k,hor:d.hor,pts:d.pts,at,ref,from:d.from,T});
+  });
+  return out;
+}
+let DSEL=null;
+function adSVG(u,P,ox,oy,sc,fs,live){
+  let s='';const X=v=>f(ox+v*sc),Y=v=>f(oy+v*sc),tk=3.5;
+  adLayout(u,P,sc,fs).forEach(d=>{
+    const a=d.pts[0],b=d.pts[d.pts.length-1];let p='',h='';
+    if(d.hor){
+      p+=`M${X(a)} ${Y(d.at)}H${X(b)}`;d.pts.forEach(v=>{p+=`M${f(+X(v)-tk)} ${f(+Y(d.at)+tk)}l${2*tk} ${-2*tk}`;if(d.from!=null)p+=`M${X(v)} ${Y(d.from)}V${f(+Y(d.at)-4)}`;});
+      h=`M${X(a)} ${Y(d.at)}H${X(b)}`;
+    }else{
+      p+=`M${X(d.at)} ${Y(a)}V${Y(b)}`;d.pts.forEach(v=>{p+=`M${f(+X(d.at)-tk)} ${f(+Y(v)+tk)}l${2*tk} ${-2*tk}`;});
+      h=`M${X(d.at)} ${Y(a)}V${Y(b)}`;
+    }
+    const tx=d.T.map(q=>d.hor?`<text class="adt" x="${X(q.m)}" y="${Y(d.at)}" font-size="${fs}">${q.t}</text>`:`<text class="adt" transform="translate(${X(d.at)} ${Y(q.m)}) rotate(-90)" font-size="${fs}">${q.t}</text>`).join('');
+    const on=live&&DSEL&&DSEL.idx===u.idx&&DSEL.k===d.k?' on':'';
+    s+=`<g class="adim${live?' live':''}${on}" data-u="${u.idx}" data-k="${d.k}" data-h="${d.hor?1:0}" data-at="${f(d.at)}" data-ref="${f(d.ref)}"><path class="adl" d="${p}"/>${live?`<path class="adh" d="${h}"/>`:''}${tx}</g>`;
   });
   return s;
 }
@@ -2835,8 +2924,8 @@ function restoreIter(u,n){
 }
 
 function edRender(){
-  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=isMob?10:30,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P);
-  const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P))*Sc)/2+outTop(P)*Sc;
+  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=isMob?10:30,adT=E.mode==='layout'?0:AD_TOP,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P)+adT;
+  const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P)+adT)*Sc)/2+(outTop(P)+adT)*Sc;   // room above the window wall for the width strings
   Object.assign(E,{Sc,x0,y0});
   const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
   let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,noFurn:edHide()})+wallsSVG(ws)+sideWinSVG(P);
@@ -2850,7 +2939,7 @@ function edRender(){
   if(E.ai)g+=`<g id="rmOv">${rmOverlay()}</g>`+edWalkerSVG();
   const fs=Math.max(8,Math.min(12,Sc*0.22));
   $('edSvg').setAttribute('width',cw);$('edSvg').setAttribute('height',ch);$('edSvg').setAttribute('viewBox',`0 0 ${cw} ${ch}`);
-  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide())+(E.mode!=='layout'?dmSVG(P,x0,y0,Sc,fs,E.sel&&E.sel.t==='m'?E.sel.id:null):'')+'<g id="dmOv"></g>';
+  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide())+(E.mode!=='layout'?adSVG(E.u,P,x0,y0,Sc,f(Math.max(7,Math.min(10,Sc*0.2))),false)+dmSVG(P,x0,y0,Sc,fs,E.sel&&E.sel.t==='m'?E.sel.id:null):'')+'<g id="dmOv"></g>';
   if(E.ai){edWalkPlace();if(!wkRaf&&!reduce){wkT=0;wkRaf=requestAnimationFrame(edWalkLoop);}}
   edBubbles(cw);
 }
@@ -3168,7 +3257,7 @@ function edPanel(){
   if(s&&s.t==='m'){const m=(P.dms||[]).find(x=>x.id===s.id);if(m)h+=`<h3 class="sub">Dimension</h3><dl class="edl"><dt>Length</dt><dd>${Math.round(dmGeom(P,m).len*1000)} mm</dd></dl><div class="edbtns"><button class="tb" data-act="mflip">Other side</button><button class="tb" data-act="mdel">Delete dimension</button></div>`;}
   if(E.mode==='draft'){
     const stale=(P.dms||[]).filter(x=>!dmOk(P,x)).length;
-    h+=`<h3 class="sub">Dimensions</h3><button class="tb wide" type="button" data-act="dimtool" aria-pressed="${!!E.dimTool}">${E.dimTool?'Cancel dimension':'Add a dimension'}</button><p class="note">${E.dimTool?(E.dimA?'Now click the second point.':'Click the first point on a wall.'):'The plan shows only the dimensions you add. Click two points on walls, such as the two ends of one wall.'}</p>`;
+    h+=`<h3 class="sub">Dimensions</h3><button class="tb wide" type="button" data-act="dimtool" aria-pressed="${!!E.dimTool}">${E.dimTool?'Cancel dimension':'Add a dimension'}</button><p class="note">${E.dimTool?(E.dimA?'Now click the second point.':'Click the first point on a wall.'):'Overall and wall dimensions are drawn for you. Add another by clicking two points on walls.'}</p>`;
     if(stale)h+=`<p class="chk-warn">${stale} dimension${stale>1?'s are':' is'} hidden because its wall moved.</p><div class="edbtns"><button class="tb" data-act="mclean">Remove ${stale>1?'them':'it'}</button></div>`;
   }
   if(E.mode==='draft')h+=cleanHtml();
@@ -4441,7 +4530,40 @@ $('mDetail').onclick=()=>{detail=!detail;document.body.classList.toggle('detail'
 /* ---------- tools ---------- */
 $('undo').onclick=()=>{const ad=added();if(ad.length){const last=ad.reduce((m,x)=>x.idx>m.idx?x:m);units=units.filter(u=>u!==last);nextIdx=last.idx;if(selected===last)showInfo(null);render();save();}};
 $('reset').onclick=()=>{showInfo(null);initial(PROJ&&PROJ.base);render();save();scroller.scrollTo({left:0});};
-svg.addEventListener('click',e=>{const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);showInfo(selected===u?null:u);render();});
+/* Dimensions on the plan: drag to move, tap to pick (then Delete). */
+let ADRAG=null,adEat=0;
+const dimxOf=u=>(u.dimx=u.dimx||{h:{},o:{}},u.dimx.h=u.dimx.h||{},u.dimx.o=u.dimx.o||{},u.dimx);
+function hideDimBar(){$('dimBar').hidden=true;}
+function dimPick(sel,cx,cy){DSEL=sel;render();if(!sel)return hideDimBar();const b=$('dimBar');b.hidden=false;const r=b.getBoundingClientRect();b.style.left=Math.max(8,Math.min(innerWidth-r.width-8,cx-r.width/2))+'px';b.style.top=Math.max(8,cy-r.height-16)+'px';}
+svg.addEventListener('pointerdown',e=>{
+  const g=e.target.closest('.adim.live');if(!g)return;
+  const u=units.find(x=>x.idx==g.dataset.u);if(!u)return;
+  e.preventDefault();e.stopPropagation();hideDimBar();
+  ADRAG={u,k:g.dataset.k,hor:g.dataset.h==='1',at:+g.dataset.at,ref:+g.dataset.ref,x:e.clientX,y:e.clientY,g,moved:false,d:0};
+  try{g.setPointerCapture(e.pointerId);}catch(x){}
+});
+svg.addEventListener('pointermove',e=>{
+  const A=ADRAG;if(!A)return;const dx=e.clientX-A.x,dy=e.clientY-A.y;
+  if(!A.moved&&Math.hypot(dx,dy)<5)return;A.moved=true;A.d=A.hor?dy:dx;
+  A.g.setAttribute('transform',A.hor?`translate(0 ${f(A.d)})`:`translate(${f(A.d)} 0)`);
+});
+svg.addEventListener('pointerup',e=>{
+  const A=ADRAG;if(!A)return;ADRAG=null;adEat=Date.now();
+  if(A.moved){const at=A.at+Math.round(A.d/S/0.05)*0.05;dimxOf(A.u).o[A.k]=Math.round((at-A.ref)*1000)/1000;DSEL=null;render();save();return;}
+  dimPick({idx:A.u.idx,k:A.k},e.clientX,e.clientY);
+});
+svg.addEventListener('pointercancel',()=>{if(ADRAG){ADRAG=null;render();}});
+function dimDelete(){
+  if(!DSEL)return;const u=units.find(x=>x.idx===DSEL.idx),k=DSEL.k;if(!u)return;
+  dimxOf(u).h[k]=1;DSEL=null;hideDimBar();render();save();if(selected===u)showInfo(u);
+  toast('Dimension deleted.',{label:'Undo',fn:()=>{delete dimxOf(u).h[k];render();save();if(selected===u)showInfo(u);}});
+}
+$('dimDel').onclick=dimDelete;
+document.addEventListener('keydown',e=>{if(DSEL&&(e.key==='Delete'||e.key==='Backspace')&&!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)&&!E){e.preventDefault();dimDelete();}else if(DSEL&&e.key==='Escape')dimPick(null);});
+document.addEventListener('pointerdown',e=>{if(DSEL&&!e.target.closest('#dimBar')&&!e.target.closest('.adim')){DSEL=null;hideDimBar();if(view==='app')render();}});
+scroller.addEventListener('scroll',hideDimBar,{passive:true});
+$('iDims').onclick=()=>{if(!selected)return;delete selected.dimx;render();save();showInfo(selected);toast('Dimensions restored.');};
+svg.addEventListener('click',e=>{if(Date.now()-adEat<400||e.target.closest('.adim'))return;const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);showInfo(selected===u?null:u);render();});
 $('iClose').onclick=()=>{showInfo(null);if(!isMob)render();};
 $('grp').onclick=()=>{grouped=!grouped;render();save();};
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};

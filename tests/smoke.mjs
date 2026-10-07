@@ -37,6 +37,20 @@ try {
   await g.click('#briefChips .chip');
   await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(300);
   if ((await g.evaluate(() => (window.__pad.units()[0] || {}).brief)) !== 'Two construction worker roommates') errs.push('the brief was not kept on the new unit');
+  // A new plan is dimensioned at once: overall width and depth, and its walls. A dimension can be deleted or dragged.
+  const dk = await g.evaluate(() => [...document.querySelectorAll('#adims .adim')].map(x => x.dataset.k));
+  if (!dk.includes('w') || !dk.includes('d')) errs.push('a new unit has no overall dimensions');
+  if (dk.filter(k => /^[hv]/.test(k)).length < 3) errs.push('a new unit has too few wall dimensions: ' + dk.length);
+  {
+    const bx = await g.locator('#adims .adim[data-k="w"] .adt').first().boundingBox();
+    await g.mouse.click(bx.x + bx.width / 2, bx.y + bx.height / 2); await g.waitForTimeout(150);
+    if (!(await g.isVisible('#dimBar'))) errs.push('tapping a dimension did not offer to delete it');
+    else { await g.click('#dimDel'); await g.waitForTimeout(150); if (await g.locator('#adims .adim[data-k="w"]').count()) errs.push('deleting a dimension did not remove it'); }
+    if (await g.isVisible('#info')) errs.push('tapping a dimension opened the unit panel');
+    const db = await g.locator('#adims .adim[data-k="d"] .adt').first().boundingBox(), at0 = +(await g.getAttribute('#adims .adim[data-k="d"]', 'data-at'));
+    await g.mouse.move(db.x + db.width / 2, db.y + db.height / 2); await g.mouse.down(); await g.mouse.move(db.x + db.width / 2 + 40, db.y + db.height / 2, { steps: 4 }); await g.mouse.up(); await g.waitForTimeout(150);
+    if (!(+(await g.getAttribute('#adims .adim[data-k="d"]', 'data-at')) > at0)) errs.push('dragging a dimension did not move it');
+  }
   await g.reload();
   await g.waitForSelector('#proj', { state: 'visible', timeout: 5000 }).catch(() => errs.push('guest reload did not return to the building list'));
   if (!/Guest Building/.test((await g.textContent('#pList')) || '')) errs.push('guest building was not kept');
