@@ -51,6 +51,12 @@ Never put the `service_role` key anywhere in this repository.
 Bump `VERSION` in `sw.js`, open a pull request as usual, and check the deploy preview. The landing page note
 "Demo mode" disappears once the values are filled in.
 
+## Status
+
+Connected on 7 October 2026 to the Supabase project "PAD" (`frqsdccnjmdigrmyzkng`). The values are in `index.html`.
+On `localhost` the app still uses the in-browser demo, so local work and the smoke test never touch the real database.
+Add `?live` to the address to use the real service locally.
+
 ## How it behaves
 
 - Each building is one row. Its units, edits and customizations are saved as JSON in that row.
