@@ -289,6 +289,10 @@ body.view-proj #proj{display:block;flex:1;min-height:0;overflow:auto}
 .pitem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid var(--rule);background:var(--paper);border-radius:2px}
 .pitem:hover{border-color:var(--accent);background:var(--furn-fill)}
 .pitem b{font-size:15px;font-weight:600}
+.prow{display:flex;gap:8px;align-items:center;margin-bottom:8px}.prow .pitem{margin:0;flex:1;min-width:0}.prow .pitem b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.pdel{flex:none}
+.shlink{display:flex;gap:8px;margin:4px 0 10px}.shlink input{flex:1;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.cmt{display:flex;flex-wrap:wrap;gap:8px}
+body.no-google :is(#lGoogle,#lCard .or){display:none!important}
 .pitem span{font-size:12px;color:var(--ink-2);font-family:var(--narrow)}
 .note{font-size:13px;color:var(--ink-2);line-height:1.45;margin:6px 0}
 .cbadge{display:inline-block;min-width:16px;padding:0 5px;margin-left:4px;border-radius:9px;background:#D81E1E;color:#fff;font-size:11px;font-weight:600;text-align:center;line-height:16px;letter-spacing:0}
@@ -456,7 +460,7 @@ body.mob .ed-handle{background:#fff}
 #lGuest{display:none}
 #lGuest .demo-note{margin:0 0 16px;font-size:13px}
 body.no-social #lGuest{display:block}
-body.no-social :is(#lTabs,#lTitle,#lGoogle,#lDemoG,.or,#lForm,#lDemo,#pOut,#hShare,#hChat,#mShare,#mChat,#iChat,.cmt,#chat,#share,#hRole,.social-only){display:none!important}.ktpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+body.no-social :is(#lGoNote,#iShare,#lTabs,#lTitle,#lGoogle,#lDemoG,.or,#lForm,#lDemo,#pOut,#hShare,#hChat,#mShare,#mChat,#iChat,.cmt,#chat,#share,#hRole,.social-only){display:none!important}.ktpl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .kt{display:flex;flex-direction:column;gap:3px}
 .ktp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border:1px solid var(--rule);background:var(--paper);border-radius:2px;color:var(--draw);font-size:12px}
 .ktp:hover:not(:disabled){border-color:var(--accent);background:var(--furn-fill)}
@@ -596,6 +600,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <p class="land-lead">Describe a unit layout. See it in seconds.</p>
   </div>
   <section class="land-card" id="lCard" aria-labelledby="lTitle">
+    <p class="demo-note" id="lGoNote" hidden>Someone shared a building with you. Sign in or create an account with the email they invited.</p>
     <div id="lBack"><h2>Welcome back</h2><p class="demo-note" id="lWho"></p><button class="tb primary wide" id="lContinue" type="button">Go to my buildings</button></div>
     <div id="lGuest">
       <button class="tb primary wide" id="lStart" type="button">Start designing</button>
@@ -780,7 +785,7 @@ body.no-ai:not(.manual) .cust{display:none}
   <div class="info-head"><div><span class="step" id="iKicker">Baseline unit</span><h2 id="iTitle">PAD-01</h2></div><button class="x" id="iClose" aria-label="Close unit details">×</button></div>
   <div class="cust" id="iCustBox"><p>Want a different version of this unit? A sheet of tracing paper slides over it. Drag rooms around, or describe the change in words, and the earlier version is kept.</p><button class="tb primary" id="iCust">Change this unit</button></div>
   <div class="iters" id="iIters"></div>
-  <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button></div>
+  <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button><button class="tb" id="iShare" type="button">Share this unit</button></div>
   <div class="dels"><button class="tb" id="iExp" type="button" title="Walls, doors, windows, rooms, furniture and areas as JSON, in metres">Export JSON</button><button class="tb danger" id="iDel" type="button">Delete this unit</button></div>
   <dl id="iList"></dl>
   <h3 class="sub">Room areas</h3>
@@ -875,14 +880,15 @@ body.no-ai:not(.manual) .cust{display:none}
 
 <div class="modal" id="share" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
   <div class="sheet">
-    <div class="sheet-head"><span class="step">Share building</span><button class="x" id="shClose" type="button" aria-label="Close">×</button></div>
-    <h2 id="shTitle">Invite people to this building</h2>
-    <p class="lead">Everyone you invite can edit units and chat. We do not send an email yet, so share the site link with them.</p>
+    <div class="sheet-head"><span class="step" id="shStep">Share building</span><button class="x" id="shClose" type="button" aria-label="Close">×</button></div>
+    <h2 id="shTitle">Share this building</h2>
+    <p class="lead" id="shLead">Add their email, then send them the link.</p>
     <form id="shForm" class="inrow"><div class="field grow"><input id="shEmail" type="email" placeholder="name@company.com" aria-label="Email to invite" autocomplete="off"></div><button class="tb primary" type="submit">Invite</button></form>
     <div class="result" id="shMsg" hidden></div>
     <h3 class="sub">People</h3>
     <div id="shList"></div>
-    <div class="actions"><button class="tb" id="shCopy" type="button">Copy site link</button></div>
+    <h3 class="sub">Link</h3>
+    <div class="shlink"><input id="shLink" readonly aria-label="Link to share" onclick="this.select()"><button class="tb" id="shCopy" type="button">Copy</button><button class="tb primary" id="shSend" type="button">Send</button></div>
   </div>
 </div>
 
@@ -1013,6 +1019,14 @@ const Local={
     if(u){if(!d.members.some(m=>m.project_id===id&&m.user_id===u.id))d.members.push({project_id:id,user_id:u.id,role:'editor'});dbw(d);return'added';}
     if(!d.invites.some(i=>i.project_id===id&&i.email===email))d.invites.push({project_id:id,email,invited_by:cur.id});dbw(d);return'pending';
   },
+  async deleteProject(id){
+    const d=db(),p=d.projects.find(x=>x.id===id);if(!p||p.owner!==cur.id)throw new Error('Only the owner can delete this building.');
+    d.projects=d.projects.filter(x=>x.id!==id);d.members=d.members.filter(m=>m.project_id!==id);d.invites=d.invites.filter(i=>i.project_id!==id);d.comments=d.comments.filter(c=>c.project_id!==id);dbw(d);
+  },
+  async leaveProject(id){
+    const d=db(),n=d.members.length;d.members=d.members.filter(m=>!(m.project_id===id&&m.user_id===cur.id&&m.role!=='owner'));
+    if(d.members.length===n)throw new Error('Could not leave this building.');dbw(d);
+  },
   async comments(id){const d=db();return d.comments.filter(c=>c.project_id===id).map(c=>cmL(d,c));},
   async postComment(id,unit,body){
     body=String(body||'').trim();if(!body)throw new Error('Write a message first.');if(body.length>2000)throw new Error('Messages are limited to 2000 characters.');
@@ -1041,6 +1055,8 @@ function loadLib(){
 const Supa={
   mode:'supabase',
   async init(){
+    document.body.classList.add('no-google');
+    fetch(SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:SUPABASE_ANON_KEY}}).then(r=>r.json()).then(st=>{if(st&&st.external&&st.external.google)document.body.classList.remove('no-google');}).catch(()=>{});
     await loadLib();
     sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,detectSessionInUrl:true}});
     const{data}=await sb.auth.getSession();cur=data.session?mapU(data.session.user):null;
@@ -1078,6 +1094,8 @@ const Supa={
     return{members:m.data.map(r=>({user_id:r.profiles.id,name:r.profiles.name,email:r.profiles.email,role:r.role})),pending:i.data.map(r=>r.email)};
   },
   async invite(id,email){email=norm(email);if(!okMail(email))throw new Error('Enter a valid email address.');const r=await sb.rpc('invite_to_project',{p_project:id,p_email:email});fail(r.error,'Could not send the invite.');return r.data;},
+  async deleteProject(id){const r=await sb.from('projects').delete({count:'exact'}).eq('id',id);fail(r.error,'Could not delete the building.');if(r.count===0)throw new Error('Only the owner can delete this building.');},
+  async leaveProject(id){const r=await sb.from('project_members').delete({count:'exact'}).eq('project_id',id).eq('user_id',cur.id);fail(r.error,'Could not leave this building.');if(r.count===0)throw new Error('Could not leave this building.');},
   async comments(id){const r=await sb.from('comments').select(SEL).eq('project_id',id).order('id');fail(r.error,'Could not load comments.');return r.data.map(cmS);},
   async postComment(id,unit,body){
     body=String(body||'').trim();if(!body)throw new Error('Write a message first.');if(body.length>2000)throw new Error('Messages are limited to 2000 characters.');
@@ -4423,6 +4441,17 @@ const BE=window.PADBE;
 const SOCIAL=BE.mode==='supabase'||/[?&]fulldemo/.test(location.search);   // accounts, sharing and chat need the shared service
 document.body.classList.toggle('no-social',!SOCIAL);
 let view='boot',pendingRemote=null,unsub=null;
+/* Shared links: ?b=<building>&u=<unit>. Kept until sign-in, even across sign-up. */
+const GOK='pad-go';
+(()=>{const q=new URLSearchParams(location.search),b=q.get('b');if(!b)return;
+  try{localStorage.setItem(GOK,JSON.stringify({b,u:q.get('u')}));}catch(e){}
+  q.delete('b');q.delete('u');const r=q.toString();history.replaceState(null,'',location.pathname+(r?'?'+r:'')+location.hash);})();
+function peekGo(){try{return JSON.parse(localStorage.getItem(GOK)||'null');}catch(e){return null;}}
+async function enter(){
+  const g=peekGo();try{localStorage.removeItem(GOK);}catch(e){}
+  if(g&&g.b){if(await openProject(g.b,g.u,true))return;showProjects();const me=BE.user();toast('That building is not shared with '+(me&&me.email||'you')+' yet. Ask the owner to add this email.');return;}
+  showProjects();
+}
 function showView(v){view=v;const c=document.body.classList;['boot','land','proj','app'].forEach(x=>c.toggle('view-'+x,x===v));}
 function toast(msg,act){const t=$('toast');t.textContent=msg;if(act){const b=document.createElement('button');b.className='tb';b.textContent=act.label;b.onclick=()=>{t.hidden=true;act.fn();};t.appendChild(b);}t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{t.hidden=true;},act?7000:4000);}
 function when(iso){const s=(Date.now()-new Date(iso).getTime())/1000;if(!(s>=0))return '';if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric'});}
@@ -4448,7 +4477,7 @@ function goHome(){
 }
 ['hHome','hHomeBtn','pHome','pHomeBtn','mHome','mHome2'].forEach(id=>{$(id).onclick=goHome;});
 $('lContinue').onclick=()=>{homeHold=false;showProjects();};
-function showLanding(){homeHold=false;$('lCard').classList.remove('signed');closeProject();showView('land');setLMode('in');$('lDemo').hidden=BE.mode!=='demo';$('lDemoG').hidden=true;$('lPass').value='';setTimeout(()=>$('lEmail').focus(),30);}
+function showLanding(){homeHold=false;$('lCard').classList.remove('signed');closeProject();showView('land');setLMode('in');$('lDemo').hidden=BE.mode!=='demo';$('lDemoG').hidden=true;$('lPass').value='';$('lGoNote').hidden=!peekGo();if(peekGo())setLMode('up');setTimeout(()=>$('lEmail').focus(),30);}
 $('lTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setLMode(b.dataset.m);});
 $('lForm').addEventListener('submit',async e=>{
   e.preventDefault();const email=$('lEmail').value.trim(),pw=$('lPass').value,msg=$('lMsg');msg.hidden=true;
@@ -4466,7 +4495,7 @@ $('lGoogle').onclick=async()=>{
 };
 $('lStart').onclick=async()=>{try{await BE.signInGuest();}catch(er){toast(er.message);}};
 $('lGoDemo').onclick=async()=>{try{await BE.signInGoogle({email:$('lGEmail').value,name:$('lGName').value});}catch(er){fail($('lMsg'),er.message);}};
-BE.onAuth(u=>{if(u){if(view==='boot'||(view==='land'&&!homeHold))showProjects();}else showLanding();});
+BE.onAuth(u=>{if(u){if(view==='boot'||(view==='land'&&!homeHold))enter();}else showLanding();});
 
 /* building list */
 async function showProjects(){
@@ -4475,10 +4504,24 @@ async function showProjects(){
   $('pList').innerHTML='<p class="note">Loading.</p>';
   try{
     const L=await BE.listProjects();
-    $('pList').innerHTML=L.length?L.map(p=>`<button class="pitem" data-id="${escapeHtml(p.id)}"><b>${escapeHtml(p.name)}</b><span>${p.role==='owner'?'Owner':'Shared with you'} · ${escapeHtml(when(p.updated_at))}</span></button>`).join(''):'<p class="note">No buildings yet. Create your first one.</p>';
+    $('pList').innerHTML=L.length?L.map(p=>{const own=p.role==='owner',id=escapeHtml(p.id);return `<div class="prow"><button class="pitem" data-id="${id}"><b>${escapeHtml(p.name)}</b><span>${own?'Owner':'Shared with you'} · ${escapeHtml(when(p.updated_at))}</span></button><button class="tb pdel" type="button" data-id="${id}" data-own="${own?1:0}">${own?'Delete':'Leave'}</button></div>`;}).join(''):'<p class="note">No buildings yet. Name your first one and press Create building.</p>';
+    if(!L.length)setTimeout(()=>{if(view==='proj')$('pName').focus();},30);
   }catch(er){$('pList').innerHTML=`<p class="note">${escapeHtml(er.message)}</p>`;}
 }
-$('pList').addEventListener('click',e=>{const b=e.target.closest('.pitem');if(b)openProject(b.dataset.id);});
+let pdelArm=null;
+$('pList').addEventListener('click',async e=>{
+  const d=e.target.closest('.pdel');
+  if(d){
+    const own=d.dataset.own==='1',word=own?'Delete':'Leave';
+    if(pdelArm&&pdelArm.b!==d){clearTimeout(pdelArm.t);pdelArm.b.textContent=pdelArm.w;pdelArm.b.classList.remove('danger');pdelArm=null;}
+    if(!pdelArm){d.textContent=own?'Tap again to delete':'Tap again to leave';d.classList.add('danger');pdelArm={b:d,w:word,t:setTimeout(()=>{d.textContent=word;d.classList.remove('danger');pdelArm=null;},4000)};return;}
+    clearTimeout(pdelArm.t);pdelArm=null;d.disabled=true;
+    try{if(own)await BE.deleteProject(d.dataset.id);else await BE.leaveProject(d.dataset.id);toast(own?'Building deleted.':'You left the building.');showProjects();}
+    catch(er){d.disabled=false;d.textContent=word;d.classList.remove('danger');toast(er.message);}
+    return;
+  }
+  const b=e.target.closest('.pitem');if(b)openProject(b.dataset.id);
+});
 $('pOut').onclick=async()=>{try{await BE.signOut();}catch(er){toast(er.message);}};
 $('pNew').onclick=async()=>{
   const name=$('pName').value.trim(),msg=$('pMsg');msg.hidden=true;
@@ -4491,7 +4534,7 @@ $('pNew').onclick=async()=>{
 $('pName').addEventListener('keydown',e=>{if(e.key==='Enter')$('pNew').click();});
 
 /* opening and closing a building */
-async function openProject(id){
+async function openProject(id,unit,quiet){
   try{
     const p=await BE.getProject(id);
     closeProject();
@@ -4502,8 +4545,11 @@ async function openProject(id){
     $('hProj').textContent=PROJ.name;$('mProj').textContent=PROJ.name;$('hRole').textContent=PROJ.role==='owner'?'· You own this building':'· Shared with you';
     chatInit();unsub=BE.subscribe(PROJ.id,{onComment:chatIncoming,onProject:remoteProject});
     render();
-    if(!added().length)openModal('R');
-  }catch(er){toast(er.message);}
+    const u=unit!=null&&unit!==''?units.find(x=>x.idx===+unit):null;
+    if(u){showInfo(u);if(isMob){mobIdx=mobList().indexOf(u);mobGo(mobIdx,false);}else scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120)});openChat(u.idx);}
+    else if(!added().length&&PROJ.role==='owner')openModal('R');
+    return true;
+  }catch(er){if(!quiet)toast(er.message);return false;}
 }
 function closeProject(){
   if(PROJ&&saveT)flushSave();
@@ -4579,26 +4625,41 @@ async function drawMembers(){
     $('shList').innerHTML=m.members.map(x=>`<div class="mrow"><b>${escapeHtml(x.name||x.email)}</b><span>${escapeHtml(x.email||'')} · ${x.role==='owner'?'Owner':'Editor'}</span></div>`).join('')+m.pending.map(x=>`<div class="mrow"><b>${escapeHtml(x)}</b><span>Invited, not signed up yet</span></div>`).join('');
   }catch(er){$('shList').innerHTML=`<p class="note">${escapeHtml(er.message)}</p>`;}
 }
-function openShare(){if(!PROJ)return;$('shMsg').hidden=true;$('shEmail').value='';$('share').hidden=false;drawMembers();setTimeout(()=>$('shEmail').focus(),30);}
-$('hShare').onclick=openShare;
+let shUnit=null,shTo='';
+const shTag=()=>shUnit==null?null:unitTag(shUnit).split(' · ')[0];
+function shareLink(){return location.origin+location.pathname+'?b='+encodeURIComponent(PROJ.id)+(shUnit==null?'':'&u='+shUnit);}
+function openShare(unit){
+  if(!PROJ)return;shUnit=unit==null?null:+unit;shTo='';const t=shTag();
+  $('shStep').textContent=t?'Share unit':'Share building';
+  $('shTitle').textContent=t?'Share '+t:'Share '+PROJ.name;
+  $('shLead').textContent=t?'Add their email, then send the link. It opens '+t+' and its discussion. They can see the whole building.':'Add their email, then send the link. Everyone added can edit units and chat.';
+  $('shLink').value=shareLink();$('shMsg').hidden=true;$('shEmail').value='';$('share').hidden=false;drawMembers();setTimeout(()=>$('shEmail').focus(),30);
+}
+$('iShare').onclick=()=>{if(selected)openShare(selected.idx);};
+$('hShare').onclick=()=>openShare();
 $('mShare').onclick=()=>{$('mMenu').hidden=true;openShare();};
 $('shClose').onclick=()=>{$('share').hidden=true;};
 $('share').addEventListener('click',e=>{if(e.target===$('share'))$('share').hidden=true;});
 $('shForm').addEventListener('submit',async e=>{
   e.preventDefault();const em=$('shEmail').value.trim(),msg=$('shMsg');msg.hidden=true;if(!em)return;
-  try{const r=await BE.invite(PROJ.id,em);fail(msg,r==='added'?'Added. They can open this building from their list.':'Invite saved. They will see this building after they sign up or sign in with that email. Send them the site link.',true);$('shEmail').value='';drawMembers();}
+  try{const r=await BE.invite(PROJ.id,em);shTo=em;fail(msg,r==='added'?'Added. Now send them the link.':'Added. Send them the link and ask them to sign up with '+em+'.',true);$('shEmail').value='';drawMembers();}
   catch(er){fail(msg,er.message);}
 });
-$('shCopy').onclick=async()=>{try{await navigator.clipboard.writeText(location.origin+location.pathname);toast('Site link copied.');}catch(er){toast('Copy failed. The address is '+location.origin);}};
+$('shCopy').onclick=async()=>{const l=shareLink();try{await navigator.clipboard.writeText(l);toast('Link copied.');}catch(er){$('shLink').select();toast('Copy the link from the box.');}};
+$('shSend').onclick=async()=>{
+  const l=shareLink(),t=shTag(),what=t?t+' in '+PROJ.name:PROJ.name,sub='PAD: '+what,body='I shared '+what+' with you in Patry Analysis & Design. Open it here'+(shTo?' and sign in with '+shTo:'')+':\n'+l;
+  if(navigator.share&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({title:sub,text:body.replace('\n'+l,''),url:l});return;}catch(er){if(er&&er.name==='AbortError')return;}}
+  location.href='mailto:'+encodeURIComponent(shTo)+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body);
+};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={BE,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={BE,showInfo,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
 showView('boot');
-BE.init().then(u=>{if(u)showProjects();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
+BE.init().then(u=>{if(u)enter();else showLanding();}).catch(er=>{showLanding();fail($('lMsg'),er.message);});
 })();
 </script>
 
