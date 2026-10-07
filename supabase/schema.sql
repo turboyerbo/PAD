@@ -109,7 +109,7 @@ end $$;
 
 -- Every save stamps who made it and when, so teammates know which changes are theirs to ignore.
 create or replace function public.touch_project() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = public as $$
 begin
   new.updated_at = now();
   new.updated_by = auth.uid();
@@ -166,6 +166,8 @@ grant insert, delete on public.comments to authenticated;
 
 revoke execute on function public.is_member(uuid), public.create_project(text, jsonb), public.invite_to_project(uuid, text) from public, anon;
 grant execute on function public.is_member(uuid), public.create_project(text, jsonb), public.invite_to_project(uuid, text) to authenticated;
+-- The sign-up trigger runs on its own; nobody calls it directly.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
 
 -- Live updates ---------------------------------------------------------------------------------
 

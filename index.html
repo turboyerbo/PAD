@@ -933,7 +933,7 @@ const LAYOUTS={"1B-01_1":{"name":"1B-01 · 1 bed + den, 1 bath","W":7.11,"fronts
 /* Accounts, buildings and chat. Uses Supabase when the two values below are filled in (see docs/SETUP.md),
    otherwise a demo that keeps fake accounts in this browser only. Both expose the same window.PADBE. */
 (function(){
-const SUPABASE_URL='',SUPABASE_ANON_KEY='';   // public values from Supabase > Project settings > API. Row level security protects the data.
+const SUPABASE_URL='https://frqsdccnjmdigrmyzkng.supabase.co',SUPABASE_ANON_KEY='sb_publishable_18RaYlVBwIeE_2E28jLlMw_MKosr2uK';   // public values from Supabase > Project settings > API. Row level security protects the data.
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
 const norm=e=>String(e||'').trim().toLowerCase();
 const okMail=e=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
@@ -1092,7 +1092,9 @@ const Supa={
   }
 };
 
-const configured=!!(SUPABASE_URL&&SUPABASE_ANON_KEY),impl=configured?Supa:Local;
+// Local copies and the smoke test keep the in-browser demo so tests never write to the real database. Add ?live to use it locally.
+const localHost=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)&&!/[?&]live\b/.test(location.search);
+const configured=!!(SUPABASE_URL&&SUPABASE_ANON_KEY)&&!localHost,impl=configured?Supa:Local;
 window.PADBE=Object.assign(Object.create(impl),{
   mode:impl.mode,
   onAuth:f=>{listeners.add(f);return()=>listeners.delete(f);},
