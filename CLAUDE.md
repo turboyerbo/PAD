@@ -15,7 +15,7 @@ Follow CONTRIBUTING.md, plus these rules:
   The one exception is a person lying on a bed or sofa, or getting up from it (`p.lie` above 0 or `p.tr` set). The smoke test skips them.
 - Plans change through prompts (docs/PROMPTS.md) and room-level moves (docs/ROOMS.md): drag a room, type a size. The tracing sheet shows rooms, walls, doors and windows only; furniture is placed by `rmFurnish` when a layout is accepted. The editor has three modes (Furniture, Drafting, Layout (AI); see docs/MODES.md). Keep each mode to its own tools. Do not add free line drawing. `?manualedit` shows all the tools at once and exists for tests only.
 - Never put an API key in `index.html`. The Anthropic key is a Netlify environment variable used by `netlify/functions/revise.mjs`.
-- Colours follow the reference plan: hatched grey walls, cyan furniture and fixtures, green plants. People and pets are the only orange. Use the CSS variables, not new hex values.
+- Colours follow the reference plan: hatched grey walls with a black outline on the unit's outer walls (window wall, corridor wall, walls between units) and lighter grey interior partitions, very faint room tints (`--rm-*`: lavender bedrooms and dens, peach kitchen, mint bath and laundry, green hall, pale peach closets, pale yellow living and dining), cyan furniture and fixtures, green plants. People and pets are the only orange. Use the CSS variables, not new hex values.
 - On-screen text: plain and short, no em-dashes.
 - In the pull request description, say what you changed, what you tested, and anything you could not test.
 - A unit exports as JSON for another team (docs/EXPORT.md). If you change the plan data, update `padExport`, the schema in docs/export/ and the sample, and run tools/validate-export.mjs.

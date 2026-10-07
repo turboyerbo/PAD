@@ -23,7 +23,9 @@
   --wall:#C6C5BD; --wall-edge:#3D3C36; --fx:#2BA6DC; --fx-fill:#FAFDFF;
   --furn:#2BA6DC; --furn-fill:#EAF7FC; --rug:#DDF1F9; --plant:#6CB23D; --plant-fill:#DCEFC8;
   --grain:#E3E6E8; --tile:#DADEE0; --dots:#C7CBCD;
-  --person:#F07A1A; --person-fill:#FFD2A8; --accent:#0274BE; --markup:#B3261E;
+  --person:#F07A1A; --person-fill:#FFD2A8;
+  --outline:#000000; --wall-in:#7E7D76;
+  --rm-bed:#ECECFC; --rm-kit:#FBF3EE; --rm-bath:#EBF7F4; --rm-hall:#EDF9E9; --rm-closet:#FCEDE1; --rm-liv:#FBFAEE; --rm-mech:#F1F2F3; --accent:#0274BE; --markup:#B3261E;
   --display:'Poppins','Helvetica Neue',Arial,sans-serif;
   --narrow:'Archivo Narrow','Arial Narrow','Helvetica Neue',sans-serif;
   color-scheme:light;
@@ -118,7 +120,9 @@ footer svg{display:block}
 .grain{stroke:var(--grain);fill:none}
 .tilel{stroke:var(--tile);fill:none}
 .dot{fill:var(--dots)}
-.wS{fill:var(--wall-edge);stroke:var(--wall-edge);stroke-width:1.5}
+.wS{fill:var(--wall-in);stroke:var(--wall-in);stroke-width:1}
+.wS.wX{fill:var(--outline);stroke:var(--outline);stroke-width:2}.wO{fill:none;stroke:var(--outline);stroke-width:1.6}.ghost .wO{display:none}   /* the outline of the unit: window wall, corridor wall, walls between units */
+.rt{stroke:none}.rt-bed{fill:var(--rm-bed)}.rt-kit{fill:var(--rm-kit)}.rt-bath{fill:var(--rm-bath)}.rt-hall{fill:var(--rm-hall)}.rt-closet{fill:var(--rm-closet)}.rt-liv{fill:var(--rm-liv)}.rt-mech{fill:var(--rm-mech)}
 .wF{fill:url(#hatch)}
 .win rect{fill:var(--sheet);stroke:var(--wall-edge);stroke-width:.8}
 .win path{stroke:var(--ink-2);stroke-width:.7;fill:none}
@@ -422,7 +426,7 @@ body.manual .modes{display:none}
 .ghost{opacity:.75}
 .ghost *{fill:none!important;stroke:#8FA3B5!important;stroke-width:.7!important}
 .ghost .wF{fill:rgba(143,163,181,.18)!important;stroke:none!important}
-.ghost .wS{stroke-dasharray:3 3}
+.ghost .wS{stroke-dasharray:3 3}.ghost .wS.wX{stroke:var(--wall-in);fill:var(--wall-in);stroke-width:1}
 .ed-confirm{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(238,241,252,.74);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 .ed-confirm[hidden]{display:none}
 .ec-card{background:#fff;border:1.5px solid var(--draw);max-width:480px;width:100%;max-height:100%;overflow:auto;padding:18px 20px;box-shadow:0 18px 44px rgba(31,42,122,.3)}
@@ -1738,16 +1742,25 @@ function computeScale(){
   S=s*zoom;TOP+=(BM+AD_TOP)*S;
   const first=ordered()[0];PADL=isMob&&first?Math.max(12,(scroller.clientWidth-first.plan.W*S)/2):36;
 }
-function wallsSVG(ws){let a='',b='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`;a+=`<rect class="wS" ${s}/>`;b+=`<rect class="wF" ${s}/>`;});return a+b;}
+/* ext: true when every wall is on the outline (walls between units), or the plan, to tell its outer walls from its partitions */
+const wallExt=(w,P)=>!!(w.bw||w.y<-0.01||(w.y<=0.01&&w.h>=0.25)||(w.y+w.h>=P.D-0.01&&w.y>=P.D-0.25)||(w.x<=0.01&&w.w<=0.12)||(w.x+w.w>=P.W-0.01&&w.w<=0.12));
+function wallsSVG(ws,ext){let a='',b='',c='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`,x=ext===true||(ext&&wallExt(w,ext));a+=`<rect class="wS${x?' wX':''}" ${s}/>`;b+=`<rect class="wF" ${s}/>`;if(x)c+=`<rect class="wO" ${s}/>`;});return a+b+c;}
+const RT=[[/Bedroom|^Den$/,'bed'],[/^Kitchen$/,'kit'],[/^(Bath|WC|Ensuite|Laundry)$/,'bath'],[/^(Hall|Entry|Foyer)$/,'hall'],[/^(Closet|Walk-in|Pantry|Storage)$/,'closet'],[/^(Living|Dining|Living \/ Sleeping|Studio)$/,'liv'],[/^Mech$/,'mech']];
+function roomTints(P){
+  return P.rooms.filter(q=>!q.bk&&q.w>0&&q.h>0).sort((a,b)=>b.w*b.h-a.w*a.h).map(q=>{const t=RT.find(([re])=>re.test(q.n));return t?`<rect class="rt rt-${t[1]}" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}"/>`:'';}).join('');
+}
 function unitSVG(u,o){
   const P=u.plan;let s='';
-  if(!(o&&o.noFloor))P.floors.forEach(fl=>{const cl=fl.t==='base'?'base':fl.t==='wood'?'wd-p':'tl-p';s+=`<rect class="${cl}" x="${f(fl.x)}" y="${f(fl.y)}" width="${f(fl.w)}" height="${f(fl.h)}"/>`;});
+  const fl=(o&&o.noFloor)?[]:P.floors,frect=(cl,r)=>`<rect class="${cl}" x="${f(r.x)}" y="${f(r.y)}" width="${f(r.w)}" height="${f(r.h)}"/>`;
+  fl.forEach(r=>{if(r.t==='base')s+=frect('base',r);});
+  if(!(o&&o.noFloor)||(o&&o.tint))s+=roomTints(P);   // a faint colour for each kind of room, as on the drawings
+  fl.forEach(r=>{if(r.t!=='base')s+=frect(r.t==='wood'?'wd-p':'tl-p',r);});
   if(!(o&&o.noFloor))P.rooms.forEach(q=>{if(q.red&&!q.bk)s+=`<rect class="rmred" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}"/>`;});
   if(!(o&&o.noFurn))P.furn.forEach((p,i)=>{s+=`<g class="m-${p.k}" transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})">${piece(p)}</g>`;});
   if(!(o&&o.noFurn))P.marks.forEach(m=>s+=`<circle class="turn" cx="${f(m.x)}" cy="${f(m.y)}" r="${m.r}"/>`);
   P.doors.forEach(d=>{const ex=d.hx+d.ox*d.w,ey=d.hy+d.oy*d.w,cx=d.hx+d.cx*d.w,cy=d.hy+d.cy*d.w;const sw=(d.cx*d.oy-d.cy*d.ox)>0?1:0;
     s+=`<path class="darc" d="M${f(cx)} ${f(cy)}A${d.w} ${d.w} 0 0 ${sw} ${f(ex)} ${f(ey)}"/><path class="dleaf" d="M${f(d.hx)} ${f(d.hy)}L${f(ex)} ${f(ey)}"/>`;});
-  s+=wallsSVG(P.walls);
+  s+=wallsSVG(P.walls,P);
   winSegs(P).forEach(w=>{s+=`<g class="win"><rect x="${f(w.x1)}" y="0" width="${f(w.x2-w.x1)}" height="0.3"/><path d="M${f(w.x1)} 0.13H${f(w.x2)}M${f(w.x1)} 0.17H${f(w.x2)}"/></g>`;});
   s+=bumpGlass(P);
   s+=sideWinSVG(P);
@@ -1781,7 +1794,7 @@ function render(){
     const ws=[...endWall(u0,'L',rn.x0-0.2,u0.oy),...endWall(u1,'R',rn.x1,u1.oy),{x:rn.x0-0.2,y:DM+CORR,w:rn.x1-rn.x0+0.4,h:0.2}];
     for(let i=1;i<rn.us.length;i++){const a=rn.us[i-1],b=rn.us[i];if(Math.abs(a.plan.D-b.plan.D)>0.001){const top=Math.min(a.oy,b.oy),bot=Math.max(a.oy,b.oy);ws.push({x:b.ox-0.1,y:top,w:0.2,h:bot-top+0.3});}}
     o+=`<g transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})"><rect class="base" x="${f(rn.x0)}" y="${f(DM)}" width="${f(rn.x1-rn.x0)}" height="${CORR}"/><rect class="dt-p" x="${f(rn.x0)}" y="${f(DM)}" width="${f(rn.x1-rn.x0)}" height="${CORR}"/></g>`;
-    runWalls+=`<g transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})">${wallsSVG(ws)}</g>`;
+    runWalls+=`<g transform="translate(${f(PADL)} ${f(TOP)}) scale(${f(S)})">${wallsSVG(ws,true)}</g>`;
     if(grouped){const c=rn.us.length;o+=`<text class="gh" x="${f(PADL+rn.x0*S)}" y="16">${TYPE(rn.n)}${rn.n===0?'S':''} · ${c} UNIT${c>1?'S':''}</text>`;}
   });
   list.forEach(u=>{
@@ -2254,7 +2267,7 @@ let layFilter=0;
 function layoutCard(id){
   const L=LAYOUTS[id],P=buildUnit({n:L.n,pri:'balanced',seed:1,layout:id}),fu={plan:P},o=outTop(P);
   const ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0)];
-  const svg=`<svg viewBox="-0.4 ${f(-o-0.4)} ${f(P.W+0.8)} ${f(P.D+o+0.8)}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${DEFS}${unitSVG(fu,{})}${wallsSVG(ws)}</svg>`;
+  const svg=`<svg viewBox="-0.4 ${f(-o-0.4)} ${f(P.W+0.8)} ${f(P.D+o+0.8)}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${DEFS}${unitSVG(fu,{})}${wallsSVG(ws,true)}</svg>`;
   return `<button class="lcard" type="button" data-id="${id}" aria-label="Add ${layoutName(id)}">${svg}<b>${layoutName(id)}</b><span>${L.n} bed · ${L.W.toFixed(1)} × ${L.D.toFixed(1)} m · ${Math.round(netArea(P)/FT2)} ft² net</span></button>`;
 }
 function drawLayouts(){
@@ -2961,7 +2974,7 @@ function edRender(){
   const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P)+adT)*Sc)/2+(outTop(P)+adT)*Sc;   // room above the window wall for the width strings
   Object.assign(E,{Sc,x0,y0});
   const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
-  let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,noFurn:edHide()})+wallsSVG(ws)+sideWinSVG(P);
+  let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,tint:true,noFurn:edHide()})+wallsSVG(ws,true)+sideWinSVG(P);
   const s=E.sel;
   if(s&&s.t==='f'){const p=P.furn.find(x=>x.id===s.id);if(p){const[w,d]=dimsOf(p);g+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})"><rect class="sel" x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/></g>`;}}
   if(s&&s.t==='d'){const d=P.doors.find(x=>x.id===s.id);if(d){const[lo,hi]=doorRng(d);g+=doorHor(d)?`<rect class="wsel" x="${f(lo)}" y="${f(d.hy-0.15)}" width="${f(hi-lo)}" height="0.3"/>`:`<rect class="wsel" x="${f(d.hx-0.15)}" y="${f(lo)}" width="0.3" height="${f(hi-lo)}"/>`;}}
