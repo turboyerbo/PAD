@@ -289,6 +289,9 @@ body.view-proj #proj{display:block;flex:1;min-height:0;overflow:auto}
 .pitem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border:1px solid var(--rule);background:var(--paper);border-radius:2px}
 .pitem:hover{border-color:var(--accent);background:var(--furn-fill)}
 .pitem b{font-size:15px;font-weight:600}
+#fBrief{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);resize:vertical}
+#s1 .brief{margin:0 0 6px}#s1 .brief .chips{margin-top:8px}#s1 .bedq{display:block;margin:14px 0 8px}
+.ibrief{display:flex;gap:8px;align-items:flex-start;margin:0 0 12px}.ibrief p{flex:1;margin:0;font-style:italic;color:var(--ink-2);line-height:1.4}.ibrief input{display:none;flex:1;min-width:0;font:inherit;padding:6px 8px;border:1px solid var(--ink)}.ibrief.ed p,.ibrief.ed #iBriefEd{display:none}.ibrief.ed input{display:block}
 .prow{display:flex;gap:8px;align-items:center;margin-bottom:8px}.prow .pitem{margin:0;flex:1;min-width:0}.prow .pitem b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.pdel{flex:none}
 .shlink{display:flex;gap:8px;margin:4px 0 10px}.shlink input{flex:1;min-width:0;font-size:13px;padding:8px 10px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
 .cmt{display:flex;flex-wrap:wrap;gap:8px}
@@ -783,6 +786,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </aside>
 <aside class="info" id="info" hidden aria-labelledby="iTitle">
   <div class="info-head"><div><span class="step" id="iKicker">Baseline unit</span><h2 id="iTitle">PAD-01</h2></div><button class="x" id="iClose" aria-label="Close unit details">×</button></div>
+  <div class="ibrief" id="iBriefBox" hidden><p id="iBrief"></p><input id="iBriefIn" maxlength="160" aria-label="Who is this unit for"><button class="tb" id="iBriefEd" type="button">Edit</button></div>
   <div class="cust" id="iCustBox"><p>Want a different version of this unit? A sheet of tracing paper slides over it. Drag rooms around, or describe the change in words, and the earlier version is kept.</p><button class="tb primary" id="iCust">Change this unit</button></div>
   <div class="iters" id="iIters"></div>
   <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button><button class="tb" id="iShare" type="button">Share this unit</button></div>
@@ -797,7 +801,13 @@ body.no-ai:not(.manual) .cust{display:none}
   <div class="sheet">
     <div class="sheet-head"><span class="step" id="mStep">Step 1 of 2</span><button class="x" id="mClose" aria-label="Close">×</button></div>
     <section id="s1">
-      <h2 id="mTitle">Create a new unit with how many bedrooms?</h2>
+      <h2 id="mTitle">Who is this unit for?</h2>
+      <div class="field brief">
+        <textarea id="fBrief" rows="2" maxlength="160" aria-label="Who is this unit for" placeholder="e.g. Two construction worker roommates"></textarea>
+        <div class="chips" id="briefChips"><button class="chip" type="button">Two construction worker roommates</button><button class="chip" type="button">A young couple and their elderly mother</button><button class="chip" type="button">A single professional working from home</button><button class="chip" type="button">A family with two young kids</button></div>
+        <div class="result err" id="briefMsg" role="alert" hidden>Say who this unit is for first.</div>
+      </div>
+      <span class="lbl bedq">How many bedrooms?</span>
       <div class="opts five" id="bedOpts">
         <button class="opt" data-n="0"><span class="num">0</span><span class="nm">Studio</span></button>
         <button class="opt" data-n="1"><span class="num">1</span><span class="nm">One bed</span></button>
@@ -1604,7 +1614,7 @@ function makeUnit(spec){
 }
 const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
-function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
+function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,brief:u.brief||'',side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
   try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpOpen}));}catch(e){}
   if(!PROJ)return;
@@ -1745,7 +1755,8 @@ function render(){
     if(!lite()){
     t+=`<text class="lb2" x="${cxp}" y="${ly+28}" font-size="${fs}">${netA(u).toFixed(1)} net · ${a.toFixed(1)} gross m²</text>`;
     t+=`<text class="lb2" x="${cxp}" y="${ly+41}" font-size="${fs}">${eff(u).toFixed(0)}% efficient</text>`;
-    t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${escapeHtml(priText(u))}</text>`;
+    {const mx=Math.max(12,Math.floor(Wp/(fs*0.55))),bt=u.brief?(u.brief.length>mx?u.brief.slice(0,mx-1).trim()+'…':u.brief):priText(u);
+    t+=`<text class="lb3" x="${cxp}" y="${ly+54}" font-size="${fs}">${u.brief?`<title>${escapeHtml(u.brief)}</title>`:''}${escapeHtml(bt)}</text>`;}
     }
     t+=dmSVG(u.plan,X,uy,S,Wp<64||S<26?9:11);   // the only dimensions drawn are the ones a person added
     t+=roomLabels(u,X,uy,null,S,null,true);
@@ -1887,6 +1898,7 @@ function showInfo(u){
   selected=u;drawKeyplan();const info=$('info');
   if(delArm){clearTimeout(delArm);delArm=0;}$('iDel').textContent='Delete this unit';
   if(!u){info.hidden=true;return;}
+  $('iBriefBox').classList.remove('ed');$('iBriefBox').hidden=u.src!=='add';$('iBrief').textContent=u.brief||'Say who this unit is for.';
   const a=area(u),mm=Math.round(u.plan.W*1000),m=u.plan.meta||{};
   $('iKicker').textContent=(u.layout?'Baseline layout · '+layoutName(u.layout):u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Baseline unit · placeholder':'Baseline unit · printed set'):'Added unit')+(u.custom?' · customized':'');
   $('iTitle').textContent=tagOf(u)+' · '+(u.minimal?'Minimum studio':u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'');
@@ -2122,14 +2134,20 @@ const modal=$('modal');let pick={n:0};
 let place='R';
 const endCorner=side=>{const e=side==='L'?units[0]:units[units.length-1];return !!(e&&e.corner===side);};
 function setPlace(p){place=p;$('segP').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));}
-function openModal(side){let sd=side==='L'?'L':'R';if(endCorner(sd)&&!endCorner(sd==='L'?'R':'L'))sd=sd==='L'?'R':'L';setPlace(sd);$('fCorner').checked=false;['fA','fW','fL'].forEach(id=>$(id).value='');pick={n:0};$('s1').hidden=false;$('s2').hidden=true;$('s3').hidden=true;$('mStep').textContent='Step 1 of 3';$('otherBox').hidden=true;$('gen').hidden=true;$('otherTxt').value='';
+function openModal(side){let sd=side==='L'?'L':'R';if(endCorner(sd)&&!endCorner(sd==='L'?'R':'L'))sd=sd==='L'?'R':'L';setPlace(sd);$('fCorner').checked=false;['fA','fW','fL'].forEach(id=>$(id).value='');pick={n:0};$('fBrief').value='';$('briefMsg').hidden=true;$('s1').hidden=false;$('s2').hidden=true;$('s3').hidden=true;$('mStep').textContent='Step 1 of 3';$('otherBox').hidden=true;$('gen').hidden=true;$('otherTxt').value='';
   document.querySelectorAll('#priOpts .opt').forEach(b=>b.setAttribute('aria-pressed','false'));
-  modal.hidden=false;setTimeout(()=>document.querySelector('#bedOpts .opt').focus(),30);}
+  modal.hidden=false;setTimeout(()=>$('fBrief').focus(),30);}
 function closeModal(){modal.hidden=true;addBtn.focus();}
 $('add').onclick=()=>openModal('R');$('addL').onclick=()=>openModal('L');$('mClose').onclick=closeModal;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)closeModal();});
-document.querySelectorAll('#bedOpts .opt').forEach(b=>b.onclick=()=>{pick.n=+b.dataset.n;$('s1').hidden=true;$('s2').hidden=false;$('mStep').textContent='Step 2 of 3';
+/* Every new unit says who it is for. */
+const briefClean=v=>String(v||'').trim().replace(/\s+/g,' ').slice(0,160);
+function needBrief(){const v=briefClean($('fBrief').value);if(v.length<4){$('briefMsg').hidden=false;$('fBrief').focus();return false;}$('briefMsg').hidden=true;pick.brief=v;return true;}
+$('fBrief').addEventListener('input',()=>{$('briefMsg').hidden=true;});
+$('fBrief').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(needBrief())document.querySelector('#bedOpts .opt').focus();}});
+$('briefChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;$('fBrief').value=c.textContent;$('briefMsg').hidden=true;$('fBrief').focus();});
+document.querySelectorAll('#bedOpts .opt').forEach(b=>b.onclick=()=>{if(!needBrief())return;pick.n=+b.dataset.n;$('s1').hidden=true;$('s2').hidden=false;$('mStep').textContent='Step 2 of 3';
   $('s2Title').textContent=`What should this ${pick.n===0?'studio':pick.n+'-bedroom unit'} prioritize?`;setTimeout(()=>document.querySelector('#priOpts .opt').focus(),30);});
 document.querySelectorAll('#priOpts .opt').forEach(b=>b.onclick=()=>{
   const p=b.dataset.p;
@@ -2200,17 +2218,17 @@ function drawLayouts(){
   const ids=Object.keys(LAYOUTS).filter(id=>!layFilter||LAYOUTS[id].n===layFilter);
   $('layG').innerHTML=ids.map(layoutCard).join('');
 }
-$('browseLay').onclick=()=>{modal.hidden=true;layFilter=0;drawLayouts();$('lay').hidden=false;};
+$('browseLay').onclick=()=>{if(!needBrief())return;modal.hidden=true;layFilter=0;drawLayouts();$('lay').hidden=false;};
 $('layX').onclick=()=>{$('lay').hidden=true;};
 $('lay').addEventListener('click',e=>{if(e.target===$('lay'))$('lay').hidden=true;});
 $('layF').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;layFilter=+b.dataset.f;drawLayouts();});
 $('layG').addEventListener('click',e=>{
   const c=e.target.closest('.lcard');if(!c)return;const id=c.dataset.id,L=LAYOUTS[id];if(!L)return;
-  const u=makeUnit({n:L.n,pri:'balanced',seed:5,layout:id,side:'R'});units.push(u);$('lay').hidden=true;afterAdd(u,'R');
+  const u=makeUnit({n:L.n,pri:'balanced',seed:5,layout:id,side:'R',brief:pick.brief||''});units.push(u);$('lay').hidden=true;afterAdd(u,'R');
 });
 function generate(r){
   const lay=useCatalog(r)?catalogPick(r.n,r.seed):null;   // a size or corner request builds from scratch instead
-  const u=makeUnit({n:r.n,pri:r.pri,other:r.other,seed:r.seed,layout:lay,W:lay?null:r.fit,D:lay?null:r.D,maxA:r.maxA,Wt:r.Wt,Lt:r.Lt,side:r.side,corner:r.corner});
+  const u=makeUnit({brief:pick.brief||'',n:r.n,pri:r.pri,other:r.other,seed:r.seed,layout:lay,W:lay?null:r.fit,D:lay?null:r.D,maxA:r.maxA,Wt:r.Wt,Lt:r.Lt,side:r.side,corner:r.corner});
   if(r.side==='L')units.unshift(u);else units.push(u);modal.hidden=true;
   afterAdd(u,r.side);
 }
@@ -2227,7 +2245,7 @@ function afterAdd(u,side){
 /* ---------- quick add ---------- */
 $('quickOpts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;quickAdd(+b.dataset.n);});
 function quickAdd(n){
-  const msg=$('quickMsg');msg.hidden=true;
+  const msg=$('quickMsg');msg.hidden=true;if(!needBrief())return;
   if(endCorner(place)){msg.textContent=endCorner(place==='L'?'R':'L')?'Both ends already have corner units. Undo one of them to add more units.':`The ${place==='L'?'left':'right'} end already has a corner unit. Add this unit at the other end.`;msg.hidden=false;return;}
   const spec={n,pri:'balanced',other:'',seed:Math.floor(Math.random()*1e9),minA:n===0?STUDIO_A[0]:null,maxA:null,Wt:null,Lt:null,side:place,corner:null};
   const r=solveSize(spec);
@@ -3202,7 +3220,7 @@ function aiPlan(){
   const walls=G.map((g,i)=>{const id='w'+(i+1);E.wt[id]={hor:g.hor,pos:g.pos,a:g.a,b:g.b};return{id,runs:g.hor?'left to right':'front to back',at:r2(g.pos),from:r2(g.a),to:r2(g.b),added:isUser(P,g)||undefined};});
   const roomOf=p=>{const q=P.rooms.find(R=>!R.bk&&p.x>=R.x&&p.x<=R.x+R.w&&p.y>=R.y&&p.y<=R.y+R.h);return q?q.n:undefined;};
   const widOf=g=>{if(!g)return null;const k=Object.keys(E.wt).find(i=>{const t=E.wt[i];return t.hor===g.hor&&Math.abs(t.pos-g.pos)<0.02&&Math.min(t.b,g.b)-Math.max(t.a,g.a)>0.3;});return k||null;};
-  return{unit:{type:u.n===0?'studio':u.n+' bedroom',width:r2(P.W),depth:r2(P.D),corner:u.corner?(P.side==='L'?'window wall on the left':'window wall on the right'):undefined,netArea:r2(netOf(P)),note:'Windows are on the y=0 wall. The corridor and entry door are on the y='+r2(P.D)+' wall.'},
+  return{unit:{household:u.brief||undefined,type:u.n===0?'studio':u.n+' bedroom',width:r2(P.W),depth:r2(P.D),corner:u.corner?(P.side==='L'?'window wall on the left':'window wall on the right'):undefined,netArea:r2(netOf(P)),note:'Windows are on the y=0 wall. The corridor and entry door are on the y='+r2(P.D)+' wall.'},
     rooms:P.rooms.filter(q=>!q.bk).map(q=>({name:q.n,x:r2(q.x),y:r2(q.y),w:r2(q.w),h:r2(q.h),area:r2(q.a)})),
     walls,
     doors:P.doors.map(d=>({id:d.id,at:[r2(d.hx),r2(d.hy)],width:r2(d.w),runs:doorHor(d)?'left to right':'front to back',wall:widOf(doorGroup(P,d))||'outer wall',entry:doorHor(d)&&d.hy>=P.D-0.45||undefined})),
@@ -4072,7 +4090,7 @@ function padExport(u){
     schema:'pad-unit-plan',version:EXP_VERSION,exportedAt:new Date().toISOString(),generator:'PAD (padufs.netlify.app)',units:'metres',
     coordinateSystem:{origin:'the outer face of the unit’s left wall at the window wall',xAxis:'to the right',yAxis:'down the page, from the window wall (y=0) toward the corridor (y=depth)',toDxf:'x′ = x, y′ = depth − y; a rotation of r degrees clockwise becomes −r in DXF',depth:r3(P.D),width:r3(P.W)},
     project:{name:(typeof PROJ!=='undefined'&&PROJ&&PROJ.name)||null},
-    plan:{id:tagOf(u)+'-v'+(u.cur||1),name:tagOf(u),unitType:TYPEU(u),bedrooms:u.n,corner:u.corner||null,
+    plan:{id:tagOf(u)+'-v'+(u.cur||1),name:tagOf(u),brief:u.brief||null,unitType:TYPEU(u),bedrooms:u.n,corner:u.corner||null,
       variation:{version:u.cur||1,name:(it&&it.note)||(u.cur>1?'Iteration':'Original layout'),savedAt:it&&it.at?new Date(it.at).toISOString():null,isOriginal:!(u.cur>1)},
       source:{catalogId:u.layout||null,catalogName:u.layout?layoutName(u.layout):null,printedNetFt2:(u.layout&&LAYOUTS[u.layout]&&LAYOUTS[u.layout].netSF)||null},
       areas:{netM2:r3(net),netFt2:sf(net),unitGrossM2:r3(grossArea(P)),corridorShareM2:r3(corrShare(P)),grossWithCorridorM2:r3(gr),grossWithCorridorFt2:sf(gr),efficiencyPct:r3(net/gr*100),footprintM2:r3(P.W*P.D),
@@ -4617,6 +4635,14 @@ $('chForm').addEventListener('submit',e=>{e.preventDefault();chatSend();});
 $('chText').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chatSend();}});
 function infoCount(){const n=CH.msgs.filter(m=>selected&&m.unit===selected.idx).length;$('iChat').textContent=n?`Comments (${n})`:'Comment on this unit';}
 $('iChat').onclick=()=>{if(selected)openChat(selected.idx);};
+$('iBriefEd').onclick=()=>{if(!selected)return;$('iBriefBox').classList.add('ed');const i=$('iBriefIn');i.value=selected.brief||'';i.focus();i.select();};
+function briefSave(keep){
+  const box=$('iBriefBox');if(!box.classList.contains('ed')||!selected)return;box.classList.remove('ed');
+  const v=briefClean($('iBriefIn').value);if(keep&&v.length>=4&&v!==selected.brief){selected.brief=v;render();save();}
+  showInfo(selected);
+}
+$('iBriefIn').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();briefSave(true);}else if(e.key==='Escape'){e.stopPropagation();briefSave(false);}});
+$('iBriefIn').addEventListener('blur',()=>briefSave(true));
 
 /* sharing */
 async function drawMembers(){
