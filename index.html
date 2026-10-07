@@ -4521,6 +4521,88 @@ function rmFurnish(P,u){
   if(sofa&&P.nodes&&P.nodes.sofa){P.nodes.sofa={x:f(sofa.x+(sofa.rot===90||sofa.rot===270?(sofa.rot===90?-0.8:0.8):0)),y:f(sofa.y+(sofa.rot===0?0.8:sofa.rot===180?-0.8:0)),spot:true};if(P.nd&&P.nd[0])P.nd[0].nodes=JSON.parse(JSON.stringify(P.nodes));}
   return P.furn;
 }
+/* ---------- plan guard: the checks every saved plan passes, and the repairs that get it there ----------
+   1 No furniture or fixture runs into a wall or into another piece.
+   2 A person can reach every room from the entry with 800 mm clear (600 mm is enough inside a bath, laundry, closet or mechanical room).
+   3 No wall runs into a door opening or across a door swing.
+   4 The rooms agree with the walls: no wall runs through the middle of a room and no two rooms sit on top of each other.
+   What the plan underneath already had (a traced drawing, say) is tolerated; only new problems count. */
+const GU_SMALL=/^(Bath|Laundry|Closet|Mech|Pantry|Walk-in)$/;
+const GU_KEEP=/^(wc|tub|shower|van|sink|cook|fridge|bed)$/;                 // never removed to make room
+const GU_DROP=['plant','dog','arm','ctable','tv','desk','dresser','shelf','ns','rtable','ltable','closet','wd','island','sofa','counter'];   // removed first to last
+const guName=p=>(KN[p.k]||p.k).toLowerCase();
+function guRoomAt(P,x,y){const R=P.rooms.filter(q=>!q.bk&&x>=q.x-0.02&&x<=q.x+q.w+0.02&&y>=q.y-0.02&&y<=q.y+q.h+0.02);R.sort((a,b)=>a.w*a.h-b.w*b.h);return R[0]||null;}
+/* walls that do not belong to the door's own wall: a door's host wall runs along it at the hinge line */
+function guDoorHits(P,d){
+  const hor=doorHor(d),rg=doorRng(d),line=hor?d.hy-d.oy*0.05:d.hx-d.ox*0.05,out={open:false,swing:false};
+  const thr=hor?[rg[0]+0.04,line-0.2,rg[1]-0.04,line+0.2]:[line-0.2,rg[0]+0.04,line+0.2,rg[1]-0.04];
+  const sb=swingBox(d),sw=[sb[0]+0.05,sb[1]+0.05,sb[2]-0.05,sb[3]-0.05];
+  P.walls.forEach(w=>{if(w.rail)return;const r=[w.x,w.y,w.x+w.w,w.y+w.h],wh=w.w>=w.h,host=wh===hor&&Math.abs((wh?w.y+w.h/2:w.x+w.w/2)-line)<0.13;
+    if(host)return;
+    if(fzX(r,thr,0.015))out.open=true;
+    if(fzX(r,sw,0.015))out.swing=true;});
+  return out;
+}
+/* Rooms a person cannot reach. Walls and solid furniture keep 400 mm from the centre of a 800 mm wide person,
+   300 mm in a doorway and inside small rooms. */
+function guReach(P,withFurn){
+  const W=P.W,D=P.D,cs=0.05,nx=Math.ceil(W/cs),ny=Math.ceil(D/cs),N=nx*ny;
+  const b8=new Uint8Array(N),b6=new Uint8Array(N),thr=new Uint8Array(N);
+  const mark=(arr,r,rad,skipThr)=>{const i0=Math.max(0,Math.floor((r[0]-rad)/cs)),i1=Math.min(nx-1,Math.floor((r[2]+rad)/cs)),j0=Math.max(0,Math.floor((r[1]-rad)/cs)),j1=Math.min(ny-1,Math.floor((r[3]+rad)/cs));
+    for(let j=j0;j<=j1;j++){const y=(j+0.5)*cs;for(let i=i0;i<=i1;i++){const x=(i+0.5)*cs,c=j*nx+i;if(skipThr&&thr[c])continue;const dx=Math.max(r[0]-x,0,x-r[2]),dy=Math.max(r[1]-y,0,y-r[3]);if(dx*dx+dy*dy<rad*rad)arr[c]=1;}}};
+  P.doors.forEach(d=>{const hor=doorHor(d),rg=doorRng(d),line=hor?d.hy-d.oy*0.05:d.hx-d.ox*0.05,r=hor?[rg[0],line-0.45,rg[1],line+0.45]:[line-0.45,rg[0],line+0.45,rg[1]];
+    for(let j=Math.max(0,Math.floor(r[1]/cs));j<=Math.min(ny-1,Math.floor(r[3]/cs));j++)for(let i=Math.max(0,Math.floor(r[0]/cs));i<=Math.min(nx-1,Math.floor(r[2]/cs));i++)thr[j*nx+i]=1;});
+  const WR=P.walls.map(w=>[w.x,w.y,w.x+w.w,w.y+w.h]);
+  WR.forEach(r=>{mark(b8,r,0.4,true);mark(b8,r,0.3,false);mark(b6,r,0.3,false);});
+  if(withFurn)P.furn.forEach(p=>{if(/^(rug|plant|dog)$/.test(p.k))return;const r=fzBox(p);mark(b8,r,0.4,false);mark(b6,r,0.3,false);});
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const x=(i+0.5)*cs,y=(j+0.5)*cs;if(x<0.1+0.3||x>W-0.1-0.3||y<0.3+0.3||y>D-0.2-0.05){b6[j*nx+i]=1;if(y<D-0.2)b8[j*nx+i]=1;}}
+  // start just inside the entry door
+  const ed=P.doors.filter(d=>doorHor(d)&&d.hy>=D-0.45).sort((a,b)=>b.w-a.w)[0];if(!ed)return{stuck:[],ok:true};
+  const rg=doorRng(ed),ex=(rg[0]+rg[1])/2;
+  const flood=arr=>{const seen=new Uint8Array(N);let s=-1,bd=1e9;for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const c=j*nx+i;if(arr[c])continue;const x=(i+0.5)*cs,y=(j+0.5)*cs;if(y>D-0.2)continue;const dd=(x-ex)**2+(y-(D-0.55))**2;if(dd<bd&&dd<0.36){bd=dd;s=c;}}
+    if(s<0)return seen;const q=[s];seen[s]=1;while(q.length){const c=q.pop(),i=c%nx,j=(c-i)/nx;if(i>0&&!arr[c-1]&&!seen[c-1]){seen[c-1]=1;q.push(c-1);}if(i<nx-1&&!arr[c+1]&&!seen[c+1]){seen[c+1]=1;q.push(c+1);}if(j>0&&!arr[c-nx]&&!seen[c-nx]){seen[c-nx]=1;q.push(c-nx);}if(j<ny-1&&!arr[c+nx]&&!seen[c+nx]){seen[c+nx]=1;q.push(c+nx);}}return seen;};
+  const r8=flood(b8),r6=flood(b6);
+  if(P.__dbg)P.__dbg={nx,ny,cs,b8:Array.from(b8),r8:Array.from(r8)};
+  const any=(seen,r)=>{for(let j=Math.max(0,Math.floor(r[1]/cs));j<=Math.min(ny-1,Math.floor(r[3]/cs));j++)for(let i=Math.max(0,Math.floor(r[0]/cs));i<=Math.min(nx-1,Math.floor(r[2]/cs));i++)if(seen[j*nx+i])return true;return false;};
+  const stuck=[];
+  P.rooms.forEach(q=>{if(q.bk||q.w*q.h<0.6)return;const r=[q.x+0.05,q.y+0.05,q.x+q.w-0.05,q.y+q.h-0.05];
+    if(GU_SMALL.test(q.n)){const near=[q.x-0.9,q.y-0.9,q.x+q.w+0.9,q.y+q.h+0.9];if(/^(Closet|Mech|Pantry)$/.test(q.n)){if(!any(r8,near)&&!any(r6,r))stuck.push(q);}else if(!(any(r6,r)&&any(r8,near)))stuck.push(q);}
+    else if(!any(r8,r))stuck.push(q);});
+  return{stuck,ok:!stuck.length};
+}
+/* Walls through the middle of a room, and rooms on top of each other: the plan has lost track of its rooms. */
+function guScramble(P){
+  const R=P.rooms.filter(q=>!q.bk),out=[];
+  R.forEach(q=>{const inn=[q.x+0.3,q.y+0.3,q.x+q.w-0.3,q.y+q.h-0.3];if(inn[2]<=inn[0]||inn[3]<=inn[1])return;
+    P.walls.forEach(w=>{if(w.rail)return;const r=[w.x,w.y,w.x+w.w,w.y+w.h],ix=Math.min(r[2],inn[2])-Math.max(r[0],inn[0]),iy=Math.min(r[3],inn[3])-Math.max(r[1],inn[1]);if(ix<=0||iy<=0||Math.max(ix,iy)<0.6)return;
+      const mx=(Math.max(r[0],inn[0])+Math.min(r[2],inn[2]))/2,my=(Math.max(r[1],inn[1])+Math.min(r[3],inn[3]))/2;
+      if(R.some(o=>o!==q&&Math.min(Math.abs(mx-o.x),Math.abs(mx-o.x-o.w),Math.abs(my-o.y),Math.abs(my-o.y-o.h))<0.2&&mx>=o.x-0.25&&mx<=o.x+o.w+0.25&&my>=o.y-0.25&&my<=o.y+o.h+0.25))return;   // the wall of a closet or bath that sits inside this room
+      out.push(q.n+' has a wall through it.');});});
+  for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++){const a=R[i],b=R[j];if(a.w*a.h<2||b.w*b.h<2)continue;const ix=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),iy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(ix>0.3&&iy>0.3&&ix*iy>0.4)out.push(a.n+' and '+b.n+' overlap.');}
+  return[...new Set(out)];
+}
+/* Everything wrong, each with a key so problems the original already had can be told apart. */
+function guAudit(P,u){
+  const iss=[],add=(t,key,m,ref)=>iss.push({t,key:t+':'+key,m,ref});
+  const wr=P.walls.filter(w=>!w.rail).map(w=>[w.x,w.y,w.x+w.w,w.y+w.h]);
+  const F=P.furn.filter(p=>!/^(rug|plant|dog)$/.test(p.k)),fb=F.map(fzBox),ap=/^(sink|cook|fridge)$/;
+  const where=p=>{const q=guRoomAt(P,p.x,p.y);return q?q.n:'?';};
+  F.forEach((p,i)=>{
+    if(wr.some(w=>fzX(fb[i],w,0.02)))add('fw',p.k+'@'+where(p),`The ${guName(p)} in the ${where(p).toLowerCase()} runs into a wall.`,p);
+    for(let j=i+1;j<F.length;j++){const q=F[j];if((p.k==='counter'&&ap.test(q.k))||(q.k==='counter'&&ap.test(p.k)))continue;if(fzX(fb[i],fb[j],0.03))add('ff',[p.k,q.k].sort().join('+')+'@'+where(p),`The ${guName(p)} and the ${guName(q)} overlap.`,[p,q]);}
+  });
+  P.doors.forEach(d=>{const h=guDoorHits(P,d),q=guRoomAt(P,d.hx+d.ox*0.3,d.hy+d.oy*0.3),n=q?q.n.toLowerCase():'a room';
+    if(h.open)add('dopen',n+Math.round((doorHor(d)?d.hx:d.hy)*2),`A wall runs into the door of the ${n}.`,d);
+    else if(h.swing)add('dswing',n+Math.round((doorHor(d)?d.hx:d.hy)*2),`A wall is in the way of the door swing into the ${n}.`,d);
+    const sb=swingBox(d);F.forEach((p,i)=>{if(fzX(fb[i],sb,0.05))add('df',p.k+'@'+n,`The ${guName(p)} blocks the door of the ${n}.`,p);});});
+  guReach(P,true).stuck.forEach(q=>add('reach',q.n,`The ${q.n.toLowerCase()} cannot be reached with ${GU_SMALL.test(q.n)?'600':'800'} mm clear.`,q));
+  guScramble(P).forEach(m=>add('scr',m,m,null));
+  return iss;
+}
+/* Only the problems the original did not have. */
+const guNew=(iss,base)=>iss.filter(x=>!base.has(x.key));
+const guBase=(P,u)=>new Set(guAudit(P,u).map(x=>x.key));
+
 /* The furnished copy of a plan, to check before it is accepted. */
 function rmFurnished(P,u){
   const c=o=>JSON.parse(JSON.stringify(o));
@@ -4928,7 +5010,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={BE,showInfo,view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={BE,showInfo,aiPlan:()=>aiPlan(),guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
