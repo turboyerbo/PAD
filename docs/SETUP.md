@@ -65,6 +65,8 @@ Add `?live` to the address to use the real service locally.
 - Invites do not send an email yet. The person is added as soon as they sign up or sign in with the invited address,
   so send them the site link yourself.
 - Comments belong to a building and optionally to one unit (the unit number, for example PAD-04). They arrive live for everyone in the building.
+- Sketches and notes drawn on a unit are rows in `markups` (pen strokes or pinned notes, in the unit's metres). Everyone in the building sees them live; you erase your own, the owner can erase any. Projects created before 7 October 2026 need the `markups` block at the end of `schema.sql` (already applied to the PAD project).
+- The chat opens when a building opens. Closing it keeps it closed until the next sign-in in that tab.
 - Passwords are handled entirely by Supabase. PAD never stores or sees them.
 
 ## Checking it works

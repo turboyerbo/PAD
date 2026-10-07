@@ -172,3 +172,28 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 -- Live updates ---------------------------------------------------------------------------------
 
 alter publication supabase_realtime add table public.comments, public.projects;
+
+-- Sketches and notes drawn on a unit -------------------------------------------------------------
+-- Added 7 October 2026. Everyone in the building can see and add them; you erase your own, the owner can erase any.
+
+create table public.markups (
+  id         bigint generated always as identity primary key,
+  project_id uuid not null references public.projects(id) on delete cascade,
+  unit       integer not null,                         -- unit number (PAD-04 is 4)
+  user_id    uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  kind       text not null check (kind in ('pen', 'note')),
+  data       jsonb not null check (pg_column_size(data) < 20000),   -- pen: {p:[[x,y],...]}, note: {x,y,t}, metres in the unit
+  created_at timestamptz not null default now()
+);
+create index on public.markups (project_id, id);
+alter table public.markups enable row level security;
+alter table public.markups replica identity full;   -- so erasing reaches the others live
+create policy "read sketches" on public.markups for select to authenticated
+  using (public.is_member(project_id));
+create policy "add sketches" on public.markups for insert to authenticated
+  with check (user_id = auth.uid() and public.is_member(project_id));
+create policy "erase your sketches" on public.markups for delete to authenticated
+  using (user_id = auth.uid() or exists (select 1 from public.projects p where p.id = project_id and p.owner = auth.uid()));
+revoke all on public.markups from anon;
+grant select, insert, delete on public.markups to authenticated;
+alter publication supabase_realtime add table public.markups;
