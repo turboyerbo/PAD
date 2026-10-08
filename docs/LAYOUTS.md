@@ -26,6 +26,28 @@ Eighteen layouts: eleven 1 bedroom plans (mostly 1 bed + den) and seven 2 bedroo
 The printed net area counts the partitions inside the unit, so it is larger than the sum of the room areas. Each layout carries
 the difference, so PAD shows the same net area as the drawing and keeps it correct as walls move.
 
+## Tidying the traced plans
+
+The converter's walls leak: partitions stop a little short of the walls they meet, a traced wall is often two lines with a sliver
+between them, and sliding doors became bare openings. When a catalog plan loads, `draftClose` and `sepSplit` tidy it:
+
+- A sliver of up to 160 mm between two parallel walls is filled.
+- A wall that stops up to 350 mm short of another wall is drawn on to meet it (never across a doorway).
+- An opening of up to 2.5 m with no door gets a room separation across it.
+- Rooms whose names still share one space get a separation between them: across the line between the two names, on a wall face
+  nearby if there is one, never through furniture, at most 5 m long. A line that would leave a space with no room in it is not drawn,
+  and one placed earlier that does is taken out again (the space joins the hall or the living area next to it).
+- A small closed space with no name (up to 4.5 m2) becomes a closet. The printed net area still stands.
+
+Where the result is wrong, the owner moves or deletes the separation in Drafting (MODES.md). The traced room rectangles are left as
+they were; the room colours and the room outline go by the space each room's name sits in.
+
+## The catalog sheet
+
+New unit, then Choose from catalog, shows every layout with its room colours, grouped by what it does best against the others with
+the same bedrooms: Larger bathrooms (or a second bathroom where most have one), Larger den, More storage, Larger living space, and
+Balanced for the rest. A group needs a layout at least 12% above the middle of its peers. Tapping a card adds it at once.
+
 ## Adding to the catalog
 
 1. Put the DXF in the Digital Toolkit folder. Convert the folder:

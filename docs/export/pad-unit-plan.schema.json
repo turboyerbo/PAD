@@ -83,6 +83,13 @@
     },
     "rooms": { "type": "array", "items": { "$ref": "#/$defs/room" } },
     "walls": { "type": "array", "items": { "$ref": "#/$defs/wall" } },
+    "roomSeparations": { "type": "array", "description": "Room separation lines: where one room ends and the next begins with no wall (as Revit's Room Separation Lines). Each runs horizontally or vertically, wall to wall. People and furniture pass through them.",
+      "items": { "type": "object", "required": ["id", "from", "to"], "properties": {
+        "id": { "type": "string" },
+        "from": { "$ref": "#/$defs/point" },
+        "to": { "$ref": "#/$defs/point" },
+        "drawnBy": { "enum": ["owner", "PAD"], "description": "PAD: placed when the plan was tidied (an open doorway, or between rooms that share an open space). owner: drawn or moved in Drafting." }
+      } } },
     "doors": { "type": "array", "items": { "$ref": "#/$defs/door" } },
     "windows": { "type": "array", "items": { "$ref": "#/$defs/window" } },
     "furniture": { "type": "array", "items": { "$ref": "#/$defs/piece" } },
