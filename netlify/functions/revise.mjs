@@ -35,7 +35,7 @@ async function countDay(limit) {
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
-const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint', 'add_room', 'grow_room', 'add_corridor_door'];
+const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint', 'add_room', 'grow_room', 'add_corridor_door', 'name_space'];
 const KINDS = ['bed', 'ns', 'sofa', 'arm', 'ctable', 'rtable', 'ltable', 'desk', 'dresser', 'closet', 'shelf', 'tv', 'rug', 'plant', 'wd', 'counter', 'sink', 'cook', 'fridge', 'island', 'wc', 'van', 'tub', 'shower'];
 
 const TOOL = {
@@ -59,10 +59,10 @@ const TOOL = {
             d: { type: 'number', description: 'Metres. For a wall: across the wall (horizontal walls move down with positive, vertical walls move right). For a door: along its wall (right or down with positive). For resize_bump: change in width, see dd for depth.' },
             dd: { type: 'number', description: 'resize_bump only: change in depth, metres.' },
             kind: { type: 'string', description: 'add_item: one of ' + KINDS.join(', ') + '. add_bump: balcony, den, nook, loggia or vestibule. kitchen_layout: u, l, gal2 or gal1.' },
-            x: { type: 'number' }, y: { type: 'number' }, rot: { type: 'number', description: '0, 90, 180 or 270.' },
+            x: { type: 'number', description: 'name_space: a point inside the blank space, metres.' }, y: { type: 'number' }, rot: { type: 'number', description: '0, 90, 180 or 270.' },
             w: { type: 'number' }, h: { type: 'number' },
             hor: { type: 'boolean', description: 'add_wall: true for a wall that runs left to right.' },
-            room: { type: 'string', description: 'grow_room: the room to grow, like Bedroom or Bath. add_corridor_door: the room beside the corridor to give the door to (optional).' },
+            room: { type: 'string', description: 'name_space: the room name, one of Bedroom, Primary Bedroom, Living, Dining, Kitchen, Den, Bath, Hall, Entry, Closet, Laundry, Mech. grow_room: the room to grow, like Bedroom or Bath. add_corridor_door: the room beside the corridor to give the door to (optional).' },
             host: { type: 'string', description: 'add_room: the room to carve the new room out of (optional), like Bedroom or Living.' },
             width: { type: 'number', description: 'set_footprint: new unit width in metres.' },
             depth: { type: 'number', description: 'set_footprint: new unit depth in metres.' },
@@ -91,6 +91,13 @@ Rules the result must keep (Ontario Building Code and the owner's standards):
 - No wall shorter than 2 m. No dead-end halls longer than 1.5 m past the last door.
 - Items must not overlap walls or each other, and door swings must stay clear.
 - Do not move outer walls. Do not remove windows. Never remove the toilet, sink or the entry door.
+- Every room must be reachable from the entry door with 800 mm clear to walk (600 mm is enough inside a bath, laundry or closet). Halls at least 860 mm wide.
+- Never put a wall in a door opening or inside the swing of a door.
+- A room is the space its walls enclose (doorways count as closed). After your steps every room snaps to its walls; a room that no longer sits in one enclosed space is taken off and its space left blank. The plan lists blank_spaces: name each one with name_space, or do not create it.
+- Keep the rooms rectangles that agree with the walls. Change rooms with grow_room, add_room, set_footprint and move_wall; use add_wall only for a wall that runs cleanly from wall to wall.
+- Furniture is placed afresh after your steps, so leave room for it: a bed with space on both sides, a sofa, a kitchen run, a tub or shower, toilet and vanity.
+- When a change does not fit, taking out a closet or another small room is better than squeezing rooms. Say so.
+- The outline does not have to stay a plain rectangle: a den or nook bump-out, a recessed balcony or an entry vestibule gives an L-shape or a stepped outline.
 
 How to work:
 - The request comes with a change amount from 1 to 100 percent. At 1 to 10, change almost nothing: one or two steps, the rooms stay where they are, net area within that percent. At 11 to 40, a few steps and rooms may swap sides. At 41 to 89, several steps and a different footprint are fine. At 90 or more, a full reorganisation is allowed, but every room must stay reachable from the entry door.

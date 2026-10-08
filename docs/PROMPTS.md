@@ -10,6 +10,37 @@ Units are changed only by describing the change in words. There are no drawing t
 4. The page applies the steps with the same editing code the old drawing tools used, then runs the code checks (toilet clearance, kitchen area, tub sizes, dead-end halls, overlaps). If the checks find new problems, the page sends them back once and applies the corrected steps.
 5. The result shows on the tracing paper over the original. Up to 5 requests per sheet. Review changes, then either Save as next iteration (v2, v3 and so on, earlier versions stay in the unit panel and can be restored) or Save as new unit, which adds a variation beside the original and leaves the original as it was.
 
+## Checks and repairs (the layout guard)
+
+**Rooms follow the walls.** A room is the space its walls enclose, with doorways counted as closed (`roomRegions`). After every change each room
+snaps to its space and its colour fills that space, whatever its shape (`snapRooms`, `roomTints`). Several rooms may share one open space, such as a
+kitchen open to the living room, as long as they do not sit on top of each other. A room that no longer sits in one enclosed space (a wall now runs
+across it, say) is taken off, and the space is left blank with a dashed outline and "Tap to name". Tapping it offers the room names; the named room
+fills the space. A plan with a blank space cannot be saved. The assistant sees the blank spaces and can name one with `name_space`.
+A room keeps its printed area until its space changes size, then changes in proportion. Rooms that already sat loosely on a traced drawing are held
+only to how they sat at the start.
+
+Every plan is checked before it can be saved, and every assistant answer is held to the same checks:
+
+1. No furniture or fixture runs into a wall, another piece or a door swing.
+2. Every room can be reached from the entry with 800 mm clear (600 mm inside a bath, laundry, closet or mechanical room).
+3. No wall runs into a door opening or across a door swing.
+4. The rooms agree with the walls: no wall through the middle of a room, no rooms half on top of each other.
+5. Rooms meet their minimum area and width, and bedrooms and living rooms have a window.
+
+Problems the sheet underneath already had (a traced drawing, say) are tolerated; only new ones count (`guAudit`, `guBase`, `guNew`).
+
+When a request is made, the assistant's steps are applied and checked. What fails goes back to Claude with the reasons, up to four rounds
+(about two and a half minutes at most), and the best answer is kept. Then `planGuard` repairs what is left, in this order: redraw the walls and
+doors around the rooms, slide or flip doors clear of walls, place the furniture afresh, take out loose pieces (plants, chairs, tables, dressers,
+nightstands, closet shelving, washer and dryer...), then closets, laundry and mechanical rooms, then a hall, dining room or den. Toilets, tubs,
+showers, vanities, sinks, cooktops, fridges and beds are never taken out. If that is not enough, `guSearch` rearranges the rooms with the room
+engine, repairs and checks each arrangement, and keeps the best one that passes with no room smaller than three quarters of what it was. If none
+passes, the plan stays as it was and the assistant says so.
+
+The review dialog will not save a plan that still fails; it offers **Find a layout that works** (the same search). A unit saved before these
+checks existed shows **Fix layout problems** in its panel; the fix is saved as a new iteration.
+
 ## Turning it on
 
 The assistant needs an Anthropic API key. Until it is set, the Describe a change button is hidden.

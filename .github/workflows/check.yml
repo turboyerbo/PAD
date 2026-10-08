@@ -8,7 +8,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20   # the smoke test now walks every catalog layout through the layout guard
     steps:
       - uses: actions/checkout@v4
         with:
