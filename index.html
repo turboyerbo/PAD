@@ -24,7 +24,7 @@
   --furn:#2BA6DC; --furn-fill:#EAF7FC; --rug:#DDF1F9; --plant:#6CB23D; --plant-fill:#DCEFC8;
   --grain:#E3E6E8; --tile:#DADEE0; --dots:#C7CBCD;
   --person:#F07A1A; --person-fill:#FFD2A8;
-  --outline:#000000; --wall-in:#7E7D76;
+  --outline:#000000; --wall-in:#7E7D76; --wall-out:var(--navy);
   --rm-bed:#F1E7F3; --rm-kit:#FCEBDC; --rm-bath:#E6F4E5;   /* three room colours only: mauve bedrooms and dens, orange kitchens and closets, green baths and halls */ --accent:#0274BE; --markup:#B3261E;
   --display:'Poppins','Helvetica Neue',Arial,sans-serif;
   --narrow:'Archivo Narrow','Arial Narrow','Helvetica Neue',sans-serif;
@@ -152,6 +152,7 @@ footer svg{display:block}
 .wS.wX{fill:var(--outline);stroke:var(--outline);stroke-width:2}.wO{fill:none;stroke:var(--outline);stroke-width:1.6}.ghost .wO{display:none}   /* the outline of the unit: window wall, corridor wall, walls between units */
 .rt{stroke:none}.rt-bed{fill:var(--rm-bed)}.rt-kit{fill:var(--rm-kit)}.rt-bath{fill:var(--rm-bath)}
 .wF{fill:url(#hatch)}
+.wF.wFX{fill:var(--wall-out)}   /* the unit's outer walls are solid dark blue; interior partitions stay hatched grey */
 .win rect{fill:var(--sheet);stroke:var(--wall-edge);stroke-width:.8}
 .win path{stroke:var(--ink-2);stroke-width:.7;fill:none}
 .lf>*{fill:var(--mt-fab);stroke:var(--mt-fab-l);stroke-width:.9}
@@ -1876,8 +1877,8 @@ function computeScale(){
   const first=ordered()[0];PADL=isMob&&first?Math.max(12,(scroller.clientWidth-first.plan.W*S)/2):36;
 }
 /* ext: true when every wall is on the outline (walls between units), or the plan, to tell its outer walls from its partitions */
-const wallExt=(w,P)=>!!(w.bw||w.y<-0.01||(w.y<=0.01&&w.h>=0.25)||(w.y+w.h>=P.D-0.01&&w.y>=P.D-0.25)||(w.x<=0.01&&w.w<=0.12)||(w.x+w.w>=P.W-0.01&&w.w<=0.12));
-function wallsSVG(ws,ext){let a='',b='',c='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`,x=ext===true||(ext&&wallExt(w,ext));a+=`<rect class="wS${x?' wX':''}" ${s}/>`;b+=`<rect class="wF" ${s}/>`;if(x)c+=`<rect class="wO" ${s}/>`;});return a+b+c;}
+const wallExt=(w,P)=>!!(w.bw||w.y<-0.01||(w.y<=0.01&&w.h>=0.25)||(w.y+w.h>=P.D-0.01&&w.y>=P.D-0.25)||(w.x<=0.12&&w.h>w.w&&w.x+w.w<=0.4)||(w.x+w.w>=P.W-0.12&&w.h>w.w&&w.x>=P.W-0.4));   // a traced plan draws the wall between units as a second, thicker line just inside the edge
+function wallsSVG(ws,ext){let a='',b='',c='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`,x=ext===true||(ext&&wallExt(w,ext));a+=`<rect class="wS${x?' wX':''}" ${s}/>`;b+=`<rect class="wF${x?' wFX':''}" ${s}/>`;if(x)c+=`<rect class="wO" ${s}/>`;});return a+b+c;}
 const RT=[[/Bedroom|^Den$/,'bed'],[/^(Kitchen|Closet|Walk-in|Pantry|Storage)$/,'kit'],[/^(Bath|WC|Ensuite|Hall|Entry|Foyer)$/,'bath']];   // living, dining, laundry and mechanical rooms stay white
 const ROOM_TINTS=false;   // off for now: on the traced templates too few rooms have a closed space of their own to colour reliably
 function roomTints(P){
