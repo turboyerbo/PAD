@@ -164,7 +164,21 @@ try {
       if (back.used !== 0 || back.r !== before.r || back.W !== before.W || back.D !== before.D || back.reds) errs.push('undo did not put the unit back after room edits: ' + JSON.stringify(back));
       // do it again and keep it
       await ai.mouse.move(a[0], a[1]); await ai.mouse.down(); await ai.mouse.move(b2[0], b2[1], { steps: 8 }); await ai.mouse.up(); await ai.waitForTimeout(300);
-      await ai.click('#edDone'); await ai.click('#ecOk'); await ai.waitForTimeout(400);
+      await ai.click('#edDone');
+      // a layout that fails the checks is not saved: blank spaces are named, anything else is rescued with Find a layout that works
+      for (let k = 0; k < 4 && await ai.isDisabled('#ecOk'); k++) {
+        if (await ai.locator('#ecFix').count()) { if (await ai.isDisabled('#ecFix')) break; await ai.click('#ecFix'); await ai.waitForFunction(() => !document.getElementById('ecOk').disabled || /No working/.test(document.getElementById('ecBody').textContent), null, { timeout: 90000 }).catch(() => {}); }
+        else { await ai.click('#ecBack'); const bx = await ai.locator('#edSvg .blank').first().boundingBox(); if (!bx) break; await ai.mouse.click(bx.x + bx.width / 2, bx.y + bx.height / 2); await ai.click('#nmPick [data-n="Den"]'); await ai.click('#edDone'); }
+      }
+      // a move the checks cannot make work is refused with the reason, never saved broken
+      const refused = await ai.isDisabled('#ecOk');
+      if (refused) {
+        if (!(await ai.locator('#ecBody .chk-bad').count())) errs.push('a refused room move did not say why');
+        await ai.click('#ecBack'); await ai.click('#edCancel'); await ai.click('#edCancel'); await ai.waitForTimeout(300);
+        const u0 = await ai.evaluate(() => window.__pad.units()[0].iters.length);
+        if (u0 !== 2) errs.push('a refused room move was saved anyway');
+      } else {
+      await ai.click('#ecOk'); await ai.waitForTimeout(400);
       const kept = await ai.evaluate(() => { const u = window.__pad.units()[0]; return { W: u.plan.W, D: u.plan.D, dim: u.custom && u.custom.dim && u.custom.dim[0], people: u.people.length, nodes: Object.keys(u.plan.nodes).length }; });
       if (!kept.dim || kept.dim.W !== kept.W || kept.dim.D !== kept.D) errs.push('a saved room edit did not keep the unit size: ' + JSON.stringify(kept));
       // accepting furnishes the new layout afresh: a toilet 457 mm from the walls beside it, a bed, a sink, and nothing overlapping a wall
@@ -172,6 +186,7 @@ try {
       if (!fz.k.wc || !fz.k.bed || !fz.k.sink || !(fz.k.tub || fz.k.shower)) errs.push('accepting a layout should place a toilet, bed, sink and tub or shower: ' + JSON.stringify(fz.k));
       if (fz.wc < 0.456) errs.push('the new toilet is too close to a wall: ' + fz.wc);
       if (fz.ov > 0) errs.push('furnishing left ' + fz.ov + ' pieces overlapping walls or each other');
+      }
     }
     // Baseline layouts gallery
     await ai.evaluate(() => document.getElementById('iClose').click());
@@ -404,7 +419,7 @@ try {
     out.review = !document.getElementById('edConfirm').hidden && document.querySelectorAll('#ecBody li').length > 0;
     document.getElementById('ecNote').value = 'smoke test';
     document.getElementById('ecOk').click();
-    out.saved = !!u.custom && u.plan.furn.length >= nf + 1 && u.plan.rooms.length >= 1;
+    out.saved = !!u.custom && u.plan.furn.some(q => q.k === 'wc') && u.plan.rooms.length >= 1;   // the guard may place the furniture afresh, so the count can change
     out.iters = !!u.iters && u.iters.length === 2 && u.cur === 2 && u.iters[1].note === 'smoke test';
     out.idx = u.idx;
     return out;
@@ -588,7 +603,9 @@ try {
   await p.click('#pOut');
   await p.waitForSelector('#land', { state: 'visible', timeout: 3000 }).catch(() => errs.push('sign out did not return to the landing page'));
   await p.fill('#lEmail', 'alex@example.com'); await p.fill('#lPass', 'password123'); await p.click('#lGo');
-  await p.waitForSelector('.pitem', { timeout: 5000 }).catch(() => errs.push('building missing after signing back in'));
+  // signing in again can race the sign-out that came just before it: wait for the list, and sign in once more if the landing page is still up
+  if (!(await p.waitForSelector('#proj', { state: 'visible', timeout: 4000 }).then(() => true).catch(() => false)) && await p.isVisible('#lGo')) { await p.fill('#lPass', 'password123'); await p.click('#lGo'); }
+  await p.waitForSelector('#proj .pitem', { state: 'visible', timeout: 5000 }).catch(async () => errs.push('building missing after signing back in: ' + JSON.stringify(await p.evaluate(() => ({ v: window.__pad.view(), u: !!window.__pad.BE.user(), cls: document.body.className, msg: document.getElementById('lMsg').textContent, toast: document.getElementById('toast').textContent })))));
   await p.click('.pitem');
   await p.waitForSelector('#strip', { state: 'visible', timeout: 5000 });
   await p.waitForTimeout(400);
@@ -637,6 +654,31 @@ try {
     });
     if (r.filter(x => !x.fix).every(x => x.blocked)) errs.push('the layout guard blocked every change instead of finding a layout that works');
     await gp.close();
+  }
+  // The assistant gets its problems back: a first answer that runs a wall through the living room is sent back, and the corrected one is kept
+  {
+    const rp = await browser.newPage({ viewport: { width: 1500, height: 860 }, reducedMotion: 'reduce' });
+    rp.on('pageerror', e => errs.push('review page error: ' + e.message));
+    const seen = [];
+    await rp.route('**/api/revise', async route => {
+      const req = route.request();
+      if (req.method() === 'GET') return route.fulfill({ json: { ready: true } });
+      const b = req.postDataJSON(); seen.push(b.repair ? b.repair.issues : null);
+      if (!b.repair) { const d = b.plan.doors.find(x => !x.entry && x.runs === 'left to right') || b.plan.doors.find(x => !x.entry); const hor = d.runs === 'left to right'; return route.fulfill({ json: { say: 'Closed the doorway.', ops: [{ op: 'add_wall', hor, x: hor ? d.at[0] - 0.3 : d.at[0], y: hor ? d.at[1] : d.at[1] - 0.3, w: 1.6, h: 1.6 }] } }); }
+      const dr = b.plan.doors.find(x => !x.entry); return route.fulfill({ json: { say: 'Flipped a door instead.', ops: [{ op: 'flip_door', id: dr.id }] } });
+    });
+    await rp.goto(`http://localhost:${PORT}/?debug`); await rp.click('#lStart'); await rp.fill('#pName', 'Review'); await rp.click('#pNew');
+    await rp.waitForSelector('body.view-app', { timeout: 5000 });
+    await rp.evaluate(() => window.__pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-01_1' })); await rp.keyboard.press('Escape'); await rp.waitForTimeout(300);
+    await rp.evaluate(() => { const T = window.__pad; T.openEditor(T.units()[0]); });
+    await rp.fill('#aiText', 'Close a doorway'); await rp.click('#aiGo');
+    await rp.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 90000 }).catch(() => errs.push('the reviewed prompt did not finish'));
+    const st = await rp.evaluate(() => { const T = window.__pad, E = T.edState(); return { left: T.guAudit(E.P, E.u).filter(x => !E.gbase.has(x.key) && !/^(fw|ff|df)$/.test(x.t)).map(x => x.m), text: document.getElementById('edSide').textContent }; });
+    if (seen.length < 2 || !seen[1] || !seen[1].length) errs.push('problems with the first answer were not sent back to the assistant');
+    else if (!seen[1].some(m => /space|wall|reach|overlap/i.test(m))) errs.push('the problems sent back did not name the wall: ' + seen[1].join(' '));
+    if (st.left.length) errs.push('the plan kept after review still has problems: ' + st.left.join(' '));
+    if (!/Flipped a door instead/.test(st.text)) errs.push('the corrected answer was not the one kept');
+    await rp.close();
   }
 
   // Phone

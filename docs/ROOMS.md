@@ -36,3 +36,9 @@ Accepting always replaces the furniture, even if you only moved a door. The orig
 ## Where it lives
 
 `index.html`, search for `room editing`: `rmBuild` reads the plan as rooms and a tree of cuts, `rmLay` and `rmSolve` lay the rooms out, `rmApply` rebuilds the plan, `rmDown`, `rmMove` and `rmUp` handle the drag, and `rmTyped` handles typed sizes. A saved plan keeps its size in `dim` and its places for people in `nd`.
+
+## Rooms follow the walls
+
+Each room is the space its walls enclose (doorways count as closed) and its colour fills that space. When a wall or door change leaves a room
+outside one enclosed space, the room is taken off and the space shows as blank with "Tap to name"; tap it and choose a name. The unit cannot be
+saved while a space is blank. See docs/PROMPTS.md, Checks and repairs.
