@@ -70,6 +70,47 @@ try {
   if (await g.isVisible('#keyplan')) errs.push('the keyplan close button did not close it');
   for (const id of ['hHomeBtn', 'hBuildings', 'grp', 'undo', 'reset', 'zout', 'zin', 'hKeyplan']) if (!(await g.locator('#' + id + ' svg.ic').count())) errs.push('navbar button without an icon: ' + id);
   await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
+  // Building shape: a U around a courtyard (5180 Ninth Line). The keyplan draws the three wings, the strip shows one wing at a time,
+  // and a corner unit where two wings meet turns the view into the next wing, with the north arrow turning too.
+  {
+    await g.fill('#pName', 'Ninth Line U'); await g.click('#pShape [data-k="U"]'); await g.click('#pNew');
+    await g.waitForSelector('body.view-app', { timeout: 5000 }).catch(() => errs.push('could not create a U-shaped building'));
+    await g.waitForTimeout(200);
+    if (!(await g.isVisible('#keyplan'))) errs.push('a new U-shaped building should open with its keyplan');
+    const k0 = await g.evaluate(() => ({ cor: document.querySelectorAll('#kpSvg .kp-c').length, z: document.querySelectorAll('#kpSvg .kp-e').length, wb: !document.getElementById('wingbar').hidden, wn: document.getElementById('wName').textContent, pct: document.getElementById('kpPct').textContent }));
+    if (k0.cor !== 3 || k0.z !== 8) errs.push('the U keyplan should show three corridors and eight empty end and corner zones: ' + JSON.stringify(k0));
+    if (!k0.wb || k0.wn !== 'West wing') errs.push('the strip should start on the West wing: ' + JSON.stringify(k0));
+    if (!/U-shape \u00B7 0 of 130\.3 m/.test(k0.pct)) errs.push('the U should measure 130.3 m along its corridors: ' + k0.pct);
+    await g.click('#mClose').catch(() => {});
+    await g.evaluate(() => { const T = window.__pad; T.addUnit({ n: 1, pri: 'balanced', seed: 4, brief: 'A nurse on night shifts' }); T.addUnit({ n: 2, pri: 'balanced', seed: 5, brief: 'A young couple' }); });
+    if (!(await g.isVisible('#keyplan'))) await g.click('#hKeyplan');
+    await g.dispatchEvent('#kpSvg [data-zone="0:R"] >> nth=0', 'click'); await g.waitForTimeout(200);
+    if (!(await g.isVisible('#modal')) || !(await g.isChecked('#fCorner'))) errs.push('tapping an empty corner zone should open a new corner unit there');
+    else {
+      if (!/North bar/.test(await g.textContent('#fCornerTxt'))) errs.push('the corner option should say it turns into the North bar');
+      const n0 = await g.evaluate(() => document.getElementById('north').querySelector('svg').style.transform);
+      await g.fill('#fBrief', 'A family of five'); await g.click('#bedOpts [data-n="3"]'); await g.click('#priOpts [data-p="balanced"]'); await g.click('#gen3');
+      await g.waitForTimeout(1500);
+      const tf = await g.evaluate(() => getComputedStyle(document.getElementById('track')).transform);
+      await g.waitForTimeout(800);
+      const w = await g.evaluate(() => ({ wn: document.getElementById('wName').textContent, n: document.querySelectorAll('#strip .unit').length, us: window.__pad.units().map(u => [u.leg, u.corner || '']), north: document.getElementById('north').querySelector('svg').style.transform, tf: getComputedStyle(document.getElementById('track')).transform }));
+      if (w.wn !== 'North bar' || w.n !== 0) errs.push('a corner unit at the end of the West wing should turn the view into the North bar: ' + JSON.stringify(w));
+      if (JSON.stringify(w.us) !== JSON.stringify([[0, ''], [0, ''], [0, 'R']])) errs.push('the corner unit should stay on the West wing, at its end: ' + JSON.stringify(w.us));
+      if (w.north === n0) errs.push('the north arrow did not turn with the view: ' + n0);
+      if (w.tf !== 'none') errs.push('the view was left rotated after the turn: ' + w.tf + ' (midway ' + tf + ')');
+      if (!(await g.isVisible('#navL.turn'))) errs.push('at the start of the North bar the left arrow should turn back to the West wing');
+      await g.click('#wPrev'); await g.waitForTimeout(1200);
+      if ((await g.textContent('#wName')) !== 'West wing' || (await g.locator('#strip .unit').count()) !== 3) errs.push('the wing arrows did not turn back to the West wing');
+      if (!(await g.evaluate(() => document.getElementById('kpStats').textContent.includes('2 of 8 designed')))) errs.push('the keyplan should count the corner unit: ' + (await g.textContent('#kpStats')));
+    }
+    // the shape and each unit's wing are saved with the building
+    await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
+    await g.click('.pitem >> text=Ninth Line U'); await g.waitForSelector('body.view-app', { timeout: 5000 });
+    const r = await g.evaluate(() => ({ wb: !document.getElementById('wingbar').hidden, us: window.__pad.units().map(u => [u.leg, u.corner || '']), e: window.__pad.padExport(window.__pad.units()[0]).project }));
+    if (!r.wb || r.us.length !== 3 || r.us[2][1] !== 'R') errs.push('the U shape or the units\' wings were not kept: ' + JSON.stringify(r));
+    if (!r.e || r.e.shape !== 'U' || !r.e.wing || r.e.wing.name !== 'West wing' || r.e.wing.heading !== 0) errs.push('the export should say which wing a unit is on: ' + JSON.stringify(r.e));
+    await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
+  }
   await g.click('#pHomeBtn');
   if (!(await g.isVisible('#land')) || !(await g.isVisible('#lContinue')) || (await g.isVisible('#lStart'))) errs.push('Home from the building list did not show the landing page with Go to my buildings');
   await g.click('#lContinue'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 }).catch(() => errs.push('Go to my buildings did not return to the list'));

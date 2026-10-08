@@ -13,7 +13,14 @@
     "width": 6.59
   },
   "project": {
-    "name": "Ninth Line"
+    "name": "Ninth Line",
+    "shape": "U",
+    "wing": {
+      "name": "West wing",
+      "index": 1,
+      "of": 3,
+      "heading": 0
+    }
   },
   "plan": {
     "id": "PAD-01-v1",
