@@ -25,7 +25,7 @@
   --grain:#E3E6E8; --tile:#DADEE0; --dots:#C7CBCD;
   --person:#F07A1A; --person-fill:#FFD2A8;
   --outline:#000000; --wall-in:#7E7D76;
-  --rm-bed:#ECECFC; --rm-kit:#FBF3EE; --rm-bath:#EBF7F4; --rm-hall:#EDF9E9; --rm-closet:#FCEDE1; --rm-liv:#FBFAEE; --rm-mech:#F1F2F3; --accent:#0274BE; --markup:#B3261E;
+  --rm-bed:#F1E7F3; --rm-kit:#FCEBDC; --rm-bath:#E6F4E5;   /* three room colours only: mauve bedrooms and dens, orange kitchens and closets, green baths and halls */ --accent:#0274BE; --markup:#B3261E;
   --display:'Poppins','Helvetica Neue',Arial,sans-serif;
   --narrow:'Archivo Narrow','Arial Narrow','Helvetica Neue',sans-serif;
   color-scheme:light;
@@ -122,7 +122,7 @@ footer svg{display:block}
 .dot{fill:var(--dots)}
 .wS{fill:var(--wall-in);stroke:var(--wall-in);stroke-width:1}
 .wS.wX{fill:var(--outline);stroke:var(--outline);stroke-width:2}.wO{fill:none;stroke:var(--outline);stroke-width:1.6}.ghost .wO{display:none}   /* the outline of the unit: window wall, corridor wall, walls between units */
-.rt{stroke:none}.rt-bed{fill:var(--rm-bed)}.rt-kit{fill:var(--rm-kit)}.rt-bath{fill:var(--rm-bath)}.rt-hall{fill:var(--rm-hall)}.rt-closet{fill:var(--rm-closet)}.rt-liv{fill:var(--rm-liv)}.rt-mech{fill:var(--rm-mech)}
+.rt{stroke:none}.rt-bed{fill:var(--rm-bed)}.rt-kit{fill:var(--rm-kit)}.rt-bath{fill:var(--rm-bath)}
 .wF{fill:url(#hatch)}
 .win rect{fill:var(--sheet);stroke:var(--wall-edge);stroke-width:.8}
 .win path{stroke:var(--ink-2);stroke-width:.7;fill:none}
@@ -1752,15 +1752,18 @@ function computeScale(){
 /* ext: true when every wall is on the outline (walls between units), or the plan, to tell its outer walls from its partitions */
 const wallExt=(w,P)=>!!(w.bw||w.y<-0.01||(w.y<=0.01&&w.h>=0.25)||(w.y+w.h>=P.D-0.01&&w.y>=P.D-0.25)||(w.x<=0.01&&w.w<=0.12)||(w.x+w.w>=P.W-0.01&&w.w<=0.12));
 function wallsSVG(ws,ext){let a='',b='',c='';ws.forEach(w=>{const s=`x="${f(w.x)}" y="${f(w.y)}" width="${f(w.w)}" height="${f(w.h)}"`,x=ext===true||(ext&&wallExt(w,ext));a+=`<rect class="wS${x?' wX':''}" ${s}/>`;b+=`<rect class="wF" ${s}/>`;if(x)c+=`<rect class="wO" ${s}/>`;});return a+b+c;}
-const RT=[[/Bedroom|^Den$/,'bed'],[/^Kitchen$/,'kit'],[/^(Bath|WC|Ensuite|Laundry)$/,'bath'],[/^(Hall|Entry|Foyer)$/,'hall'],[/^(Closet|Walk-in|Pantry|Storage)$/,'closet'],[/^(Living|Dining|Living \/ Sleeping|Studio)$/,'liv'],[/^Mech$/,'mech']];
+const RT=[[/Bedroom|^Den$/,'bed'],[/^(Kitchen|Closet|Walk-in|Pantry|Storage)$/,'kit'],[/^(Bath|WC|Ensuite|Hall|Entry|Foyer)$/,'bath']];   // living, dining, laundry and mechanical rooms stay white
+const ROOM_TINTS=false;   // off for now: on the traced templates too few rooms have a closed space of their own to colour reliably
 function roomTints(P){
-  // a room alone in the space its walls enclose fills that space; rooms sharing an open space keep their own part
-  let G=null;try{G=roomRegions(P);}catch(e){G=null;}
-  const R=P.rooms.filter(q=>!q.bk&&q.w>0&&q.h>0),at=G?R.map(q=>snapWhere(G,q)):[],cnt={};
+  if(!ROOM_TINTS)return'';
+  // A room is coloured only when it has a closed space to itself, about its own size, and fills it.
+  // Rooms in a shared or open space, or on a drawing whose walls leak, stay white rather than show colour in the wrong place.
+  let G=null;try{G=roomRegions(P);}catch(e){return'';}
+  const R=P.rooms.filter(q=>!q.bk&&q.w>0&&q.h>0),at=R.map(q=>snapWhere(G,q)),cnt={};
   at.forEach(o=>{if(o.m>=0&&o.s>=0.5)cnt[o.m]=(cnt[o.m]||0)+1;});
-  return R.map((q,i)=>({q,i})).sort((a,b)=>b.q.w*b.q.h-a.q.w*a.q.h).map(({q,i})=>{const t=RT.find(([re])=>re.test(q.n));if(!t)return'';
-    const o=at[i];if(o&&o.m>=0&&o.s>=0.5&&cnt[o.m]===1)return `<path class="rt rt-${t[1]}" d="${G.regs[o.m].rects.map(r=>`M${f(r[0])} ${f(r[1])}H${f(r[2])}V${f(r[3])}H${f(r[0])}Z`).join('')}"/>`;
-    return `<rect class="rt rt-${t[1]}" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}"/>`;}).join('');
+  return R.map((q,i)=>{const t=RT.find(([re])=>re.test(q.n)),o=at[i];if(!t||!o||o.m<0||o.s<0.8||cnt[o.m]!==1)return'';
+    const r=G.regs[o.m],ra=(q.w)*(q.h);if(r.a>1.25*ra+0.3||r.a<0.6*ra)return'';
+    return `<path class="rt rt-${t[1]}" d="${r.rects.map(x=>`M${f(x[0])} ${f(x[1])}H${f(x[2])}V${f(x[3])}H${f(x[0])}Z`).join('')}"/>`;}).join('');
 }
 function unitSVG(u,o){
   const P=u.plan;let s='';
