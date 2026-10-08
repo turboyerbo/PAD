@@ -37,6 +37,9 @@ try {
   await g.click('#briefChips .chip');
   await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(300);
   if ((await g.evaluate(() => (window.__pad.units()[0] || {}).brief)) !== 'Two construction worker roommates') errs.push('the brief was not kept on the new unit');
+  // The walls around a unit are solid dark blue; the partitions inside stay hatched
+  { const wc = await g.evaluate(() => { const o = document.querySelector('#strip .wF.wFX'), i = document.querySelector('#strip .wF:not(.wFX)'); return { o: o && getComputedStyle(o).fill, i: i && getComputedStyle(i).fill }; });
+    if (!wc.o || !/rgb\(21, 50, 67\)/.test(wc.o) || !wc.i || !/url/.test(wc.i)) errs.push('outer walls should be solid dark blue and partitions hatched: ' + JSON.stringify(wc)); }
   // A new plan is dimensioned at once: overall width and depth, and its walls. A dimension can be deleted or dragged.
   const dk = await g.evaluate(() => [...document.querySelectorAll('#adims .adim')].map(x => x.dataset.k));
   if (!dk.includes('w') || !dk.includes('d')) errs.push('a new unit has no overall dimensions');
