@@ -14,6 +14,7 @@ Coordinates
 - Every polygon is a closed ring with the first point not repeated.
 
 What is in a file
+- project: the building's name and shape (bar, L or U). On an L or U building, wing says which wing the unit is on (for example West wing, 1 of 3) and its heading: the direction along that wing's corridor in degrees clockwise from north. The window wall faces 90 degrees to the left of the heading. On a straight building wing is null.
 - plan: id (unit name plus version, like PAD-01-v2), name, brief (who the unit is for, in the owner's words, or null), unit type, bedrooms, variation (version number, what was changed, when it was saved), the catalog layout it started from, and the areas as PAD computes them. footprint is width and depth.
 - rooms: name, the Revit tag it maps to, polygon (with holes), PAD's area, the area in ft2 as Revit shows it, the polygon's own area, and the point where PAD puts the name.
 - walls: straight runs with centreline start and end, thickness, kind, and the solid segments (each with a polygon). Gaps between segments are doorways and window openings.

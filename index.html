@@ -89,6 +89,24 @@ main::-webkit-scrollbar{display:none}
 .nav svg{width:46px;height:46px}
 .nav:hover{background:#B31212}
 .nav[hidden]{display:none}
+.nav .tturn{display:none;font-size:11px;font-weight:600;line-height:1.15;text-align:center;padding:2px 4px 0}
+.nav.turn .tturn{display:block}
+.nav.turn{top:auto;bottom:18px;transform:none;padding:8px 0}   /* low, clear of the add arrows at each end of the strip */
+/* wings: the strip shows one wing of the building at a time */
+.wingbar{position:absolute;top:10px;left:14px;z-index:6;display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.93);border:1px solid var(--ink);padding:3px 6px 3px 3px;font-size:12px;box-shadow:0 6px 18px rgba(38,38,31,.18)}
+.wingbar[hidden]{display:none}
+.wb{border:0;background:none;padding:2px;color:var(--ink);display:flex;cursor:pointer}
+.wb:disabled{opacity:.25;cursor:default}
+.wb .ic{width:18px;height:18px}
+.wn{display:grid;line-height:1.15;text-align:center;min-width:86px}
+.wn small{color:var(--ink-2);font-size:10px}
+.north{display:block;width:32px;height:32px;margin-left:4px}
+.north svg{width:32px;height:32px;display:block;transition:transform .8s cubic-bezier(.4,.1,.2,1)}
+.north circle{fill:none;stroke:var(--ink-2);stroke-width:.8}
+.north path{fill:var(--ink)}
+.north text{fill:var(--ink);font-size:7.5px;font-weight:700;text-anchor:middle;font-family:var(--narrow)}
+body.mob .wingbar{top:6px;left:6px}
+@media (prefers-reduced-motion:reduce){.north svg{transition:none}}
 .nav.l{left:0;border-radius:0 8px 8px 0}.nav.r{right:0;border-radius:8px 0 0 8px}
 @media (max-width:520px){.nav{width:56px;font-size:10px}.nav svg{width:36px;height:36px}}
 #track{display:flex;align-items:flex-start;width:max-content;padding-right:48px}
@@ -545,8 +563,17 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .kp-u.sel{stroke:var(--accent);stroke-width:2}
 .kp-st{margin-top:4px;color:var(--ink-2)}
 .kp-st b{color:var(--ink)}
-#kpForm{display:flex;gap:6px;align-items:end;margin-top:6px}
-#kpForm label{display:grid;gap:2px;flex:1;font-size:11px;color:var(--ink-2)}
+#kpForm{display:grid;gap:6px;margin-top:6px}
+#kpForm[hidden]{display:none}
+.kpf{display:grid;grid-template-columns:1fr 1fr;gap:5px 6px}
+.kpf label:only-child{grid-column:1/-1}
+.kpk{display:flex}.kpk button{flex:1;font-size:11px;padding:3px 4px}
+#kpForm label{display:grid;gap:2px;font-size:11px;color:var(--ink-2)}
+.kp-e{fill:none;stroke:var(--accent);stroke-width:.9;stroke-dasharray:2 2;cursor:pointer;pointer-events:all}
+.kp-e:hover{fill:var(--furn-fill)}
+.kp-c.cur{fill:var(--ink-2)}
+.keyplan.multi{width:280px}
+polygon.kp-u.sel{stroke:var(--accent);stroke-width:2}
 #kpForm input{width:100%;box-sizing:border-box;border:1px solid var(--ink);background:var(--fx-fill);padding:4px 6px;font:inherit;font-size:13px}
 .keyplan{display:none}
 .keyplan.open{display:block}
@@ -662,6 +689,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <h2 id="pgHowT">How to use</h2>
     <p class="lm-lead">Say what you want changed in plain words and the plan updates in moments. No training and no drafting skills needed.</p>
     <ol class="lp-steps">
+      <li>Pick the building shape: straight, L or U. A U shows one wing at a time, and the view turns when you go round a corner.</li>
       <li>Start from a baseline layout, or add a standard unit that meets the code limits in one click.</li>
       <li>Describe a change, such as "make the kitchen an L-shape" or "add a balcony", and get the updated plan.</li>
       <li>Or drag a room somewhere else. The other rooms make way, and any that no longer fit turn red so you know what to fix.</li>
@@ -739,6 +767,7 @@ body.no-ai:not(.manual) .cust{display:none}
       <h2>New building</h2>
       <p class="lead">Start with an empty strip and add your own units.</p>
       <div class="field"><label for="pName">Building name</label><input id="pName" maxlength="80" placeholder="e.g. Ninth Line, Block A" autocomplete="off"></div>
+      <div class="field"><span class="lbl">Shape</span><div class="seg wide" id="pShape" role="group" aria-label="Building shape"><button type="button" data-k="bar" aria-pressed="true">Straight</button><button type="button" data-k="L" aria-pressed="false">L-shape</button><button type="button" data-k="U" aria-pressed="false">U-shape</button></div><span class="sm2" id="pShapeTxt">One corridor with units on both sides. You can change the shape later in the keyplan.</span></div>
       <label class="chk"><input type="checkbox" id="pSample"><span>Start with the nine Ninth Line sample units<br><span class="sm2">Leave this off to start from scratch.</span></span></label>
       <div class="result err" id="pMsg" role="alert" hidden></div>
       <button class="tb primary" id="pNew" type="button">Create building</button>
@@ -766,12 +795,13 @@ body.no-ai:not(.manual) .cust{display:none}
 
 <div class="stage">
 <aside class="keyplan" id="keyplan" aria-label="Keyplan: how much of the building is designed">
-  <div class="kp-h"><b>Keyplan</b><span id="kpPct"></span><button id="kpEdit" type="button" aria-label="Set the building length" title="Set the building length"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg></button><button id="kpMin" type="button" aria-label="Close the keyplan" title="Close"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="kp-h"><b>Keyplan</b><span id="kpPct"></span><button id="kpEdit" type="button" aria-label="Set the building shape and length" title="Set the building shape and length"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></svg></button><button id="kpMin" type="button" aria-label="Close the keyplan" title="Close"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
   <div class="kp-body"><svg id="kpSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Both sides of the corridor"></svg><div class="kp-st" id="kpStats"></div>
-    <form id="kpForm" hidden><label>Building length, m <input id="kpLen" type="number" min="10" max="300" step="1" inputmode="numeric"></label><button class="tb" type="submit">Set</button></form></div>
+    <form id="kpForm" hidden><div class="seg kpk" id="kpKind" role="group" aria-label="Building shape"><button type="button" data-k="bar">Straight</button><button type="button" data-k="L">L</button><button type="button" data-k="U" title="U-shape, set to 5180 Ninth Line">U</button></div><div class="kpf" id="kpFields"></div><button class="tb" type="submit">Set</button></form></div>
 </aside>
-<button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg></button>
-<button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg></button>
+<div class="wingbar" id="wingbar" hidden><button class="wb" id="wPrev" type="button" aria-label="Previous wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="wn"><b id="wName"></b><small id="wOf"></small></span><button class="wb" id="wNext" type="button" aria-label="Next wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><span class="north" id="north" role="img" aria-label="North"><svg viewBox="-13 -13 26 26" aria-hidden="true"><circle r="12"/><path d="M0 -3L4 9L0 6.5L-4 9Z"/><text y="-5">N</text></svg></span></div>
+<button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg><span class="tturn">Turn the corner</span></button>
+<button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg><span class="tturn">Turn the corner</span></button>
 <main id="scroller">
   <div id="track">
     <button class="add addl" id="addL" aria-label="Add a unit at the left end">
@@ -876,7 +906,7 @@ body.no-ai:not(.manual) .cust{display:none}
       <div class="field">
         <span class="lbl">Add it at</span>
         <div class="seg wide" id="segP" role="group" aria-label="Which end of the strip"><button type="button" data-p="L" aria-pressed="false">Left end</button><button type="button" data-p="R" aria-pressed="true">Right end</button></div>
-        <label class="chk"><input type="checkbox" id="fCorner"> <span><b>Corner unit</b><br><span class="sm2">Windows on two sides. Closes off this end of the strip.</span></span></label>
+        <label class="chk"><input type="checkbox" id="fCorner"> <span><b>Corner unit</b><br><span class="sm2" id="fCornerTxt">Windows on two sides. Closes off this end of the strip.</span></span></label>
       </div>
       <p class="lead">Size limits are optional. Leave a field blank and it is sized automatically. Units stay flush along the corridor, so a longer unit extends further toward the exterior.</p>
       <p class="lead" id="limits"></p>
@@ -1643,7 +1673,8 @@ let units=[],nextIdx=1,grouped=false,zoom=1,lastNew=null,selected=null;
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function makeUnit(spec){
-  const u=Object.assign({},spec);u.idx=spec.idx||nextIdx++;nextIdx=Math.max(nextIdx,u.idx+1);
+  const u=Object.assign({},spec);u.idx=spec.idx||nextIdx++;if(u.leg==null)u.leg=wing;   // a new unit goes on the wing in view
+  nextIdx=Math.max(nextIdx,u.idx+1);
   u.src=spec.src||'add';
   u.plan=buildUnit(u);
   const R=rng(u.seed*31+7);
@@ -1666,7 +1697,7 @@ function makeUnit(spec){
 }
 const added=()=>units.filter(u=>u.src==='add');
 let PROJ=null,saveT=null,removedBase=[],lastDel=null;   // the open building: {id,name,role,base}
-function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,brief:u.brief||'',side:u.side||'R',corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),dimx:units.filter(u=>u.dimx&&(Object.keys(u.dimx.h||{}).length||Object.keys(u.dimx.o||{}).length)).map(u=>({idx:u.idx,x:u.dimx})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
+function snapshot(){return{base:PROJ?PROJ.base:false,plate:bldgLen,shape:SHAPE,removed:removedBase.slice(),added:added().map(u=>({idx:u.idx,brief:u.brief||'',side:u.side||'R',leg:u.leg||0,corner:u.corner||null,n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null})),dimx:units.filter(u=>u.dimx&&(Object.keys(u.dimx.h||{}).length||Object.keys(u.dimx.o||{}).length)).map(u=>({idx:u.idx,x:u.dimx})),custom:units.filter(u=>u.custom||u.iters).map(u=>({idx:u.idx,d:u.custom||null,iters:u.iters||null,cur:u.cur||null}))};}
 function save(){
   try{localStorage.setItem(PREF,JSON.stringify({grouped,zoom,detail,kpOpen}));}catch(e){}
   if(!PROJ)return;
@@ -1679,43 +1710,125 @@ function flushSave(){
 }
 function initial(base){nextIdx=1;removedBase=[];units=base?BASELINE.map(b=>makeUnit(Object.assign({src:'base'},b))):[];}
 function loadData(d){
-  d=d||{};bldgLen=+d.plate>=10?+d.plate:100;initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
+  d=d||{};wing=0;setShape(normShape(d.shape,d.plate));initial(!!d.base);removedBase=(d.removed||[]).slice();units=units.filter(u=>!removedBase.includes(u.idx));
   (d.added||[]).slice().sort((a,b)=>(a.idx||0)-(b.idx||0)).forEach(a=>{try{const u=makeUnit(a);if(a.side==='L')units.unshift(u);else units.push(u);}catch(e){}});
   (d.dimx||[]).forEach(c=>{const u=units.find(x=>x.idx===c.idx);if(u&&c.x)u.dimx={h:Object.assign({},c.x.h),o:Object.assign({},c.x.o)};});
   (d.custom||[]).forEach(c=>{try{const u=units.find(x=>x.idx===c.idx);if(!u)return;if(c.iters){u.iters=c.iters;u.cur=c.cur;}if(c.d)applyCustom(u,c.d);}catch(e){}});
 }
+/* ---------- building shape ----------
+   The building is a corridor with units on both sides, run as one wing or several. Each corner turns the corridor (degrees, + to the right),
+   head is the first wing's direction in degrees from north. The strip shows one wing at a time, walking along the corridor with the window side up,
+   so it shows the units on the left of the walk; the keyplan mirrors them across the corridor. */
+const SHAPES={
+  bar:{kind:'bar',names:['Building'],len:[100],turns:[],head:90,depth:8.4},
+  L:{kind:'L',names:['Wing A','Wing B'],len:[50,40],turns:[90],head:0,depth:8.4},
+  // 5180 Ninth Line, from the A3-3 overall plan: corridor centreline lengths, the north bar skewed 7.4 degrees off square
+  U:{kind:'U',names:['West wing','North bar','East wing'],len:[44.5,50.3,35.5],turns:[97.4,82.6],head:0,depth:10.5}
+};
+const SHAPE_LABEL={bar:'Straight',L:'L-shape',U:'U-shape'};
+let SHAPE,wing=0;
+function normShape(s,plate){
+  if(!s||!SHAPES[s.kind]){const b=JSON.parse(JSON.stringify(SHAPES.bar));b.len=[+plate>=10?+plate:100];return b;}
+  const t=SHAPES[s.kind],n=t.len.length,o={kind:s.kind,names:t.names.slice(),len:[],turns:[],head:isFinite(+s.head)&&s.head!==null?+s.head:t.head,depth:+s.depth>=4&&+s.depth<=20?+s.depth:t.depth};
+  for(let i=0;i<n;i++){const v=+(s.len||[])[i];o.len.push(v>=10&&v<=300?v:t.len[i]);if(i<n-1){const a=+(s.turns||[])[i];o.turns.push(a>=30&&a<=150?a:t.turns[i]);}}
+  if(Array.isArray(s.names))s.names.forEach((x,i)=>{if(i<n&&typeof x==='string'&&x.trim())o.names[i]=x.trim().slice(0,30);});
+  return o;
+}
+const wings=()=>SHAPE?SHAPE.len.length:1;
+const wingName=i=>SHAPE&&wings()>1?SHAPE.names[i]:'';
+const heading=i=>{let h=SHAPE?SHAPE.head:90;for(let k=0;k<i;k++)h+=SHAPE.turns[k];return h;};
+const legOf=u=>Math.max(0,Math.min(wings()-1,u.leg||0));
+const wingUnits=i=>units.filter(u=>legOf(u)===i);
+/* Is this end of the wing a corner of the building (it turns into the next wing) rather than an end of the building? */
+const turnAt=(i,side)=>side==='L'?i>0:i<wings()-1;
+SHAPE=normShape(null,100);
+function setShape(s){SHAPE=s;bldgLen=Math.round(s.len.reduce((a,b)=>a+b,0)*10)/10;wing=Math.min(wing,wings()-1);}
+/* Keyplan geometry, metres, x east and y south, so north is up. */
+function shapeGeom(){
+  const n=wings(),dep=SHAPE.depth,c=KEYCORR/2,h=c+dep,rad=Math.PI/180;
+  const ds=[],pts=[[0,0]];
+  for(let i=0;i<n;i++){const a=heading(i)*rad,d=[Math.sin(a),-Math.cos(a)];ds.push(d);pts.push([pts[i][0]+d[0]*SHAPE.len[i],pts[i][1]+d[1]*SHAPE.len[i]]);}
+  const lf=d=>[d[1],-d[0]];   // the left of the walk
+  const at=(i,s,t)=>{const d=ds[i],l=lf(d);return[pts[i][0]+d[0]*s+l[0]*t,pts[i][1]+d[1]*s+l[1]*t];};
+  // the corridor or the building face at offset t, mitred at each corner
+  const off=t=>pts.map((p,i)=>{if(i===0||i===n)return at(Math.min(i,n-1),i===n?SHAPE.len[n-1]:0,t);const a=lf(ds[i-1]),b=lf(ds[i]),k=t/(1+a[0]*b[0]+a[1]*b[1]);return[p[0]+(a[0]+b[0])*k,p[1]+(a[1]+b[1])*k];});
+  const cut=i=>h*Math.tan(SHAPE.turns[i]*rad/2);   // how far the corner reaches along each wing
+  const zs=i=>i===0?dep:cut(i-1),ze=i=>i===n-1?dep:cut(i);   // the end or corner zone at each end of a wing
+  return{n,pts,ds,at,off,cut,zs,ze,c,h,dep};
+}
 /* ---------- keyplan ----------
    The designed units on one side of a 1.6 m corridor, mirrored on the other side. The corridor is drawn only here.
-   It sets how much of the building is designed and the efficiency: both rows' net area over both rows' gross area plus the corridor. */
+   It sets how much of the building is designed and the efficiency: both rows' net area over both rows' gross area plus the corridor.
+   The ends of the building and its corners are zones for end units; an empty one opens a new corner unit there. */
 function keyplanFigures(){
-  const L=ordered(),row=L.reduce((s,u)=>s+u.plan.W,0),net=L.reduce((s,u)=>s+netA(u),0),gu=L.reduce((s,u)=>s+grossArea(u.plan),0);
+  const L=units,row=L.reduce((s,u)=>s+u.plan.W,0),net=L.reduce((s,u)=>s+netA(u),0),gu=L.reduce((s,u)=>s+grossArea(u.plan),0);
   const g2=2*gu+KEYCORR*row,n2=2*net;
   return{L,row,net2:n2,gross2:g2,eff:g2?n2/g2*100:0,units:L.length*2};
 }
+const poly=(p,c,x)=>`<polygon class="${c}" points="${p.map(q=>f(q[0])+','+f(q[1])).join(' ')}"${x||''}/>`;
 function drawKeyplan(){
   const el=$('keyplan');if(!el)return;
-  el.classList.toggle('open',kpOpen);$('hKeyplan').setAttribute('aria-expanded',String(kpOpen));
-  const k=keyplanFigures(),tot=Math.max(bldgLen,k.row),dep=k.L.length?Math.max(...k.L.map(u=>u.plan.D)):8.4,pad=0.6;
-  const vw=tot+2*pad,vh=2*dep+KEYCORR+2*pad,cy=pad+dep;
-  const pct=Math.min(100,k.row/bldgLen*100);
+  el.classList.toggle('open',kpOpen);el.classList.toggle('multi',wings()>1);$('hKeyplan').setAttribute('aria-expanded',String(kpOpen));
+  const k=keyplanFigures(),G=shapeGeom(),pct=Math.min(100,k.row/bldgLen*100);
   $('hKpTxt').textContent=k.L.length?`${k.row.toFixed(0)}/${bldgLen} m`:'';
-  $('kpPct').textContent=k.L.length?`${k.row.toFixed(0)} of ${bldgLen} m`:`0 of ${bldgLen} m`;
-  let s=`<rect class="kp-t" x="${pad}" y="${pad}" width="${f(tot)}" height="${f(2*dep+KEYCORR)}"/><rect class="kp-c" x="${pad}" y="${cy}" width="${f(Math.max(0,k.row))}" height="${KEYCORR}"/>`;
-  let x=pad;
-  k.L.forEach(u=>{const W=u.plan.W,D=u.plan.D,sel=selected===u?' sel':'';
-    s+=`<rect class="kp-m" x="${f(x)}" y="${f(cy-D)}" width="${f(W)}" height="${f(D)}"/><rect class="kp-u${sel}" data-idx="${u.idx}" x="${f(x)}" y="${f(cy+KEYCORR)}" width="${f(W)}" height="${f(D)}"><title>${tagOf(u)}</title></rect>`;x+=W;});
-  $('kpSvg').setAttribute('viewBox',`0 0 ${f(vw)} ${f(vh)}`);$('kpSvg').innerHTML=s;
-  $('kpStats').innerHTML=k.L.length?`<b>${k.eff.toFixed(1)}%</b> efficient \u00B7 ${k.units} units both sides<br>${k.net2.toFixed(0)} m\u00B2 net of ${k.gross2.toFixed(0)} m\u00B2 gross, corridor included<br>${pct.toFixed(0)}% of the building${k.row>bldgLen+0.01?' (over the length set)':''}`:'Add a unit to start the keyplan.';
+  $('kpPct').textContent=(wings()>1?SHAPE_LABEL[SHAPE.kind]+' · ':'')+(k.L.length?`${k.row.toFixed(0)} of ${bldgLen} m`:`0 of ${bldgLen} m`);
+  const oL=G.off(G.h),oR=G.off(-G.h),cL=G.off(G.c),cR=G.off(-G.c);
+  let s=poly([...oL,...oR.slice().reverse()],'kp-t'),z='',uu='',over=false,zt=0,zd=0;
+  for(let i=0;i<G.n;i++){const a=cL[i],b=cL[i+1],c2=cR[i+1],d=cR[i];s+=poly([a,b,c2,d],'kp-c'+(i===wing&&G.n>1?' cur':''));}
+  // the end and corner zones, both sides of the corridor. A corner unit at that end of a wing fills its zone.
+  const zu=(i,side)=>{const L=wingUnits(i),u=side==='L'?L[0]:L[L.length-1];return u&&u.corner===side?u:null;},inZ=new Set();
+  const zoneSVG=(pl,pr,u,i,side,label)=>{zt+=2;
+    if(u){zd+=2;inZ.add(u);return poly(pl,'kp-u'+(selected===u?' sel':''),` data-idx="${u.idx}"`).replace('/>',`><title>${tagOf(u)} \u00B7 ${label}</title></polygon>`)+poly(pr,'kp-m');}
+    const t=`><title>${label}. Tap to add an end unit here.</title></polygon>`;
+    return poly(pl,'kp-e',` data-zone="${i}:${side}"`).replace('/>',t)+poly(pr,'kp-e',` data-zone="${i}:${side}"`).replace('/>',t);};
+  const band=(i,s0,s1)=>[[G.at(i,s0,G.c),G.at(i,s0,G.h),G.at(i,s1,G.h),G.at(i,s1,G.c)],[G.at(i,s0,-G.c),G.at(i,s0,-G.h),G.at(i,s1,-G.h),G.at(i,s1,-G.c)]];
+  const e0=zu(0,'L'),zs0=e0?e0.plan.W:G.dep,nl=G.n-1,e1=zu(nl,'R'),ze1=e1?e1.plan.W:G.dep,ln=SHAPE.len[nl];
+  {const [l,r]=band(0,0,zs0);z+=zoneSVG(l,r,e0,0,'L','End of the building');}
+  {const [l,r]=band(nl,ln-ze1,ln);if(!(nl===0&&e1&&e1===e0))z+=zoneSVG(l,r,e1,nl,'R','End of the building');}
+  for(let i=0;i<nl;i++){const cu=G.cut(i),len=SHAPE.len[i],side=sd=>[G.at(i,len-cu,sd*G.c),G.at(i,len-cu,sd*G.h),(sd>0?oL:oR)[i+1],G.at(i+1,cu,sd*G.h),G.at(i+1,cu,sd*G.c),(sd>0?cL:cR)[i+1]];
+    const a=zu(i,'R'),b=zu(i+1,'L'),u=a||b;z+=zoneSVG(side(1),side(-1),u,a?i:b?i+1:i,b&&!a?'L':'R','Corner of '+SHAPE.names[i]+' and '+SHAPE.names[i+1]);}
+  // the other units along each wing, from the end of its first zone
+  for(let i=0;i<G.n;i++){
+    let x=i===0?zs0:G.zs(i);const lim=SHAPE.len[i]-(i===nl?ze1:G.ze(i));
+    wingUnits(i).filter(u=>!inZ.has(u)).forEach(u=>{const W=u.plan.W,D=Math.min(u.plan.D,G.dep+2),sel=selected===u?' sel':'';if(x+W>lim+0.01)over=true;
+      uu+=poly([G.at(i,x,-G.c),G.at(i,x+W,-G.c),G.at(i,x+W,-G.c-D),G.at(i,x,-G.c-D)],'kp-m');
+      uu+=poly([G.at(i,x,G.c),G.at(i,x+W,G.c),G.at(i,x+W,G.c+D),G.at(i,x,G.c+D)],'kp-u'+sel,` data-idx="${u.idx}"`).replace('/>',`><title>${tagOf(u)}${wings()>1?' \u00B7 '+SHAPE.names[i]:''}</title></polygon>`);x+=W;});}
+  s+=z+uu;
+  const pp=[...oL,...oR];(uu.match(/points="[^"]+"/g)||[]).forEach(m=>m.slice(8,-1).split(' ').forEach(q=>{const [a,b]=q.split(',');pp.push([+a,+b]);}));   // units past the end still show
+  const xs=pp.map(p=>p[0]),ys=pp.map(p=>p[1]),pad=0.8,x0=Math.min(...xs)-pad,y0=Math.min(...ys)-pad,vw=Math.max(...xs)+pad-x0,vh=Math.max(...ys)+pad-y0;
+  $('kpSvg').setAttribute('viewBox',`${f(x0)} ${f(y0)} ${f(vw)} ${f(vh)}`);$('kpSvg').innerHTML=s;
+  const ez=`<br>Ends and corners: ${zd} of ${zt} designed${zd<zt?'. Tap a dashed zone to add one':''}`;
+  $('kpStats').innerHTML=(k.L.length?`<b>${k.eff.toFixed(1)}%</b> efficient · ${k.units} units both sides<br>${k.net2.toFixed(0)} m² net of ${k.gross2.toFixed(0)} m² gross, corridor included<br>${pct.toFixed(0)}% of the building${k.row>bldgLen+0.01||over?' (over the length set)':''}`:'Add a unit to start the keyplan.')+ez;
 }
 $('hKeyplan').onclick=e=>{e.stopPropagation();kpOpen=!kpOpen;drawKeyplan();save();};
 $('mKeyplan').onclick=()=>{$('mMenu').hidden=true;kpOpen=!kpOpen;drawKeyplan();save();};
 $('kpMin').onclick=()=>{kpOpen=false;drawKeyplan();save();};
-document.addEventListener('click',e=>{if(kpOpen&&!e.target.closest('#keyplan,#hKeyplan,#mKeyplan')){kpOpen=false;drawKeyplan();save();}});
+document.addEventListener('click',e=>{if(kpOpen&&!e.target.closest('#keyplan,#hKeyplan,#mKeyplan')&&e.target.isConnected){kpOpen=false;drawKeyplan();save();}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&kpOpen&&!/INPUT|TEXTAREA/.test(e.target.tagName)){kpOpen=false;drawKeyplan();save();}});
-$('kpEdit').onclick=()=>{const f2=$('kpForm');f2.hidden=!f2.hidden;if(!f2.hidden){$('kpLen').value=bldgLen;setTimeout(()=>$('kpLen').select(),20);}};
-$('kpForm').addEventListener('submit',e=>{e.preventDefault();const v=Math.round(+$('kpLen').value);if(!(v>=10&&v<=300)){toast('Use a building length between 10 and 300 m.');return;}bldgLen=v;$('kpForm').hidden=true;drawKeyplan();save();});
+/* The shape form: Straight, L or U, a length for each wing, the angle at each corner and the unit depth. */
+let kpDraft=null;
+function kpFields(){
+  const s=kpDraft,n=s.len.length;
+  $('kpKind').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===s.kind)));
+  let h=s.len.map((v,i)=>`<label>${n>1?escapeHtml(s.names[i]):'Building length'}, m <input id="kpLen${i?i:''}" data-i="${i}" class="kpl" type="number" min="10" max="300" step="0.1" inputmode="decimal" value="${v}"></label>`).join('');
+  h+=s.turns.map((v,i)=>`<label>Corner ${i+1}, degrees <input id="kpTurn${i}" data-i="${i}" class="kpt" type="number" min="30" max="150" step="0.1" inputmode="decimal" value="${v}"></label>`).join('');
+  if(n>1)h+=`<label>Unit depth, m <input id="kpDep" type="number" min="4" max="20" step="0.1" inputmode="decimal" value="${s.depth}"></label>`;
+  $('kpFields').innerHTML=h;
+}
+$('kpEdit').onclick=()=>{const f2=$('kpForm');f2.hidden=!f2.hidden;if(!f2.hidden){kpDraft=JSON.parse(JSON.stringify(SHAPE));kpFields();setTimeout(()=>$('kpLen').select(),20);}};
+$('kpKind').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;kpDraft=normShape({kind:b.dataset.k},kpDraft.len[0]);if(b.dataset.k==='bar')kpDraft.len=[bldgLen];kpFields();});
+$('kpForm').addEventListener('submit',e=>{e.preventDefault();
+  const s=JSON.parse(JSON.stringify(kpDraft));let bad='';
+  document.querySelectorAll('#kpFields .kpl').forEach(inp=>{const v=Math.round(+inp.value*10)/10;if(!(v>=10&&v<=300))bad='Use a length between 10 and 300 m for each wing.';s.len[+inp.dataset.i]=v;});
+  document.querySelectorAll('#kpFields .kpt').forEach(inp=>{const v=+inp.value;if(!(v>=30&&v<=150))bad='Use a corner angle between 30 and 150 degrees.';s.turns[+inp.dataset.i]=v;});
+  if($('kpDep')){const v=+$('kpDep').value;if(!(v>=4&&v<=20))bad='Use a unit depth between 4 and 20 m.';s.depth=v;}
+  if(bad){toast(bad);return;}
+  setShape(normShape(s));$('kpForm').hidden=true;render();save();});
 $('kpSvg').addEventListener('click',e=>{
+  const zn=e.target.closest('[data-zone]');
+  if(zn){const [i,side]=zn.dataset.zone.split(':');goWing(+i,()=>{openModal(side);$('fCorner').checked=true;cornerTxt();});return;}
   const r=e.target.closest('[data-idx]');if(!r)return;const u=units.find(x=>x.idx===+r.dataset.idx);if(!u)return;
+  if(legOf(u)!==wing){goWing(legOf(u),()=>{showInfo(u);const {list}=layout();scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120)});});return;}
   showInfo(u);
   if(isMob){mobIdx=mobList().indexOf(u);mobGo(mobIdx,true);}else{const {list}=layout();scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120),behavior:reduce?'auto':'smooth'});}
   drawKeyplan();
@@ -1742,7 +1855,7 @@ const AD_TOP=1.25;   // metres above the window wall kept for the overall width 
 let ADL='';
 function computeScale(){
   document.body.classList.toggle('detail',detail);
-  const h=scroller.clientHeight;TOP=isMob?(lite()?14:60):(grouped?88:70);
+  const h=scroller.clientHeight;TOP=(isMob?(lite()?14:60):(grouped?88:70))+(wings()>1?(isMob?40:34):0);   // room for the wing bar
   const avail=h-TOP-(isMob?(lite()?8:66):66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+AD_TOP+CORR+0.2)));
   if(isMob)s=Math.max(12,Math.min(s,scroller.clientWidth*0.82/6.5,scroller.clientWidth*0.94/Math.max(1,...units.map(u=>u.plan.W+0.4))));   // phone: the middle unit takes about 80% of the width, and the widest unit always fits
@@ -1783,7 +1896,7 @@ function unitSVG(u,o){
   return s;
 }
 const cK=u=>u.corner==='L'?-1:u.corner==='R'?1:0;
-function ordered(){return grouped?units.slice().sort((a,b)=>cK(a)-cK(b)||a.n-b.n||units.indexOf(a)-units.indexOf(b)):units;}
+function ordered(){const L=wings()>1?wingUnits(wing):units;return grouped?L.slice().sort((a,b)=>cK(a)-cK(b)||a.n-b.n||units.indexOf(a)-units.indexOf(b)):L;}   // the wing in view
 function layout(){
   const list=ordered();
   let x=0,run=null,prev=null;const runs=[];
@@ -1856,7 +1969,8 @@ function render(){
   drawPeople();
   stats();scalebar();
   $('undo').disabled=!added().length;$('reset').disabled=!added().length&&!removedBase.length;
-  $('badge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('reset').hidden=!(PROJ&&PROJ.base);$('hint').textContent=units.length?HINT:'No units yet. Press the arrow to create your first unit.';
+  $('badge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('reset').hidden=!(PROJ&&PROJ.base);$('hint').textContent=units.length?(wings()>1&&!list.length?`No units on the ${wingName(wing)} yet. Press the arrow to add one.`:HINT):'No units yet. Press the arrow to create your first unit.';
+  wingUI();navUpdate();
   $('grp').setAttribute('aria-pressed',String(grouped));
   if(isMob)mobSync();
 }
@@ -2151,7 +2265,7 @@ function petTick(dt){
   if(units.some(u=>u.pets&&u.pets.length))return;
   let cand;
   if(isMob)cand=[mobList()[mobIdx]];
-  else{const l=scroller.scrollLeft,r=l+scroller.clientWidth;cand=units.filter(u=>{const x=PADL+u.ox*S;return x+u.plan.W*S>l+20&&x<r-20;});}
+  else{const l=scroller.scrollLeft,r=l+scroller.clientWidth;cand=ordered().filter(u=>{const x=PADL+u.ox*S;return x+u.plan.W*S>l+20&&x<r-20;});}
   cand=cand.filter(Boolean);if(!cand.length)return;
   const u=cand[Math.floor(Math.random()*cand.length)],P=u.plan;
   const st=snapFree(P,P.nodes.entry||{x:P.W/2,y:P.D-1});
@@ -2204,13 +2318,14 @@ function drawPeople(){
 }
 function drawPets(){units.forEach(u=>(u.pets||[]).forEach(q=>{if(!q.el)return;const ag=q.age||0;q.el.style.opacity=f(Math.max(0,Math.min(1,ag/0.5,(q.life+0.8-ag)/0.8)));const sw=q.walking?Math.sin(q.phase)*0.05:0;q.el.setAttribute('transform',`translate(${f(u.ox+q.x)} ${f((u.oy||0)+q.y)}) rotate(${f(q.a)})`);q.tail.setAttribute('transform',`rotate(${f(Math.sin((q.t||0)*(q.walking?9:4))*(q.walking?18:10))} 0 0.2)`);}));}
 let lt=0;
-function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;units.forEach(u=>{u.people.forEach(p=>step(p,dt));(u.pets||[]).slice().forEach(q=>petStep(q,dt));});petTick(dt);drawPeople();drawPets();requestAnimationFrame(loop);}
+function loop(t){const dt=Math.min(0.05,(t-lt)/1000||0);lt=t;(wings()>1?wingUnits(wing):units).forEach(u=>{   // people move only on the wing in view
+  u.people.forEach(p=>step(p,dt));(u.pets||[]).slice().forEach(q=>petStep(q,dt));});petTick(dt);drawPeople();drawPets();requestAnimationFrame(loop);}
 
 /* ---------- dialog ---------- */
 const modal=$('modal');let pick={n:0};
 let place='R';
-const endCorner=side=>{const e=side==='L'?units[0]:units[units.length-1];return !!(e&&e.corner===side);};
-function setPlace(p){place=p;$('segP').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));}
+const endCorner=side=>{const L=wingUnits(wing),e=side==='L'?L[0]:L[L.length-1];return !!(e&&e.corner===side);};
+function setPlace(p){place=p;$('segP').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));if($('fCornerTxt'))cornerTxt();}
 function openModal(side){let sd=side==='L'?'L':'R';if(endCorner(sd)&&!endCorner(sd==='L'?'R':'L'))sd=sd==='L'?'R':'L';setPlace(sd);$('fCorner').checked=false;['fA','fW','fL'].forEach(id=>$(id).value='');pick={n:0};$('fBrief').value='';$('briefMsg').hidden=true;$('s1').hidden=false;$('s2').hidden=true;$('s3').hidden=true;$('mStep').textContent='Step 1 of 3';$('otherBox').hidden=true;$('gen').hidden=true;$('otherTxt').value='';
   document.querySelectorAll('#priOpts .opt').forEach(b=>b.setAttribute('aria-pressed','false'));
   modal.hidden=false;setTimeout(()=>$('fBrief').focus(),30);}
@@ -2308,6 +2423,8 @@ function generate(r){
   const u=makeUnit({brief:pick.brief||'',n:r.n,pri:r.pri,other:r.other,seed:r.seed,layout:lay,W:lay?null:r.fit,D:lay?null:r.D,maxA:r.maxA,Wt:r.Wt,Lt:r.Lt,side:r.side,corner:r.corner});
   if(r.side==='L')units.unshift(u);else units.push(u);modal.hidden=true;
   afterAdd(u,r.side);
+  // a corner unit where the building turns: turn the view the corner into the next wing
+  if(r.corner&&turnAt(wing,r.side)){const nx=r.side==='L'?wing-1:wing+1;toast(`${tagOf(u)} sits at the corner. Turning into the ${wingName(nx)}.`);setTimeout(()=>goWing(nx),reduce?0:1100);}
 }
 /* Show a unit that was just added: scroll to it (or step to it on a phone) and save. */
 function afterAdd(u,side){
@@ -4306,7 +4423,7 @@ function padExport(u){
   return{
     schema:'pad-unit-plan',version:EXP_VERSION,exportedAt:new Date().toISOString(),generator:'PAD (padufs.netlify.app)',units:'metres',
     coordinateSystem:{origin:'the outer face of the unit’s left wall at the window wall',xAxis:'to the right',yAxis:'down the page, from the window wall (y=0) toward the corridor (y=depth)',toDxf:'x′ = x, y′ = depth − y; a rotation of r degrees clockwise becomes −r in DXF',depth:r3(P.D),width:r3(P.W)},
-    project:{name:(typeof PROJ!=='undefined'&&PROJ&&PROJ.name)||null},
+    project:{name:(typeof PROJ!=='undefined'&&PROJ&&PROJ.name)||null,shape:SHAPE.kind,wing:wings()>1?{name:wingName(legOf(u)),index:legOf(u)+1,of:wings(),heading:Math.round(((heading(legOf(u))%360)+360)%360*10)/10}:null},
     plan:{id:tagOf(u)+'-v'+(u.cur||1),name:tagOf(u),brief:u.brief||null,unitType:TYPEU(u),bedrooms:u.n,corner:u.corner||null,
       variation:{version:u.cur||1,name:(it&&it.note)||(u.cur>1?'Iteration':'Original layout'),savedAt:it&&it.at?new Date(it.at).toISOString():null,isOriginal:!(u.cur>1)},
       source:{catalogId:u.layout||null,catalogName:u.layout?layoutName(u.layout):null,printedNetFt2:(u.layout&&LAYOUTS[u.layout]&&LAYOUTS[u.layout].netSF)||null},
@@ -5116,9 +5233,43 @@ $('grp').onclick=()=>{grouped=!grouped;render();save();};
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};
 $('zout').onclick=()=>{zoom=Math.max(0.4,zoom/1.2);render();save();};
 const navL=$('navL'),navR=$('navR');
-function navUpdate(){const m=scroller.scrollWidth-scroller.clientWidth;navL.hidden=scroller.scrollLeft<4;navR.hidden=m<=4||scroller.scrollLeft>=m-4;}
+/* At the end of a wing the red arrow turns the corner into the next wing. */
+function navUpdate(){const m=scroller.scrollWidth-scroller.clientWidth,a=scroller.scrollLeft<4,b=m<=4||scroller.scrollLeft>=m-4,tl=a&&wing>0,tr=b&&wing<wings()-1;
+  navL.hidden=a&&!tl;navR.hidden=b&&!tr;navL.classList.toggle('turn',tl);navR.classList.toggle('turn',tr);
+  navL.setAttribute('aria-label',tl?'Turn the corner to the '+wingName(wing-1):'Scroll left');navR.setAttribute('aria-label',tr?'Turn the corner to the '+wingName(wing+1):'Scroll right');}
 const navGo=d=>scroller.scrollBy({left:d*scroller.clientWidth*0.8,behavior:reduce?'auto':'smooth'});
-navL.onclick=()=>navGo(-1);navR.onclick=()=>navGo(1);
+navL.onclick=()=>navL.classList.contains('turn')?goWing(wing-1):navGo(-1);navR.onclick=()=>navR.classList.contains('turn')?goWing(wing+1):navGo(1);
+/* ---------- wings ----------
+   Turning a corner turns the drawing: the next wing runs down (or up) the screen, so the view rotates by the corner's angle
+   to lay it flat again, and the strip carries on left to right. The north arrow turns with it. */
+let northAng=null,turning=false;
+function northTo(i){let a=90-heading(i);if(northAng!==null){while(a-northAng>180)a-=360;while(northAng-a>180)a+=360;}northAng=a;$('north').querySelector('svg').style.transform=`rotate(${f(a)}deg)`;$('north').setAttribute('aria-label',`North. This wing runs ${compass(heading(i))}.`);}
+const compass=h=>['north','north-east','east','south-east','south','south-west','west','north-west'][Math.round((((h%360)+360)%360)/45)%8];
+function wingUI(){
+  const n=wings(),bar=$('wingbar');bar.hidden=n<2;if(n<2){northAng=null;return;}
+  $('wName').textContent=wingName(wing);$('wOf').textContent=`Wing ${wing+1} of ${n} \u00B7 ${wingUnits(wing).length} unit${wingUnits(wing).length===1?'':'s'}`;
+  $('wPrev').disabled=wing<=0;$('wNext').disabled=wing>=n-1;
+  $('wPrev').title=wing>0?'Turn the corner to the '+wingName(wing-1):'';$('wNext').title=wing<n-1?'Turn the corner to the '+wingName(wing+1):'';
+  northTo(wing);
+}
+function goWing(i,then){
+  const n=wings();i=Math.max(0,Math.min(n-1,i));
+  if(i===wing||turning){if(!turning&&then)then();return;}
+  const fwd=i>wing,t=fwd?SHAPE.turns[wing]:-SHAPE.turns[i],rot=-t;   // a right turn sends the next wing down the screen, so the view turns left to lay it flat
+  const tr=$('track'),org=()=>`${f(scroller.scrollLeft+scroller.clientWidth/2)}px ${f(scroller.clientHeight/2)}px`;
+  const land=()=>{wing=i;if(selected&&legOf(selected)!==i)showInfo(null);render();scroller.scrollLeft=fwd?0:scroller.scrollWidth;if(isMob){mobGo(fwd?0:mobList().length-1,false);}navUpdate();save();};
+  northTo(i);
+  if(reduce||!tr.animate){land();if(then)then();return;}
+  turning=true;tr.style.transformOrigin=org();
+  const a1=tr.animate([{transform:'none',opacity:1},{transform:`rotate(${f(rot/2)}deg) scale(.94)`,opacity:0.08}],{duration:420,easing:'cubic-bezier(.5,0,.9,.6)',fill:'forwards'});
+  a1.onfinish=()=>{land();tr.style.transformOrigin=org();a1.cancel();
+    const a2=tr.animate([{transform:`rotate(${f(-rot/2)}deg) scale(.94)`,opacity:0.08},{transform:'none',opacity:1}],{duration:520,easing:'cubic-bezier(.1,.4,.5,1)'});
+    a2.onfinish=a2.oncancel=()=>{turning=false;if(then)then();};};
+}
+$('wPrev').onclick=()=>goWing(wing-1);$('wNext').onclick=()=>goWing(wing+1);
+/* The corner checkbox says where the unit goes: the end of the building, or the corner into the next wing. */
+function cornerTxt(){const tn=turnAt(wing,place),nx=place==='L'?wing-1:wing+1;
+  $('fCornerTxt').textContent=tn?`Windows on two sides. Sits at the corner and turns the view into the ${wingName(nx)}.`:'Windows on two sides. Closes off this end of the building.';}
 scroller.addEventListener('scroll',navUpdate,{passive:true});
 new ResizeObserver(navUpdate).observe($('track'));new ResizeObserver(navUpdate).observe(scroller);
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(render,120);});
@@ -5214,11 +5365,14 @@ $('pNew').onclick=async()=>{
   const name=$('pName').value.trim(),msg=$('pMsg');msg.hidden=true;
   if(!name){fail(msg,'Give the building a name.');return;}
   $('pNew').disabled=true;
-  try{const r=await BE.createProject(name,{base:$('pSample').checked,added:[],custom:[]});$('pName').value='';await openProject(r.id);}
+  const k=($('pShape').querySelector('[aria-pressed="true"]')||{}).dataset;const kind=k&&k.k||'bar',sh=kind==='bar'?undefined:normShape({kind});
+  try{const r=await BE.createProject(name,{base:$('pSample').checked,added:[],custom:[],shape:sh});$('pName').value='';await openProject(r.id);if(sh)setTimeout(()=>{kpOpen=true;drawKeyplan();},0);}   // a new shaped building opens with its keyplan, so the shape shows first
   catch(er){fail(msg,er.message);}
   $('pNew').disabled=false;
 };
 $('pName').addEventListener('keydown',e=>{if(e.key==='Enter')$('pNew').click();});
+const SHAPE_TXT={bar:'One corridor with units on both sides.',L:'Two wings meeting at a corner.',U:'Three wings around a courtyard, set to 5180 Ninth Line: west wing, north bar and east wing.'};
+$('pShape').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('pShape').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));$('pShapeTxt').textContent=SHAPE_TXT[b.dataset.k]+' You can change the shape later in the keyplan.';});
 
 /* opening and closing a building */
 async function openProject(id,unit,quiet){

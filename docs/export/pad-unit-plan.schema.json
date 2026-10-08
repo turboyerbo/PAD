@@ -20,7 +20,16 @@
         "width": { "type": "number" }
       }
     },
-    "project": { "type": "object", "properties": { "name": { "type": ["string", "null"] } } },
+    "project": { "type": "object", "properties": {
+      "name": { "type": ["string", "null"] },
+      "shape": { "enum": ["bar", "L", "U"], "description": "The building's shape: one straight corridor (bar), two wings (L) or three wings around a courtyard (U)." },
+      "wing": { "type": ["object", "null"], "description": "The wing the unit is on. Null for a straight building.", "properties": {
+        "name": { "type": "string", "description": "For example West wing, North bar, East wing." },
+        "index": { "type": "integer", "minimum": 1, "description": "1 for the first wing, counting along the corridor from one end of the building." },
+        "of": { "type": "integer", "minimum": 2 },
+        "heading": { "type": "number", "minimum": 0, "description": "Direction of travel along this wing's corridor, degrees clockwise from north. The unit's window wall (y=0) faces 90 degrees to the left of it, its corridor wall to the right." }
+      } }
+    } },
     "plan": {
       "type": "object",
       "required": ["id", "name", "unitType", "bedrooms", "variation", "areas", "footprint"],
