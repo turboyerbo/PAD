@@ -67,6 +67,24 @@ try {
   await g.click('#kpEdit'); await g.fill('#kpLen', '40'); await g.press('#kpLen', 'Enter');
   if (!/of 40 m/.test(await g.textContent('#kpPct'))) errs.push('setting the building length did not change the keyplan');
   await g.click('#kpMin');
+  // Jump to a unit: by number, to the first or last, and from the keyplan
+  {
+    const ids = await g.evaluate(() => window.__pad.units().map(u => u.idx));
+    const sel = () => g.evaluate(() => document.getElementById('info').hidden ? null : document.getElementById('iTitle').textContent.slice(0, 6));
+    await g.fill('#jUnit', String(ids[ids.length - 1])); await g.press('#jUnit', 'Enter'); await g.waitForTimeout(700);
+    if ((await sel()) !== 'PAD-' + String(ids[ids.length - 1]).padStart(2, '0')) errs.push('typing a unit number did not go to it: ' + (await sel()));
+    await g.click('#jStart'); await g.waitForTimeout(700);
+    if ((await sel()) !== 'PAD-' + String(ids[0]).padStart(2, '0') || (await g.evaluate(() => document.getElementById('scroller').scrollLeft)) > 4) errs.push('jump to the first unit did not go there');
+    await g.click('#jEnd'); await g.waitForTimeout(700);
+    if ((await sel()) !== 'PAD-' + String(ids[ids.length - 1]).padStart(2, '0')) errs.push('jump to the last unit did not go there');
+    await g.fill('#jUnit', '98'); await g.press('#jUnit', 'Enter'); await g.waitForTimeout(200);
+    if (!/no PAD-98/.test((await g.textContent('#toast')) || '')) errs.push('a unit number that does not exist should say so');
+    await g.click('#hKeyplan'); await g.waitForTimeout(150);
+    if ((await g.locator('#kpSvg .kp-n').count()) !== ids.length) errs.push('the keyplan should number every unit');
+    await g.dispatchEvent(`#kpSvg .kp-u[data-idx="${ids[0]}"]`, 'click'); await g.waitForTimeout(700);
+    if ((await sel()) !== 'PAD-' + String(ids[0]).padStart(2, '0')) errs.push('tapping a unit in the keyplan did not go to it');
+    await g.click('#kpMin'); await g.click('#iClose');
+  }
   if (await g.isVisible('#keyplan')) errs.push('the keyplan close button did not close it');
   for (const id of ['hHomeBtn', 'hBuildings', 'grp', 'undo', 'reset', 'zout', 'zin', 'hKeyplan']) if (!(await g.locator('#' + id + ' svg.ic').count())) errs.push('navbar button without an icon: ' + id);
   await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
@@ -102,6 +120,9 @@ try {
       await g.click('#wPrev'); await g.waitForTimeout(1200);
       if ((await g.textContent('#wName')) !== 'West wing' || (await g.locator('#strip .unit').count()) !== 3) errs.push('the wing arrows did not turn back to the West wing');
       if (!(await g.evaluate(() => document.getElementById('kpStats').textContent.includes('2 of 8 designed')))) errs.push('the keyplan should count the corner unit: ' + (await g.textContent('#kpStats')));
+      await g.click('#wNext'); await g.waitForTimeout(1200);
+      await g.fill('#jUnit', 'PAD-01'); await g.press('#jUnit', 'Enter'); await g.waitForTimeout(1600);
+      if ((await g.textContent('#wName')) !== 'West wing') errs.push('going to a unit on another wing should turn the view to that wing');
     }
     // the shape and each unit's wing are saved with the building
     await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });

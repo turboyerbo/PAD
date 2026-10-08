@@ -53,3 +53,13 @@ For now a corner unit is a rectangular plan with windows on its side wall. The r
 ## Export
 
 Each unit's export says the building's shape and, on an L or U, its wing and the wing's heading (docs/EXPORT.md).
+
+## Finding a unit
+
+The jump bar (top left, beside the wing bar) goes straight to a unit:
+
+- Type its number (12 or PAD-12) and press Enter, or pick it from the list.
+- The two end buttons jump to the first and last unit of the building. Home and End do the same from the keyboard.
+- The keyplan numbers every unit. Tapping one goes to it.
+
+A unit on another wing turns the view to that wing first. From the West wing to the East wing the view turns through both corners in one move. On a computer the unit's details open and it is outlined. On a phone the strip steps to it and the details stay closed, so the plan stays in view.

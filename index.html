@@ -93,7 +93,18 @@ main::-webkit-scrollbar{display:none}
 .nav.turn .tturn{display:block}
 .nav.turn{top:auto;bottom:18px;transform:none;padding:8px 0}   /* low, clear of the add arrows at each end of the strip */
 /* wings: the strip shows one wing of the building at a time */
-.wingbar{position:absolute;top:10px;left:14px;z-index:6;display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.93);border:1px solid var(--ink);padding:3px 6px 3px 3px;font-size:12px;box-shadow:0 6px 18px rgba(38,38,31,.18)}
+.navbox{position:absolute;top:10px;left:14px;z-index:6;display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;max-width:calc(100% - 300px)}
+.jumpbar{display:flex;align-items:center;gap:1px;background:rgba(255,255,255,.93);border:1px solid var(--ink);padding:3px;box-shadow:0 6px 18px rgba(38,38,31,.18)}
+.jumpbar input{width:92px;border:1px solid var(--rule);background:var(--fx-fill);padding:4px 6px;font:inherit;font-size:13px;border-radius:2px}
+.jumpbar input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.unit.flash .sel{animation:flash 1.6s ease-out 1}
+@keyframes flash{0%{stroke-width:7;opacity:1}100%{stroke-width:2;opacity:1}}
+.kp-n{font-family:var(--narrow);font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+body.mob .navbox{top:6px;left:6px;max-width:calc(100% - 12px);gap:4px}
+body.mob .wn small{display:none}
+body.mob .wn{min-width:64px}
+body.mob .jumpbar input{width:80px;font-size:16px;padding:3px 5px}
+.wingbar{display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.93);border:1px solid var(--ink);padding:3px 6px 3px 3px;font-size:12px;box-shadow:0 6px 18px rgba(38,38,31,.18)}
 .wingbar[hidden]{display:none}
 .wb{border:0;background:none;padding:2px;color:var(--ink);display:flex;cursor:pointer}
 .wb:disabled{opacity:.25;cursor:default}
@@ -105,7 +116,6 @@ main::-webkit-scrollbar{display:none}
 .north circle{fill:none;stroke:var(--ink-2);stroke-width:.8}
 .north path{fill:var(--ink)}
 .north text{fill:var(--ink);font-size:7.5px;font-weight:700;text-anchor:middle;font-family:var(--narrow)}
-body.mob .wingbar{top:6px;left:6px}
 @media (prefers-reduced-motion:reduce){.north svg{transition:none}}
 .nav.l{left:0;border-radius:0 8px 8px 0}.nav.r{right:0;border-radius:8px 0 0 8px}
 @media (max-width:520px){.nav{width:56px;font-size:10px}.nav svg{width:36px;height:36px}}
@@ -799,7 +809,7 @@ body.no-ai:not(.manual) .cust{display:none}
   <div class="kp-body"><svg id="kpSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Both sides of the corridor"></svg><div class="kp-st" id="kpStats"></div>
     <form id="kpForm" hidden><div class="seg kpk" id="kpKind" role="group" aria-label="Building shape"><button type="button" data-k="bar">Straight</button><button type="button" data-k="L">L</button><button type="button" data-k="U" title="U-shape, set to 5180 Ninth Line">U</button></div><div class="kpf" id="kpFields"></div><button class="tb" type="submit">Set</button></form></div>
 </aside>
-<div class="wingbar" id="wingbar" hidden><button class="wb" id="wPrev" type="button" aria-label="Previous wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="wn"><b id="wName"></b><small id="wOf"></small></span><button class="wb" id="wNext" type="button" aria-label="Next wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><span class="north" id="north" role="img" aria-label="North"><svg viewBox="-13 -13 26 26" aria-hidden="true"><circle r="12"/><path d="M0 -3L4 9L0 6.5L-4 9Z"/><text y="-5">N</text></svg></span></div>
+<div class="navbox" id="navbox"><form class="jumpbar" id="jumpbar" autocomplete="off"><button class="wb" id="jStart" type="button" aria-label="Jump to the first unit" title="Jump to the first unit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 5l-7 7 7 7"/></svg></button><input id="jUnit" list="jList" inputmode="numeric" placeholder="Unit no." aria-label="Go to unit, by number" maxlength="12"><datalist id="jList"></datalist><button class="wb" id="jGo" type="submit" aria-label="Go" title="Go"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button><button class="wb" id="jEnd" type="button" aria-label="Jump to the last unit" title="Jump to the last unit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 5l7 7-7 7"/></svg></button></form><div class="wingbar" id="wingbar" hidden><button class="wb" id="wPrev" type="button" aria-label="Previous wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="wn"><b id="wName"></b><small id="wOf"></small></span><button class="wb" id="wNext" type="button" aria-label="Next wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><span class="north" id="north" role="img" aria-label="North"><svg viewBox="-13 -13 26 26" aria-hidden="true"><circle r="12"/><path d="M0 -3L4 9L0 6.5L-4 9Z"/><text y="-5">N</text></svg></span></div></div>
 <button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg><span class="tturn">Turn the corner</span></button>
 <button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg><span class="tturn">Turn the corner</span></button>
 <main id="scroller">
@@ -1793,7 +1803,12 @@ function drawKeyplan(){
     wingUnits(i).filter(u=>!inZ.has(u)).forEach(u=>{const W=u.plan.W,D=Math.min(u.plan.D,G.dep+2),sel=selected===u?' sel':'';if(x+W>lim+0.01)over=true;
       uu+=poly([G.at(i,x,-G.c),G.at(i,x+W,-G.c),G.at(i,x+W,-G.c-D),G.at(i,x,-G.c-D)],'kp-m');
       uu+=poly([G.at(i,x,G.c),G.at(i,x+W,G.c),G.at(i,x+W,G.c+D),G.at(i,x,G.c+D)],'kp-u'+sel,` data-idx="${u.idx}"`).replace('/>',`><title>${tagOf(u)}${wings()>1?' \u00B7 '+SHAPE.names[i]:''}</title></polygon>`);x+=W;});}
-  s+=z+uu;
+  // each unit's number, so a unit can be found and tapped
+  const nums=(z+uu).match(/<polygon class="kp-u[^"]*"[^>]*data-idx="\d+"[^>]*>/g)||[];
+  let nn='';nums.forEach(m=>{const id=+m.match(/data-idx="(\d+)"/)[1],pts=m.match(/points="([^"]+)"/)[1].split(' ').map(q=>q.split(',').map(Number));
+    const cx=pts.reduce((a,q)=>a+q[0],0)/pts.length,cy=pts.reduce((a,q)=>a+q[1],0)/pts.length,xs2=pts.map(q=>q[0]),ys2=pts.map(q=>q[1]),sz=Math.max(1.1,Math.min(2.6,0.42*Math.min(Math.max(...xs2)-Math.min(...xs2),Math.max(...ys2)-Math.min(...ys2))));
+    nn+=`<text class="kp-n" x="${f(cx)}" y="${f(cy)}" font-size="${f(sz)}">${String(id).padStart(2,'0')}</text>`;});
+  s+=z+uu+nn;
   const pp=[...oL,...oR];(uu.match(/points="[^"]+"/g)||[]).forEach(m=>m.slice(8,-1).split(' ').forEach(q=>{const [a,b]=q.split(',');pp.push([+a,+b]);}));   // units past the end still show
   const xs=pp.map(p=>p[0]),ys=pp.map(p=>p[1]),pad=0.8,x0=Math.min(...xs)-pad,y0=Math.min(...ys)-pad,vw=Math.max(...xs)+pad-x0,vh=Math.max(...ys)+pad-y0;
   $('kpSvg').setAttribute('viewBox',`${f(x0)} ${f(y0)} ${f(vw)} ${f(vh)}`);$('kpSvg').innerHTML=s;
@@ -1828,10 +1843,7 @@ $('kpSvg').addEventListener('click',e=>{
   const zn=e.target.closest('[data-zone]');
   if(zn){const [i,side]=zn.dataset.zone.split(':');goWing(+i,()=>{openModal(side);$('fCorner').checked=true;cornerTxt();});return;}
   const r=e.target.closest('[data-idx]');if(!r)return;const u=units.find(x=>x.idx===+r.dataset.idx);if(!u)return;
-  if(legOf(u)!==wing){goWing(legOf(u),()=>{showInfo(u);const {list}=layout();scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120)});});return;}
-  showInfo(u);
-  if(isMob){mobIdx=mobList().indexOf(u);mobGo(mobIdx,true);}else{const {list}=layout();scroller.scrollTo({left:Math.max(0,PADL+u.ox*S-120),behavior:reduce?'auto':'smooth'});}
-  drawKeyplan();
+  jumpTo(u,true);drawKeyplan();
 });
 const tagOf=u=>'PAD-'+String(u.idx).padStart(2,'0');
 
@@ -1855,7 +1867,7 @@ const AD_TOP=1.25;   // metres above the window wall kept for the overall width 
 let ADL='';
 function computeScale(){
   document.body.classList.toggle('detail',detail);
-  const h=scroller.clientHeight;TOP=(isMob?(lite()?14:60):(grouped?88:70))+(wings()>1?(isMob?40:34):0);   // room for the wing bar
+  const h=scroller.clientHeight;TOP=(isMob?(lite()?14:60):(grouped?88:70))+(isMob?40:34);   // room for the jump and wing bars
   const avail=h-TOP-(isMob?(lite()?8:66):66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+AD_TOP+CORR+0.2)));
   if(isMob)s=Math.max(12,Math.min(s,scroller.clientWidth*0.82/6.5,scroller.clientWidth*0.94/Math.max(1,...units.map(u=>u.plan.W+0.4))));   // phone: the middle unit takes about 80% of the width, and the widest unit always fits
@@ -1896,7 +1908,8 @@ function unitSVG(u,o){
   return s;
 }
 const cK=u=>u.corner==='L'?-1:u.corner==='R'?1:0;
-function ordered(){const L=wings()>1?wingUnits(wing):units;return grouped?L.slice().sort((a,b)=>cK(a)-cK(b)||a.n-b.n||units.indexOf(a)-units.indexOf(b)):L;}   // the wing in view
+function wingOrder(i){const L=wings()>1?wingUnits(i):units;return grouped?L.slice().sort((a,b)=>cK(a)-cK(b)||a.n-b.n||units.indexOf(a)-units.indexOf(b)):L;}   // a wing's units as the strip shows them
+function ordered(){return wingOrder(wing);}   // the wing in view
 function layout(){
   const list=ordered();
   let x=0,run=null,prev=null;const runs=[];
@@ -1970,7 +1983,7 @@ function render(){
   stats();scalebar();
   $('undo').disabled=!added().length;$('reset').disabled=!added().length&&!removedBase.length;
   $('badge').hidden=!(BASELINE_IS_PLACEHOLDER&&PROJ&&PROJ.base);$('reset').hidden=!(PROJ&&PROJ.base);$('hint').textContent=units.length?(wings()>1&&!list.length?`No units on the ${wingName(wing)} yet. Press the arrow to add one.`:HINT):'No units yet. Press the arrow to create your first unit.';
-  wingUI();navUpdate();
+  wingUI();navUpdate();jumpList();
   $('grp').setAttribute('aria-pressed',String(grouped));
   if(isMob)mobSync();
 }
@@ -5255,7 +5268,7 @@ function wingUI(){
 function goWing(i,then){
   const n=wings();i=Math.max(0,Math.min(n-1,i));
   if(i===wing||turning){if(!turning&&then)then();return;}
-  const fwd=i>wing,t=fwd?SHAPE.turns[wing]:-SHAPE.turns[i],rot=-t;   // a right turn sends the next wing down the screen, so the view turns left to lay it flat
+  const fwd=i>wing,t=fwd?SHAPE.turns.slice(wing,i).reduce((a,b)=>a+b,0):-SHAPE.turns.slice(i,wing).reduce((a,b)=>a+b,0),rot=-t;   // a right turn sends the next wing down the screen, so the view turns left to lay it flat; two corners turn twice as far
   const tr=$('track'),org=()=>`${f(scroller.scrollLeft+scroller.clientWidth/2)}px ${f(scroller.clientHeight/2)}px`;
   const land=()=>{wing=i;if(selected&&legOf(selected)!==i)showInfo(null);render();scroller.scrollLeft=fwd?0:scroller.scrollWidth;if(isMob){mobGo(fwd?0:mobList().length-1,false);}navUpdate();save();};
   northTo(i);
@@ -5267,6 +5280,26 @@ function goWing(i,then){
     a2.onfinish=a2.oncancel=()=>{turning=false;if(then)then();};};
 }
 $('wPrev').onclick=()=>goWing(wing-1);$('wNext').onclick=()=>goWing(wing+1);
+/* ---------- jump to a unit ----------
+   Type a unit number (12, PAD-12), or jump to the first or last unit of the building. A unit on another wing turns the view to that wing first. */
+function unitByName(q){const m=String(q||'').match(/(\d+)/);if(!m)return null;return units.find(u=>u.idx===+m[1])||null;}
+function reveal(u,smooth,info){
+  if(info||!isMob){showInfo(u);if(!isMob)render();}   // on a phone the details sheet would cover the plan, so a jump only goes there   // draws the selection around it
+  if(isMob){mobGo(mobList().indexOf(u),smooth);}
+  else{const iw=$('info').hidden?0:$('info').offsetWidth+24;scroller.scrollTo({left:Math.max(0,PADL+(u.ox+u.plan.W/2)*S-(scroller.clientWidth-iw)/2),   // centred in the part the unit panel leaves clear
+    behavior:smooth&&!reduce?'smooth':'auto'});}
+  const g=svg.querySelector(`.unit[data-idx="${u.idx}"]`);if(g){g.classList.add('flash');setTimeout(()=>g.classList.remove('flash'),1700);}
+}
+function jumpTo(u,info){if(!u)return;if(legOf(u)!==wing)goWing(legOf(u),()=>reveal(u,false,info));else reveal(u,true,info);}
+function jumpEnd(last){const L=[];for(let i=0;i<wings();i++)L.push(...wingOrder(i));if(!L.length){toast('No units yet.');return;}jumpTo(last?L[L.length-1]:L[0]);}
+function jumpList(){$('jList').innerHTML=units.map(u=>`<option value="${tagOf(u)}">${escapeHtml(TYPEU(u)+(wings()>1?' \u00B7 '+wingName(legOf(u)):''))}</option>`).join('');}
+$('jumpbar').addEventListener('submit',e=>{e.preventDefault();const q=$('jUnit').value.trim();if(!q)return;const u=unitByName(q);
+  if(!u){toast(/\d/.test(q)?`There is no PAD-${String(q.match(/\d+/)[0]).padStart(2,'0')} in this building.`:'Type a unit number, like 12 or PAD-12.');return;}
+  $('jUnit').value='';$('jUnit').blur();jumpTo(u);});
+$('jUnit').addEventListener('input',()=>{const v=$('jUnit').value;if(/^PAD-\d+$/i.test(v)&&unitByName(v))$('jumpbar').requestSubmit();});   // picked from the list
+$('jStart').onclick=()=>jumpEnd(false);$('jEnd').onclick=()=>jumpEnd(true);
+// Home and End jump to the first and last unit when no field has the keyboard
+document.addEventListener('keydown',e=>{if(view!=='app'||(typeof E!=='undefined'&&E&&!$('ed').hidden)||!modal.hidden||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.key==='Home'){e.preventDefault();jumpEnd(false);}else if(e.key==='End'){e.preventDefault();jumpEnd(true);}});
 /* The corner checkbox says where the unit goes: the end of the building, or the corner into the next wing. */
 function cornerTxt(){const tn=turnAt(wing,place),nx=place==='L'?wing-1:wing+1;
   $('fCornerTxt').textContent=tn?`Windows on two sides. Sits at the corner and turns the view into the ${wingName(nx)}.`:'Windows on two sides. Closes off this end of the building.';}
