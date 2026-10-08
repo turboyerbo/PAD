@@ -18,6 +18,7 @@ Drafting
 Layout (AI)
 - Rooms only. Drag a room, click a room and type an area or a width by depth, or describe a change in words. See ROOMS.md and PROMPTS.md.
 - A person walks from the entry through every room of 3 m2 or more (`edRoute`, using the same path finder as the occupants, with a slimmer body and open doors). A room the person cannot reach is named in the panel.
+- Rooms are coloured here and only here. Each space the walls enclose (doorways closed, `roomRegions`) takes the colour of the room with most of its rectangle in it: mauve bedrooms and dens, orange kitchens and closets, green baths and halls; living, dining, laundry and mechanical stay white. A space shared by two rooms (an open kitchen and living room) takes the larger one's colour. Tapping a room outlines its walled space, never the room engine's own box.
 - Leaving Layout, or confirming, places furniture afresh to fit (`rmFurnish`). A piece that does not fit is left out.
 
 `?manualedit` still opens the old combined tools. It is for tests only and shows no mode buttons.

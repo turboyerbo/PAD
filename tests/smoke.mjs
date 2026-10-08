@@ -310,6 +310,17 @@ try {
     if (s.walls !== nw0 + 3) errs.push('Interior alcove should add three walls: ' + nw0 + ' to ' + s.walls);
     await ai.click('#edModes [data-mode="layout"]'); await ai.waitForTimeout(400); s = await st();
     if (s.mode !== 'layout' || !s.walker || s.furn) errs.push('back in Layout (AI) the walking person should show');
+    // Layout mode colours the spaces the walls enclose, and a tapped room is outlined by its walls; no colour in the other modes
+    {
+      const lc = await ai.evaluate(() => { const pad = window.__pad, E = pad.edState(), P = E.P, r = document.getElementById('edSvg').getBoundingClientRect();
+        const q = P.rooms.find(x => !x.bk && /Bedroom/.test(x.n)); return { tints: document.querySelectorAll('#edSvg .rt').length, x: r.left + E.x0 + (q.x + q.w / 2) * E.Sc, y: r.top + E.y0 + (q.y + q.h / 2) * E.Sc, n: q.n, rid: q.rid }; });
+      if (!lc.tints) errs.push('Layout mode should colour the rooms inside their walls');
+      await ai.mouse.click(lc.x, lc.y); await ai.waitForTimeout(250);
+      const sel = await ai.evaluate(rid => { const pad = window.__pad, E = pad.edState(), o = E.rm && E.rm.rooms[E.rsel]; return { rid: o ? o.rid : null, path: !!document.querySelector('#edSvg path.rmsel'), rect: !!document.querySelector('#edSvg rect.rmsel') }; }, lc.rid);
+      if (sel.rid !== lc.rid || !sel.path || sel.rect) errs.push('tapping a room in Layout mode should outline its walled space: ' + JSON.stringify(sel) + ' ' + lc.n);
+      await ai.click('#edModes [data-mode="furn"]'); await ai.waitForTimeout(250);
+      if (await ai.locator('#edSvg .rt').count()) errs.push('room colours should show in Layout mode only');
+    }
     await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); }); await ai.waitForTimeout(200);
     // every catalog layout is walkable from the entry to every room, also after the footprint grows
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
