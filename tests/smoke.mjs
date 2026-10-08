@@ -31,11 +31,13 @@ try {
   await g.waitForSelector('body.view-app', { timeout: 5000 }).catch(() => errs.push('guest could not create a building'));
   for (const sel of ['#hShare', '#hChat']) if (await g.isVisible(sel)) errs.push(`${sel} should be hidden without the shared service`);
   // Every new unit says who it is for: nothing is added until the brief is filled in
-  await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(150);
+  // The sheet opens on two choices: the catalog or a unit type
+  if (!(await g.isVisible('#browseLay')) || !(await g.isVisible('#pickType')) || (await g.isVisible('#fBrief'))) errs.push('a new unit should start with two choices: catalog or unit type');
+  await g.click('#pickType'); await g.click('#bedOpts [data-n="1"]'); await g.click('#addGo'); await g.waitForTimeout(150);
   if (!(await g.isVisible('#briefMsg'))) errs.push('adding a unit without saying who it is for should ask first');
   if ((await g.evaluate(() => window.__pad.units().length)) !== 0) errs.push('a unit was added without a brief');
   await g.click('#briefChips .chip');
-  await g.click('#quickOpts [data-n="1"]'); await g.waitForTimeout(300);
+  await g.click('#addGo'); await g.waitForTimeout(300);
   if ((await g.evaluate(() => (window.__pad.units()[0] || {}).brief)) !== 'Two construction worker roommates') errs.push('the brief was not kept on the new unit');
   // The walls around a unit are solid dark blue; the partitions inside stay hatched
   { const wc = await g.evaluate(() => { const o = document.querySelector('#strip .wF.wFX'), i = document.querySelector('#strip .wF:not(.wFX)'); return { o: o && getComputedStyle(o).fill, i: i && getComputedStyle(i).fill }; });
@@ -60,7 +62,7 @@ try {
   // Home is one click away from the building list and from a building, and the landing page then offers a way back in
   // Keyplan: both rows of units either side of a 1.6 m corridor, and the efficiency taken from it
   await g.click('.pitem'); await g.waitForSelector('body.view-app', { timeout: 5000 });
-  await g.click('#add'); await g.fill('#fBrief', 'A young couple and their elderly mother'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.waitForTimeout(300);
+  await g.click('#add'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.fill('#fBrief', 'A young couple and their elderly mother'); await g.click('#addGo'); await g.waitForTimeout(300);
   if (await g.isVisible('#keyplan')) errs.push('the keyplan should be closed until it is opened from the navbar');
   await g.click('#hKeyplan');
   if (!(await g.isVisible('#keyplan'))) errs.push('the Keyplan button in the navbar did not open the keyplan');
@@ -110,7 +112,7 @@ try {
     else {
       if (!/North bar/.test(await g.textContent('#fCornerTxt'))) errs.push('the corner option should say it turns into the North bar');
       const n0 = await g.evaluate(() => document.getElementById('north').querySelector('svg').style.transform);
-      await g.fill('#fBrief', 'A family of five'); await g.click('#bedOpts [data-n="3"]'); await g.click('#priOpts [data-p="balanced"]'); await g.click('#gen3');
+      await g.click('#bedOpts [data-n="3"]'); await g.fill('#fBrief', 'A family of five'); await g.click('#addGo');
       await g.waitForTimeout(1500);
       const tf = await g.evaluate(() => getComputedStyle(document.getElementById('track')).transform);
       await g.waitForTimeout(800);
@@ -255,19 +257,18 @@ try {
     }
     // Baseline layouts gallery
     await ai.evaluate(() => document.getElementById('iClose').click());
-    await ai.evaluate(() => document.getElementById('add').click()); await ai.waitForTimeout(300); await ai.evaluate(() => { document.getElementById('fBrief').value = 'Test household'; document.getElementById('browseLay').click(); });
+    await ai.evaluate(() => document.getElementById('add').click()); await ai.waitForTimeout(300); await ai.evaluate(() => { document.getElementById('browseLay').click(); });
     const cards = await ai.locator('.lcard').count();
     if (cards !== 18) errs.push('the catalog gallery should show the 18 catalog layouts, it shows ' + cards);
     await ai.click('#layF [data-f="2"]');
     if ((await ai.locator('.lcard').count()) !== 7) errs.push('the 2 bed filter should leave the seven 2 bedroom layouts');
     await ai.click('#layF [data-f="0"]');
-    await ai.click('.lcard'); await ai.waitForTimeout(300);
+    await ai.click('.lcard'); await ai.fill('#fBrief', 'Test household'); await ai.click('#addGo'); await ai.waitForTimeout(300);
     const lay = await ai.evaluate(() => { const L = window.__pad.units(), u = L[L.length - 1], P = u.plan; return { n: L.length, layout: u.layout, rooms: P.rooms.length, bed: P.furn.some(p => p.k === 'bed'), W: P.W }; });
     if (lay.layout == null || lay.n !== nv.n + 1 || !lay.bed || lay.rooms < 5) errs.push('adding a baseline layout failed: ' + JSON.stringify(lay));
     // A new unit with a catalog bedroom count starts from a catalog layout; one without a catalog stays generated
     await ai.evaluate(() => document.getElementById('lay').hidden = true);
-    await ai.click('#add'); await ai.fill('#fBrief', 'Test household'); await ai.click('#quickOpts [data-n="1"]'); await ai.waitForTimeout(250);
-    await ai.click('#add'); await ai.fill('#fBrief', 'Test household'); await ai.click('#quickOpts [data-n="3"]'); await ai.waitForTimeout(250);
+    for (const n of [1, 3]) { await ai.click('#add'); await ai.click('#pickType'); await ai.click(`#bedOpts [data-n="${n}"]`); await ai.fill('#fBrief', 'Test household'); await ai.click('#addGo'); await ai.waitForTimeout(250); }
     const q2 = await ai.evaluate(() => { const L = window.__pad.units(), a = L[L.length - 2], b = L[L.length - 1]; return { a: a.n + ':' + a.layout, b: b.n + ':' + b.layout }; });
     if (/^1:null$/.test(q2.a) || !/^1:/.test(q2.a) || !/^3:null$/.test(q2.b)) errs.push('quick add should start 1 bed from the catalog and leave 3 bed generated: ' + JSON.stringify(q2));
     // printed net area carries over: the catalog layouts show 668, 678 or 670 ft2
@@ -428,7 +429,7 @@ try {
 
   const add = async (n, pri, side = 'R', corner = false, other = '') => {
     if (!(await p.isVisible('#modal'))) await p.click(side === 'L' ? '#addL' : '#add');
-    await p.fill('#fBrief', `Household for a ${n} bed ${pri} unit`); await p.click(`#bedOpts [data-n="${n}"]`);
+    await p.click('#pickType'); await p.click(`#bedOpts [data-n="${n}"]`); await p.fill('#fBrief', `Household for a ${n} bed ${pri} unit`); await p.click('#moreOpts');
     await p.click(`#priOpts [data-p="${pri}"]`);
     if (pri === 'other') { await p.fill('#otherTxt', other); await p.click('#gen'); }
     await p.click(`#segP [data-p="${side}"]`);
@@ -439,7 +440,7 @@ try {
   };
   // Quick add: one click builds a standard unit
   const before = await p.evaluate(() => window.__pad.units().length);
-  await p.fill('#fBrief', 'A family with two young kids'); await p.click('#quickOpts [data-n="2"]');
+  await p.click('#pickType'); await p.click('#bedOpts [data-n="2"]'); await p.fill('#fBrief', 'A family with two young kids'); await p.click('#addGo');
   await p.waitForTimeout(150);
   if ((await p.evaluate(() => window.__pad.units().length)) !== before + 1) errs.push('quick add did not add a unit');
 

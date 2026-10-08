@@ -218,6 +218,11 @@ footer svg{display:block}
 .x{border:none;background:none;font-size:22px;line-height:1;padding:4px 6px}
 .sheet h2{font-size:19px;font-weight:600;margin:4px 0 14px;text-wrap:balance;line-height:1.25}
 .opts{display:grid;gap:8px}
+.choose{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.pick{border:1px solid var(--ink);background:var(--sheet);border-radius:2px;padding:22px 10px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;font:inherit;font-size:15px;color:var(--ink);cursor:pointer}
+.pick:hover,.pick:focus-visible{background:var(--furn-fill)}
+.pick svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.lnk{display:block;margin:12px auto 0;border:0;background:none;color:var(--ink-2);text-decoration:underline;font:inherit;font-size:13px;cursor:pointer}
 .opts.five{grid-template-columns:repeat(5,1fr)}
 .opt{border:1px solid var(--ink);background:var(--sheet);border-radius:2px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
 .opt:hover{background:var(--furn-fill);border-color:var(--accent)}
@@ -702,7 +707,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <p class="lm-lead">Say what you want changed in plain words and the plan updates in moments. No training and no drafting skills needed.</p>
     <ol class="lp-steps">
       <li>Pick the building shape: straight, L or U. A U shows one wing at a time, and the view turns when you go round a corner.</li>
-      <li>Start from a baseline layout, or add a standard unit that meets the code limits in one click.</li>
+      <li>Add a unit: choose one from the catalog, or pick a unit type, then say who it is for.</li>
       <li>Describe a change, such as "make the kitchen an L-shape" or "add a balcony", and get the updated plan.</li>
       <li>Or drag a room somewhere else. The other rooms make way, and any that no longer fit turn red so you know what to fix.</li>
       <li>Each change becomes a new version of the unit that you can keep, compare or set aside.</li>
@@ -868,13 +873,14 @@ body.no-ai:not(.manual) .cust{display:none}
   <div class="sheet">
     <div class="sheet-head"><span class="step" id="mStep">Step 1 of 2</span><button class="x" id="mClose" aria-label="Close">×</button></div>
     <section id="s1">
-      <h2 id="mTitle">Who is this unit for?</h2>
-      <div class="field brief">
-        <textarea id="fBrief" rows="2" maxlength="160" aria-label="Who is this unit for" placeholder="e.g. Two construction worker roommates"></textarea>
-        <div class="chips" id="briefChips"><button class="chip" type="button">Two construction worker roommates</button><button class="chip" type="button">A young couple and their elderly mother</button><button class="chip" type="button">A single professional working from home</button><button class="chip" type="button">A family with two young kids</button></div>
-        <div class="result err" id="briefMsg" role="alert" hidden>Say who this unit is for first.</div>
+      <h2 id="mTitle">New unit</h2>
+      <div class="choose">
+        <button class="pick" id="browseLay" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5"/><rect x="13.5" y="3" width="7.5" height="7.5"/><rect x="3" y="13.5" width="7.5" height="7.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5"/></svg><b>Choose from catalog</b></button>
+        <button class="pick" id="pickType" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V9l9-6 9 6v11z"/><path d="M9 20v-6h6v6"/></svg><b>Select unit type</b></button>
       </div>
-      <span class="lbl bedq">How many bedrooms?</span>
+    </section>
+    <section id="sT" hidden>
+      <h2>Unit type</h2>
       <div class="opts five" id="bedOpts">
         <button class="opt" data-n="0"><span class="num">0</span><span class="nm">Studio</span></button>
         <button class="opt" data-n="1"><span class="num">1</span><span class="nm">One bed</span></button>
@@ -882,15 +888,18 @@ body.no-ai:not(.manual) .cust{display:none}
         <button class="opt" data-n="3"><span class="num">3</span><span class="nm">Three bed</span></button>
         <button class="opt" data-n="4"><span class="num">4</span><span class="nm">Four bed</span></button>
       </div>
-      <div class="quick">
-        <span class="lbl">Or add a standard unit in one click</span>
-        <p class="lead">Starts from a layout in the Patry catalog where there is one. Otherwise a balanced layout, sized to meet the code limits.</p>
-        <div class="seg wide" id="quickOpts" role="group" aria-label="Quick add a standard unit"><button type="button" data-n="0">Studio</button><button type="button" data-n="1">1 bed</button><button type="button" data-n="2">2 bed</button><button type="button" data-n="3">3 bed</button><button type="button" data-n="4">4 bed</button></div>
-        <div class="result err" id="quickMsg" hidden></div>
-        <span class="lbl">Or start from a catalog layout</span>
-        <p class="lead">Pick a layout from the Patry catalog, then describe the changes you want.</p>
-        <button class="tb wide" id="browseLay" type="button">Browse the catalog</button>
+      <div class="actions"><button class="tb" id="backT" type="button">Back</button></div>
+    </section>
+    <section id="sB" hidden>
+      <h2 id="sBTitle">Who is it for?</h2>
+      <div class="field brief">
+        <textarea id="fBrief" rows="2" maxlength="160" aria-label="Who is this unit for" placeholder="e.g. Two construction worker roommates"></textarea>
+        <div class="chips" id="briefChips"><button class="chip" type="button">Two construction worker roommates</button><button class="chip" type="button">A young couple and their elderly mother</button><button class="chip" type="button">A single professional working from home</button><button class="chip" type="button">A family with two young kids</button></div>
+        <div class="result err" id="briefMsg" role="alert" hidden>Say who this unit is for first.</div>
       </div>
+      <div class="result err" id="quickMsg" hidden></div>
+      <div class="actions"><button class="tb" id="backB" type="button">Back</button><button class="tb primary" id="addGo" type="button">Add unit</button></div>
+      <button class="lnk" id="moreOpts" type="button">More options</button>
     </section>
     <section id="s2" hidden>
       <h2 id="s2Title">What should this unit prioritize?</h2>
@@ -1843,7 +1852,7 @@ $('kpForm').addEventListener('submit',e=>{e.preventDefault();
   setShape(normShape(s));$('kpForm').hidden=true;render();save();});
 $('kpSvg').addEventListener('click',e=>{
   const zn=e.target.closest('[data-zone]');
-  if(zn){const [i,side]=zn.dataset.zone.split(':');goWing(+i,()=>{openModal(side);$('fCorner').checked=true;cornerTxt();});return;}
+  if(zn){const [i,side]=zn.dataset.zone.split(':');goWing(+i,()=>openModal(side,{corner:true}));return;}
   const r=e.target.closest('[data-idx]');if(!r)return;const u=units.find(x=>x.idx===+r.dataset.idx);if(!u)return;
   jumpTo(u,true);drawKeyplan();
 });
@@ -2368,9 +2377,20 @@ const modal=$('modal');let pick={n:0};
 let place='R';
 const endCorner=side=>{const L=wingUnits(wing),e=side==='L'?L[0]:L[L.length-1];return !!(e&&e.corner===side);};
 function setPlace(p){place=p;$('segP').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.p===p)));if($('fCornerTxt'))cornerTxt();}
-function openModal(side){let sd=side==='L'?'L':'R';if(endCorner(sd)&&!endCorner(sd==='L'?'R':'L'))sd=sd==='L'?'R':'L';setPlace(sd);$('fCorner').checked=false;['fA','fW','fL'].forEach(id=>$(id).value='');pick={n:0};$('fBrief').value='';$('briefMsg').hidden=true;$('s1').hidden=false;$('s2').hidden=true;$('s3').hidden=true;$('mStep').textContent='Step 1 of 3';$('otherBox').hidden=true;$('gen').hidden=true;$('otherTxt').value='';
+/* New unit: two choices (catalog or unit type), then who it is for. More options leads to the priority and size steps. */
+const MSECS=['s1','sT','sB','s2','s3'];
+function mShow(id,step){MSECS.forEach(k=>$(k).hidden=k!==id);$('mStep').textContent=step||'';}
+function openModal(side,o){let sd=side==='L'?'L':'R';if(endCorner(sd)&&!endCorner(sd==='L'?'R':'L'))sd=sd==='L'?'R':'L';setPlace(sd);$('fCorner').checked=!!(o&&o.corner);if(o&&o.corner)cornerTxt();['fA','fW','fL'].forEach(id=>$(id).value='');pick={n:0};$('fBrief').value='';$('briefMsg').hidden=true;$('quickMsg').hidden=true;$('otherBox').hidden=true;$('gen').hidden=true;$('otherTxt').value='';
   document.querySelectorAll('#priOpts .opt').forEach(b=>b.setAttribute('aria-pressed','false'));
-  modal.hidden=false;setTimeout(()=>$('fBrief').focus(),30);}
+  if(o&&o.corner)mShow('sT',o.corner?'Corner unit':'');else mShow('s1','');   // a corner unit is never a catalog layout, so it starts at the unit type
+  modal.hidden=false;setTimeout(()=>($('s1').hidden?document.querySelector('#bedOpts .opt'):$('browseLay')).focus(),30);}
+function toBrief(){const L=pick.layout&&LAYOUTS[pick.layout],nm=L?layoutName(pick.layout):pick.n===0?'studio':pick.n+' bed';
+  $('sBTitle').textContent=`Who is this ${L?'unit':nm} for?`;$('moreOpts').hidden=!!L;mShow('sB',L?nm:(pick.n===0?'Studio':pick.n+' bed'));setTimeout(()=>$('fBrief').focus(),30);}
+$('pickType').onclick=()=>mShow('sT','');
+$('backT').onclick=()=>mShow('s1','');
+$('backB').onclick=()=>{if(pick.layout){pick.layout=null;$('browseLay').click();}else mShow('sT',$('fCorner').checked?'Corner unit':'');};
+$('addGo').onclick=()=>{if(!needBrief())return;if(pick.layout)addLayout(pick.layout);else quickAdd(pick.n);};
+$('moreOpts').onclick=()=>{if(!needBrief())return;$('s2Title').textContent=`What should this ${pick.n===0?'studio':pick.n+'-bedroom unit'} prioritize?`;mShow('s2','More options');setTimeout(()=>document.querySelector('#priOpts .opt').focus(),30);};
 function closeModal(){modal.hidden=true;addBtn.focus();}
 $('add').onclick=()=>openModal('R');$('addL').onclick=()=>openModal('L');$('mClose').onclick=closeModal;
 modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
@@ -2379,10 +2399,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)close
 const briefClean=v=>String(v||'').trim().replace(/\s+/g,' ').slice(0,160);
 function needBrief(){const v=briefClean($('fBrief').value);if(v.length<4){$('briefMsg').hidden=false;$('fBrief').focus();return false;}$('briefMsg').hidden=true;pick.brief=v;return true;}
 $('fBrief').addEventListener('input',()=>{$('briefMsg').hidden=true;});
-$('fBrief').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(needBrief())document.querySelector('#bedOpts .opt').focus();}});
+$('fBrief').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('addGo').click();}});
 $('briefChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;$('fBrief').value=c.textContent;$('briefMsg').hidden=true;$('fBrief').focus();});
-document.querySelectorAll('#bedOpts .opt').forEach(b=>b.onclick=()=>{if(!needBrief())return;pick.n=+b.dataset.n;$('s1').hidden=true;$('s2').hidden=false;$('mStep').textContent='Step 2 of 3';
-  $('s2Title').textContent=`What should this ${pick.n===0?'studio':pick.n+'-bedroom unit'} prioritize?`;setTimeout(()=>document.querySelector('#priOpts .opt').focus(),30);});
+document.querySelectorAll('#bedOpts .opt').forEach(b=>b.onclick=()=>{pick.n=+b.dataset.n;pick.layout=null;toBrief();});
 document.querySelectorAll('#priOpts .opt').forEach(b=>b.onclick=()=>{
   const p=b.dataset.p;
   if(p==='other'){b.setAttribute('aria-pressed','true');$('otherBox').hidden=false;$('gen').hidden=false;$('otherTxt').focus();return;}
@@ -2423,18 +2442,18 @@ $('segMin').addEventListener('click',e=>{const b=e.target.closest('button');if(!
 function toStep3(){pick.seed=Math.floor(Math.random()*1e9);
   setMinA(STUDIO_A[0]);$('minAField').hidden=pick.n!==0;
   $('limits').textContent=LIMITS[pick.n]||`Walls must be at least ${MINWALL} m long.`;
-  $('fW').placeholder=pick.n===1?'6, 6.5 or 7':'auto';$('s2').hidden=true;$('s3').hidden=false;$('mStep').textContent='Step 3 of 3';updateSize();setTimeout(()=>$('fA').focus(),30);}
+  $('fW').placeholder=pick.n===1?'6, 6.5 or 7':'auto';mShow('s3','More options');updateSize();setTimeout(()=>$('fA').focus(),30);}
 ['fA','fW','fL'].forEach(id=>$(id).addEventListener('input',updateSize));
 $('segP').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setPlace(b.dataset.p);updateSize();});
 $('fCorner').addEventListener('change',updateSize);
 function segInit(id,set){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$(id).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));set(b.dataset.u);updateSize();});}
 segInit('segA',u=>{aU=u;$('fA').placeholder=u==='ft2'?'e.g. 600':'e.g. 55';});
 segInit('segL',u=>{lU=u;$('fW').placeholder=pick.n===1?(u==='ft'?"19'-8\", 21'-4\" or 23'-0\"":'6, 6.5 or 7'):'auto';$('fL').placeholder=u==='ft'?"27'-6\"":'8.4';});
-$('back3').onclick=()=>{$('s3').hidden=true;$('s2').hidden=false;$('mStep').textContent='Step 2 of 3';};
+$('back3').onclick=()=>mShow('s2','More options');
 $('gen3').onclick=()=>{const r=readSize();if(r.err)return;generate(r);};
 $('s3').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.tagName==='INPUT'&&!$('gen3').disabled)$('gen3').click();});
 $('chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const ta=$('otherTxt');ta.value=(ta.value.trim()?ta.value.trim()+', ':'')+c.textContent;ta.focus();});
-$('back').onclick=()=>{$('s2').hidden=true;$('s1').hidden=false;$('mStep').textContent='Step 1 of 3';$('otherBox').hidden=true;$('gen').hidden=true;};
+$('back').onclick=()=>{$('otherBox').hidden=true;$('gen').hidden=true;toBrief();};
 $('gen').onclick=()=>{pick.pri='other';pick.other=$('otherTxt').value.trim();toStep3();};
 /* ---------- baseline layouts: pick one to add it to the building ---------- */
 let layFilter=0;
@@ -2452,14 +2471,15 @@ function drawLayouts(){
   const ids=Object.keys(LAYOUTS).filter(id=>!layFilter||LAYOUTS[id].n===layFilter);
   $('layG').innerHTML=ids.map(layoutCard).join('');
 }
-$('browseLay').onclick=()=>{if(!needBrief())return;modal.hidden=true;layFilter=0;drawLayouts();$('lay').hidden=false;};
+$('browseLay').onclick=()=>{modal.hidden=true;layFilter=0;drawLayouts();$('lay').hidden=false;};
 $('layX').onclick=()=>{$('lay').hidden=true;};
 $('lay').addEventListener('click',e=>{if(e.target===$('lay'))$('lay').hidden=true;});
 $('layF').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;layFilter=+b.dataset.f;drawLayouts();});
 $('layG').addEventListener('click',e=>{
   const c=e.target.closest('.lcard');if(!c)return;const id=c.dataset.id,L=LAYOUTS[id];if(!L)return;
-  const u=makeUnit({n:L.n,pri:'balanced',seed:5,layout:id,side:'R',brief:pick.brief||''});units.push(u);$('lay').hidden=true;afterAdd(u,'R');
+  pick.layout=id;pick.n=L.n;$('lay').hidden=true;modal.hidden=false;toBrief();   // then who it is for
 });
+function addLayout(id){const L=LAYOUTS[id];const u=makeUnit({n:L.n,pri:'balanced',seed:5,layout:id,side:place,brief:pick.brief||''});if(place==='L')units.unshift(u);else units.push(u);modal.hidden=true;afterAdd(u,place);}
 function generate(r){
   const lay=useCatalog(r)?catalogPick(r.n,r.seed):null;   // a size or corner request builds from scratch instead
   const u=makeUnit({brief:pick.brief||'',n:r.n,pri:r.pri,other:r.other,seed:r.seed,layout:lay,W:lay?null:r.fit,D:lay?null:r.D,maxA:r.maxA,Wt:r.Wt,Lt:r.Lt,side:r.side,corner:r.corner});
@@ -2479,11 +2499,10 @@ function afterAdd(u,side){
 }
 
 /* ---------- quick add ---------- */
-$('quickOpts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;quickAdd(+b.dataset.n);});
 function quickAdd(n){
   const msg=$('quickMsg');msg.hidden=true;if(!needBrief())return;
   if(endCorner(place)){msg.textContent=endCorner(place==='L'?'R':'L')?'Both ends already have corner units. Undo one of them to add more units.':`The ${place==='L'?'left':'right'} end already has a corner unit. Add this unit at the other end.`;msg.hidden=false;return;}
-  const spec={n,pri:'balanced',other:'',seed:Math.floor(Math.random()*1e9),minA:n===0?STUDIO_A[0]:null,maxA:null,Wt:null,Lt:null,side:place,corner:null};
+  const spec={n,pri:'balanced',other:'',seed:Math.floor(Math.random()*1e9),minA:n===0?STUDIO_A[0]:null,maxA:null,Wt:null,Lt:null,side:place,corner:$('fCorner').checked?place:null};
   const r=solveSize(spec);
   if(r.err){msg.textContent=r.err;msg.hidden=false;return;}
   generate(Object.assign(spec,r));
