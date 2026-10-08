@@ -15,6 +15,12 @@ Drafting
 - Footprint: width and depth change 100 mm at a time, up to 1 m from the original. Walls, floors and rooms that touch the changed side stretch with it (`fpMove`).
 - Leaving Drafting, or confirming, drops any furniture a wall now cuts through (`edFinalize`).
 
+Room separations (Drafting)
+- A room separation is a dashed line where one room ends and the next begins with no wall (Revit's room separation line). It runs straight, horizontally or vertically, from wall to wall. People and furniture pass through it.
+- Add a room separation, then tap the open space: the line goes across the narrower way through that point. Tap a line to drag it, turn it the other way, or delete it. A separation does not use up one of the five changes.
+- Separations close spaces for the room colours and the room outline in Layout mode. The checks (no wall in a doorway, 800 mm clear, rooms out of step) still go by the walls.
+- Catalog plans get theirs when they load (docs/LAYOUTS.md, Tidying the traced plans).
+
 Layout (AI)
 - Rooms only. Drag a room, click a room and type an area or a width by depth, or describe a change in words. See ROOMS.md and PROMPTS.md.
 - A person walks from the entry through every room of 3 m2 or more (`edRoute`, using the same path finder as the occupants, with a slimmer body and open doors). A room the person cannot reach is named in the panel.
