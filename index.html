@@ -623,6 +623,7 @@ body.mob .mi{padding:10px 12px;font-size:14px}
 body.mob #track{min-height:100%;align-items:center}/* room editing */
 .rmred{fill:rgba(198,40,40,.2);stroke:#C62828;stroke-width:2;stroke-dasharray:7 4;pointer-events:none}
 .rmsel{fill:rgba(31,42,122,.07);stroke:var(--draw);stroke-width:2.5;pointer-events:none}
+.rmself{fill:rgba(31,42,122,.07);stroke:none;pointer-events:none}
 .rmprev{fill:none;stroke:var(--draw);stroke-width:1.5;stroke-dasharray:5 4;pointer-events:none}
 .rmghost{fill:rgba(31,42,122,.14);stroke:var(--draw);stroke-width:2;pointer-events:none}
 .rmzone{fill:rgba(2,116,190,.26);pointer-events:none}
@@ -1890,11 +1891,38 @@ function roomTints(P){
     const r=G.regs[o.m],ra=(q.w)*(q.h);if(r.a>1.25*ra+0.3||r.a<0.6*ra)return'';
     return `<path class="rt rt-${t[1]}" d="${r.rects.map(x=>`M${f(x[0])} ${f(x[1])}H${f(x[2])}V${f(x[3])}H${f(x[0])}Z`).join('')}"/>`;}).join('');
 }
+/* Layout mode: each space the walls enclose takes the colour of the room in it (the room with most of its rectangle there).
+   A space shared by two rooms (an open kitchen and living room) takes the larger one's colour. Living, dining, laundry and mechanical stay white. */
+function regionRooms(P){
+  const G=roomRegions(P),own={},best={};
+  P.rooms.forEach((q,i)=>{if(q.bk||!(q.w>0&&q.h>0))return;const o=snapWhere(G,q),id=q.rid!==undefined?q.rid:'i'+i;if(o.m<0||o.s<0.5)return;own[id]=o.m;if(!best[o.m]||o.cnt>best[o.m].cnt)best[o.m]={q,cnt:o.cnt};});
+  return{G,own,best};
+}
+/* The outline of one walled space, as straight runs along the grid (no seams between the rectangles that fill it). */
+function regOutline(G,m){
+  const{cs,x0,y0,nx,ny,comp}=G,at=(i,j)=>i>=0&&j>=0&&i<nx&&j<ny&&comp[j*nx+i]===m;let d='';
+  for(let j=0;j<=ny;j++){let a=-1;for(let i=0;i<=nx;i++){const e=i<nx&&at(i,j)!==at(i,j-1);if(e&&a<0)a=i;if(!e&&a>=0){d+=`M${f(x0+a*cs)} ${f(y0+j*cs)}H${f(x0+i*cs)}`;a=-1;}}}
+  for(let i=0;i<=nx;i++){let a=-1;for(let j=0;j<=ny;j++){const e=j<ny&&at(i,j)!==at(i-1,j);if(e&&a<0)a=j;if(!e&&a>=0){d+=`M${f(x0+i*cs)} ${f(y0+a*cs)}V${f(y0+j*cs)}`;a=-1;}}}
+  return d;
+}
+const regPath=r=>r.rects.map(x=>`M${f(x[0])} ${f(x[1])}H${f(x[2])}V${f(x[3])}H${f(x[0])}Z`).join('');
+function regionTints(P){
+  let R;try{R=regionRooms(P);}catch(e){return'';}
+  return Object.keys(R.best).map(m=>{const t=RT.find(([re])=>re.test(R.best[m].q.n));return t?`<path class="rt rt-${t[1]}" d="${regPath(R.G.regs[m])}"/>`:'';}).join('');
+}
+/* The room at a point in Layout mode: the room whose walled space holds the point (in a shared space, the nearest of its rooms). */
+function regionRoomAt(P,pt){
+  let R;try{R=regionRooms(P);}catch(e){return null;}const G=R.G,i=Math.floor((pt.x-G.x0)/G.cs),j=Math.floor((pt.y-G.y0)/G.cs);
+  if(i<0||j<0||i>=G.nx||j>=G.ny)return null;const m=G.comp[j*G.nx+i];if(m<0)return null;
+  const inR=P.rooms.filter((q,k)=>R.own[q.rid!==undefined?q.rid:'i'+k]===m);if(!inR.length)return null;
+  const dist=q=>Math.hypot(Math.max(q.x-pt.x,0,pt.x-q.x-q.w),Math.max(q.y-pt.y,0,pt.y-q.y-q.h));
+  return inR.reduce((a,b)=>dist(b)<dist(a)?b:a);
+}
 function unitSVG(u,o){
   const P=u.plan;let s='';
   const fl=(o&&o.noFloor)?[]:P.floors,frect=(cl,r)=>`<rect class="${cl}" x="${f(r.x)}" y="${f(r.y)}" width="${f(r.w)}" height="${f(r.h)}"/>`;
   fl.forEach(r=>{if(r.t==='base')s+=frect('base',r);});
-  if(!(o&&o.noFloor)||(o&&o.tint))s+=roomTints(P);   // a faint colour for each kind of room, as on the drawings
+  if(o&&o.tint)s+=regionTints(P);else if(!(o&&o.noFloor))s+=roomTints(P);   // Layout mode colours each space its walls enclose; elsewhere no colour for now (ROOM_TINTS)
   fl.forEach(r=>{if(r.t!=='base')s+=frect(r.t==='wood'?'wd-p':'tl-p',r);});
   if(!(o&&o.noFloor))P.rooms.forEach(q=>{if(q.red&&!q.bk)s+=`<rect class="rmred" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}"/>`;});
   if(!(o&&o.noFurn))P.furn.forEach((p,i)=>{s+=`<g class="m-${p.k}" transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})">${piece(p)}</g>`;});
@@ -3137,7 +3165,7 @@ function edRender(){
   const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P)+adT)*Sc)/2+(outTop(P)+adT)*Sc;   // room above the window wall for the width strings
   Object.assign(E,{Sc,x0,y0});
   const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
-  let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,tint:true,noFurn:edHide()})+wallsSVG(ws,true)+sideWinSVG(P);
+  let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,tint:E.mode==='layout',noFurn:edHide()})+wallsSVG(ws,true)+sideWinSVG(P);
   const s=E.sel;
   if(s&&s.t==='f'){const p=P.furn.find(x=>x.id===s.id);if(p){const[w,d]=dimsOf(p);g+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot})"><rect class="sel" x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/></g>`;}}
   if(s&&s.t==='d'){const d=P.doors.find(x=>x.id===s.id);if(d){const[lo,hi]=doorRng(d);g+=doorHor(d)?`<rect class="wsel" x="${f(lo)}" y="${f(d.hy-0.15)}" width="${f(hi-lo)}" height="0.3"/>`:`<rect class="wsel" x="${f(d.hx-0.15)}" y="${f(lo)}" width="0.3" height="${f(hi-lo)}"/>`;}}
@@ -4033,6 +4061,7 @@ function rmEnsure(){if(!E)return null;if(E.rm===undefined||E.rm===null){try{E.rm
 const rmName=(rm,k)=>{const o=rm.rooms[k];return o?o.n:'room';};
 function rmHit(pt){
   const rm=E.rm;if(!rm)return null;let hit=null;
+  {const q=regionRoomAt(E.P,pt);if(q){const o=Object.values(rm.rooms).find(x=>x.rid===q.rid);if(o)return o.k;}}   // the room whose walls hold the point
   Object.values(rm.rooms).forEach(o=>{if(!o.minor)return;const r=rm.minorCur&&rm.minorCur[o.k]||o.r0;if(rmIn(r,pt.x,pt.y))hit=o.k;});
   if(hit!==null)return hit;
   Object.values(rm.rooms).forEach(o=>{if(o.minor)return;if(rmIn(rm.cur[o.k],pt.x,pt.y))hit=o.k;});
@@ -4048,7 +4077,10 @@ function rmOverlay(){
   P.rooms.forEach(q=>{if(q.red&&!q.bk)s+=`<rect class="rmred" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}"/>`;});
   if(!rm)return s;
   const k=E.rsel;
-  if(k!==null&&k!==undefined&&rm.rooms[k]){const o=rm.rooms[k],r=o.minor?(rm.minorCur&&rm.minorCur[k]||o.r0):rm.cur[k];if(r)s+=`<rect class="rmsel" ${box(r)}/>`;}
+  if(k!==null&&k!==undefined&&rm.rooms[k]&&!(E.rd&&E.rd.moved)){   // the selected room is outlined by the walls around it, not by the room engine's own box
+    let R=null;try{R=regionRooms(P);}catch(x){}const m=R?R.own[rm.rooms[k].rid]:undefined;
+    if(m!==undefined)s+=`<path class="rmself" d="${regPath(R.G.regs[m])}"/><path class="rmsel" style="fill:none" d="${regOutline(R.G,m)}"/>`;
+    else{const q=P.rooms.find(x=>x.rid===rm.rooms[k].rid);if(q)s+=`<rect class="rmsel" x="${f(q.x)}" y="${f(q.y)}" width="${f(q.w)}" height="${f(q.h)}"/>`;}}
   const d=E.rd;
   if(d&&d.moved){
     if(d.prev)Object.keys(d.prev).forEach(j=>{s+=`<rect class="rmprev" ${box(d.prev[j])}/>`;});
