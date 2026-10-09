@@ -331,6 +331,13 @@ try {
       if (s1.n !== s0.n + 1 || s1.t !== 'sp') errs.push('Add a room separation should place one where tapped: ' + JSON.stringify([s0, s1]));
       await ai.click('#edSide [data-act="sprot"]'); await ai.click('#edSide [data-act="spdel"]'); await ai.waitForTimeout(150);
       if ((await ai.evaluate(() => window.__pad.edState().P.seps.length)) !== s0.n) errs.push('deleting a room separation did not remove it');
+      // room areas follow a moved wall, and a room can be renamed
+      const ar = await ai.evaluate(() => { const T = window.__pad, E = T.edState(), A = () => E.P.rooms.filter(q => !q.bk).map(q => q.a.toFixed(2)).join(','), a0 = A(), g = T.wallGroups(E.P).filter(q => q.b - q.a > 1 && q.pos > 1.5 && q.pos < (q.hor ? E.P.D : E.P.W) - 1.5)[0];
+        T.edSelect({ t: 'w', wi: g.idxs[0] }); for (let i = 0; i < 4; i++) document.querySelector('#edSide [data-act="wnudge"][data-d="0.05"]').click(); return { a0, a1: A() }; });
+      if (ar.a0 === ar.a1) errs.push('moving a wall should update the room areas');
+      await ai.evaluate(() => { const T = window.__pad, E = T.edState(), q = E.P.rooms.find(x => !x.bk && x.lx !== undefined); T.edSelect({ t: 'r', id: q.rid }); });
+      await ai.fill('#edSide .rnin', 'Office'); await ai.click('#edSide [data-rename]'); await ai.waitForTimeout(150);
+      if (!(await ai.evaluate(() => window.__pad.edState().P.rooms.some(q => q.n === 'Office')))) errs.push('renaming a room did not take');
     }
     await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); }); await ai.waitForTimeout(200);
     // every catalog layout is walkable from the entry to every room, also after the footprint grows
@@ -391,9 +398,9 @@ try {
       if (r.grew) grew++;
     }
     if (grew < 6) errs.push('rooms grew into the hall or a closet on only ' + grew + ' of 12 layouts');
-    // Suggest a variation: at 1% the net area stays within 1%, and the slider range is 1 to 100
-    const sl = await ai.evaluate(() => { window.__pad.openEditor(window.__pad.units()[0]); const s = document.getElementById('aiAmt'); return s ? { min: s.min, max: s.max, v: s.value } : null; });
-    if (!sl || sl.min !== '1' || sl.max !== '100' || sl.v !== '1') errs.push('the change slider should run 1 to 100 and start at 1: ' + JSON.stringify(sl));
+    // Suggest a variation: three settings; a slight change keeps the net area within 1%
+    const sl = await ai.evaluate(() => { window.__pad.openEditor(window.__pad.units()[0]); return [...document.querySelectorAll('#aiAmtSeg button')].map(b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')); });
+    if (sl.join('|') !== 'Slight change*|Swap rooms|New layout') errs.push('How much may change should offer Slight change (chosen), Swap rooms and New layout: ' + sl.join('|'));
     await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); });
     let okv = 0, nv2 = 0;
     for (const c of JSON.parse(fs.readFileSync(path.join(root, 'tools/catalog.json'), 'utf8'))) {
