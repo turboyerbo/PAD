@@ -225,6 +225,7 @@ try {
       // typed size: a bigger bedroom, kept as asked
       let tn = 'Den';   // a room with no small room drawn over it, so the click selects it
       for (const nm of ['Den', 'Living', 'Kitchen', 'Bedroom']) { const c = await at(nm); if (!c) continue; await ai.mouse.click(c[0], c[1]); await ai.waitForTimeout(150); if (await ai.locator('#rmA').count()) { tn = await ai.evaluate(() => { const E = window.__pad.edState(); return E.rm.rooms[E.rsel].n; }); break; } }   // the room the tap selected
+      if (!(await ai.isVisible('#rmPop')) || !/Of net area/.test((await ai.textContent('#rmPop')) || '')) errs.push('tapping a room in Layout mode should show its stats in a floating box');
       await ai.fill('#rmA', '14'); await ai.click('#rmGo'); await ai.waitForTimeout(300);
       const den = await ai.evaluate(tn => { const E = window.__pad.edState(), q = E.P.rooms.find(x => x.n === tn && x.lk) || E.P.rooms.find(x => x.n === tn); return { a: q && q.a, used: E.used, W: E.P.W, D: E.P.D, tn }; }, tn);
       if (!den.a || Math.abs(den.a - 14) > 0.6 || den.used !== 2) errs.push('a typed room area was not kept: ' + JSON.stringify(den));
@@ -232,6 +233,13 @@ try {
       await ai.click('#edUndo'); await ai.click('#edUndo'); await ai.waitForTimeout(200);
       const back = await ai.evaluate(() => { const E = window.__pad.edState(); return { used: E.used, W: E.P.W, D: E.P.D, r: E.P.rooms.map(q => q.n + q.x.toFixed(1) + q.y.toFixed(1)).join(), reds: E.P.rooms.filter(q => q.red).length }; });
       if (back.used !== 0 || back.r !== before.r || back.W !== before.W || back.D !== before.D || back.reds) errs.push('undo did not put the unit back after room edits: ' + JSON.stringify(back));
+      // zoom on the tracing sheet: the buttons, and two fingers pinching; neither is a change to the plan
+      const zm = await ai.evaluate(() => { const E = window.__pad.edState(), used = E.used, sv = document.getElementById('edSvg'), r = sv.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        document.querySelector('#edZoom [data-z="in"]').click(); const z1 = E.zoom; document.querySelector('#edZoom [data-z="fit"]').click(); const z2 = E.zoom;
+        const ev = (t, id, x, y) => sv.dispatchEvent(new PointerEvent(t, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y }));
+        ev('pointerdown', 11, cx - 30, cy); ev('pointerdown', 12, cx + 30, cy); ev('pointermove', 11, cx - 90, cy); ev('pointermove', 12, cx + 90, cy); ev('pointerup', 11, cx - 90, cy); ev('pointerup', 12, cx + 90, cy);
+        const z3 = E.zoom; document.querySelector('#edZoom [data-z="fit"]').click(); return { z1, z2, z3, same: E.used === used && !E.rd }; });
+      if (!(zm.z1 > 1 && zm.z2 === 1 && zm.z3 > 2 && zm.same)) errs.push('zooming the tracing sheet did not work: ' + JSON.stringify(zm));
       // do it again and keep it
       await ai.mouse.move(a[0], a[1]); await ai.mouse.down(); await ai.mouse.move(b2[0], b2[1], { steps: 8 }); await ai.mouse.up(); await ai.waitForTimeout(300);
       await ai.click('#edDone');

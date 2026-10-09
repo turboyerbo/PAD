@@ -383,6 +383,10 @@ body.chat-open .info{right:356px}
 .ed-top .tb.primary{background:#fff;color:var(--navy)}
 .ed-body{flex:1;min-height:0;display:flex}
 .ed-cv{flex:1;min-width:0;position:relative;overflow:hidden}
+.edzoom{position:absolute;right:8px;bottom:8px;z-index:3;display:flex;flex-direction:column;border:1px solid var(--draw);background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(38,38,31,.15)}
+.edzoom button{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:0;border-bottom:1px solid var(--rule);background:none;color:var(--draw);padding:0;cursor:pointer;touch-action:manipulation}
+.edzoom button:last-child{border-bottom:0}.edzoom button:disabled{opacity:.35;cursor:default}
+.edzoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #edSvg{display:block;touch-action:none;cursor:default;user-select:none;-webkit-user-select:none}
 #edSvg *{vector-effect:non-scaling-stroke}
 #edSvg pattern *{vector-effect:none}
@@ -613,6 +617,16 @@ polygon.kp-u.sel{stroke:var(--accent);stroke-width:2}
 .keyplan:not(.open) .kp-n{display:none}
 body.mob .keyplan:not(.open){top:88px;right:8px;width:64px}
 body.infoon .keyplan:not(.open){display:none}
+/* phones: zoom buttons for the strip stay under the small keyplan (the navbar has them on a computer) */
+.szoom{display:none}
+body.mob .szoom{position:absolute;top:156px;right:8px;z-index:5;display:flex;flex-direction:column;border:1px solid var(--ink);background:rgba(255,255,255,.92)}
+body.mob .szoom button{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;background:none;color:var(--ink);padding:0;touch-action:manipulation}
+body.mob .szoom button+button{border-top:1px solid var(--rule)}
+body.mob .szoom svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+body.mob.infoon .szoom{display:none}
+/* the page itself never double-tap zooms; pinching still works, and iPhones do not zoom into a text box when it is tapped */
+html{touch-action:manipulation}
+@supports (-webkit-touch-callout:none){input,select,textarea{font-size:max(16px,1em)!important}}
 body.mob .keyplan:not(.open) #kpSvg{max-height:60px}
 .kp-h button .ic{width:14px;height:14px}
 body.mob .keyplan{top:40px;right:6px;width:172px}
@@ -655,6 +669,13 @@ body.mob #track{min-height:100%;align-items:center}/* room editing */
 .amtseg{display:flex;margin:4px 0 6px}.amtseg button{flex:1;font-size:12px;padding:8px 4px}
 .edpop{position:fixed;z-index:80;background:var(--sheet);border:1px solid var(--ink);box-shadow:0 8px 24px rgba(38,38,31,.25);padding:8px 10px 10px;border-radius:4px;font-size:15px}
 .edpop[hidden]{display:none}.edpop p{margin:0 0 8px;font-weight:600}.edpop .pr{display:flex;gap:8px}.edpop .tb{min-width:60px;height:42px;justify-content:center}
+.rmpop{width:min(280px,calc(100vw - 16px));box-sizing:border-box;font-size:13px;z-index:79}
+.rmpop .rph{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px}.rmpop .rph b{flex:1;font-size:16px;line-height:1.2}
+.rmpop .rph button{border:0;background:none;padding:0 2px;font-size:20px;line-height:1;color:var(--ink);cursor:pointer}
+.rmpop dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0 0 8px}.rmpop dt{color:var(--ink-2)}.rmpop dd{margin:0;font-weight:600}
+.rmpop .rmf{margin:0 0 6px}.rmpop .rnrow{margin-top:6px}.rmpop .chk-bad{margin:0 0 6px}
+.rmpop .tb{height:auto;min-width:0}
+.rmpop.red{border-color:#C62828}
 .edpop .pa svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .sepl{fill:none;stroke:var(--draw);stroke-width:1.3;stroke-dasharray:6 4;opacity:.7;pointer-events:none}.sepl.on{stroke:var(--accent);stroke-width:3;opacity:1}
 .rmself{fill:rgba(31,42,122,.07);stroke:none;pointer-events:none}
@@ -844,6 +865,7 @@ body.no-ai:not(.manual) .cust{display:none}
   <div class="kp-body"><svg id="kpSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Both sides of the corridor"></svg><div class="kp-st" id="kpStats"></div>
     <form id="kpForm" hidden><div class="seg kpk" id="kpKind" role="group" aria-label="Building shape"><button type="button" data-k="bar">Straight</button><button type="button" data-k="L">L</button><button type="button" data-k="U" title="U-shape, set to 5180 Ninth Line">U</button></div><div class="kpf" id="kpFields"></div><button class="tb" type="submit">Set</button></form></div>
 </aside>
+<div class="szoom" id="sZoom" role="group" aria-label="Zoom"><button type="button" id="sZin" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" id="sZout" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button></div>
 <div class="navbox" id="navbox"><form class="jumpbar" id="jumpbar" autocomplete="off"><button class="wb" id="jStart" type="button" aria-label="Jump to the first unit" title="Jump to the first unit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 5l-7 7 7 7"/></svg></button><input id="jUnit" list="jList" inputmode="numeric" placeholder="Unit no." aria-label="Go to unit, by number" maxlength="12"><datalist id="jList"></datalist><button class="wb" id="jGo" type="submit" aria-label="Go" title="Go"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button><button class="wb" id="jEnd" type="button" aria-label="Jump to the last unit" title="Jump to the last unit"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 5l7 7-7 7"/></svg></button></form><div class="wingbar" id="wingbar" hidden><button class="wb" id="wPrev" type="button" aria-label="Previous wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><span class="wn"><b id="wName"></b><small id="wOf"></small></span><button class="wb" id="wNext" type="button" aria-label="Next wing"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><span class="north" id="north" role="img" aria-label="North"><svg viewBox="-13 -13 26 26" aria-hidden="true"><circle r="12"/><path d="M0 -3L4 9L0 6.5L-4 9Z"/><text y="-5">N</text></svg></span></div></div>
 <button class="nav l" id="navL" aria-label="Scroll left" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5M11 5l-7 7 7 7"/></svg><span class="tturn">Turn the corner</span></button>
 <button class="nav r" id="navR" aria-label="Scroll right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5l7 7-7 7"/></svg><span class="tturn">Turn the corner</span></button>
@@ -1020,14 +1042,16 @@ body.no-ai:not(.manual) .cust{display:none}
       <button class="tb" type="button" data-mode="layout" aria-pressed="true" title="Resize rooms by typing or describe a change. The plan is regenerated to stay walkable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 11h10M13 3v18M13 15h8"/></svg>Layout (AI)</button>
     </div>
     <div class="meter" id="edMeter" role="status"></div>
-    <button class="tb ti ti-fat" id="edSlim" type="button" aria-pressed="true" aria-label="Larger buttons" title="Larger buttons"></button>
+    <button class="tb ti ti-fat" id="edSlim" type="button" aria-label="Larger buttons" title="Larger buttons"></button>
     <div class="ed-act"><button class="tb" id="edInfo" type="button" title="Unit details, iterations, share and export">Details</button><button class="tb" id="edUndo" type="button">Undo</button><button class="tb" id="edReset" type="button">Start over</button><button class="tb" id="edCancel" type="button">Discard</button><button class="tb primary" id="edDone" type="button">Review changes</button></div>
   </div>
   <div class="ed-body">
-    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div></div>
+    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div>
+      <div class="edzoom" id="edZoom" role="group" aria-label="Zoom"><button type="button" data-z="in" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-z="out" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button type="button" data-z="fit" aria-label="Fit the plan" title="Fit the plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div></div>
     <button class="ed-handle" id="edHandle" type="button" aria-expanded="false" aria-controls="edSide"><span id="edHandleTxt">Tools</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
     <aside class="ed-side" id="edSide"></aside>
     <div class="edpop" id="edPop" hidden role="dialog" aria-label="Wall, door or room separation"></div>
+    <div class="edpop rmpop" id="rmPop" hidden role="dialog" aria-label="Room"></div>
   </div>
   <div class="ed-confirm" id="edConfirm" hidden>
     <div class="ec-card" role="group" aria-labelledby="ecTitle">
@@ -2867,7 +2891,7 @@ function openEditor(u){
   let mr=0;P.rooms.forEach(q=>{if(q.rid>mr)mr=q.rid;});P.rooms.forEach(q=>{if(q.rid===undefined)q.rid=++mr;});
   E={mode:MANUAL?'all':'layout',amt:1,rsig:'',u,P,orig:edClone(P),sel:null,hist:[],drag:null,nid:Math.max(mx,dm),base:null,dirty:false,dis:new Set(),msg:'',used:0,last:null,review:false,ai:!MANUAL,aiRun:false,busy:false,prompts:[],log:[],draft:'',rm:null,rsel:null,rd:null,rmEdited:false};E.base=edOverlaps(P);E.gbase=guBase(P,u);E.snapKeep=snapLoose(P);try{E.abase=areaBase(P);}catch(x){E.abase={};}E.asig=JSON.stringify([P.W,P.D,P.walls,P.doors,P.seps]);{const c=edClone(P);c.nodes=P.nodes;try{snapRooms(c,E.snapKeep);guAudit(c,u).forEach(x=>E.gbase.add(x.key));}catch(e){}}   /* what the checks' own snapping turns up on the untouched plan is part of how it started */E.wsig='';E.fsig=guSig(P);E.gdid=[];E.gleft=[];
   $('edTitle').textContent=tagOf(u)+' \u00B7 '+(u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'')+' \u00B7 Iteration '+nextIter(u);
-  $('edCancel').textContent='Discard';E.rsig=roomSig(P);edModesSync();slimSync();
+  $('edCancel').textContent='Discard';E.rsig=roomSig(P);edModesSync();slimSync();edZoomSync();
   document.documentElement.style.setProperty('--hbar',((isMob?(document.querySelector('.mtop')||{}).offsetHeight:(document.querySelector('.bar')||{}).offsetHeight)||80)+'px');
   const el=$('ed');el.hidden=false;document.body.classList.add('tracing');
   el.classList.remove('tools');   // on a phone the plan opens full height; the tools are in the pull-up sheet
@@ -3233,11 +3257,11 @@ $('edCancel').onclick=()=>{
 };
 $('edDone').onclick=edReview;
 let SLIM=(()=>{try{return localStorage.getItem('pad-slim')!=='0';}catch(e){return true;}})();
-function slimSync(){const b=$('edSlim'),t=SLIM?'Larger buttons':'Thin ribbon';$('ed').classList.toggle('slim',!!isMob&&SLIM);b.setAttribute('aria-pressed',String(SLIM));b.setAttribute('aria-label',t);b.title=t;}
+function slimSync(){const b=$('edSlim'),t=SLIM?'Larger buttons':'Thin ribbon';$('ed').classList.toggle('slim',!!isMob&&SLIM);b.setAttribute('aria-label',t);b.title=t;}
 $('edSlim').onclick=()=>{SLIM=!SLIM;try{localStorage.setItem('pad-slim',SLIM?'1':'0');}catch(e){}slimSync();if(E)edRender();};
 $('edInfo').onclick=()=>{if(!E)return;if(E.dirty){toast('Review or discard the changes first.');return;}const u=E.u;edClose(true);showInfo(u);render();};
 function edClose(apply){
-  $('edPop').hidden=true;
+  $('edPop').hidden=true;$('rmPop').hidden=true;
   const pr=pendingRemote;pendingRemote=null;const el=$('ed');
   E=null;el.classList.remove('in');document.body.classList.remove('tracing');$('edConfirm').hidden=true;
   const hide=()=>{if(!el.classList.contains('in'))el.hidden=true;};
@@ -3262,8 +3286,12 @@ function edRender(){
   if(!E.drag&&!E.rd&&!E.busy){const ws=JSON.stringify([E.P.W,E.P.D,E.P.walls,E.P.doors,E.P.seps]);if(ws!==E.wsig){const first=!E.wsig;E.wsig=ws;if(!first){const r=snapRooms(E.P,E.snapKeep);E.rm=null;if(r.dropped.length)E.msg=`${r.dropped.join(', ')} no longer fit ${r.dropped.length>1?'their':'its'} walls and ${r.dropped.length>1?'were':'was'} taken off. Tap the blank space to name it.`;}}}
   {const as=JSON.stringify([E.P.W,E.P.D,E.P.walls,E.P.doors,E.P.seps]);if(as!==E.asig){E.asig=as;try{liveAreas(E.P,E.abase);}catch(x){}}}   // the room areas follow the walls and separations as they move
   const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=isMob?10:30,adT=E.mode==='layout'?0:AD_TOP,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P)+adT;
-  const Sc=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),x0=(cw-P.W*Sc)/2,y0=(ch-(P.D+CORR+outTop(P)+adT)*Sc)/2+(outTop(P)+adT)*Sc;   // room above the window wall for the width strings
-  Object.assign(E,{Sc,x0,y0});
+  const Sc0=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),vb=sc=>[(cw-P.W*sc)/2,(ch-(P.D+CORR+outTop(P)+adT)*sc)/2+(outTop(P)+adT)*sc];   // room above the window wall for the width strings
+  // zoom (pinch, the + and - buttons, or ctrl and the wheel) scales the fitted plan; pan moves it, never so far that it leaves the canvas
+  const z=E.zoom||1,Sc=Sc0*z,b0=vb(Sc);if(z<=1.001)E.pan={x:0,y:0};const pn=E.pan||(E.pan={x:0,y:0}),lx=Math.max(0,(Wt*Sc-cw)/2+cw*0.3),ly=Math.max(0,(Dt*Sc-ch)/2+ch*0.3);
+  pn.x=Math.max(-lx,Math.min(lx,pn.x));pn.y=Math.max(-ly,Math.min(ly,pn.y));
+  const x0=b0[0]+pn.x,y0=b0[1]+pn.y;
+  Object.assign(E,{Sc,x0,y0,Sc0,vb});
   const fu={plan:P},ws=[...endWall(fu,'L',-0.2,0),...endWall(fu,'R',P.W,0),{x:-0.2,y:P.D+CORR,w:P.W+0.4,h:0.15}];
   let g=`<rect class="dt-p" x="0" y="${f(P.D)}" width="${f(P.W)}" height="${CORR}"/><g class="ghost">${unitSVG({plan:E.orig},{noFloor:true,noFurn:edHide()})}</g>`+unitSVG(fu,{noFloor:true,tint:E.mode==='layout',noFurn:edHide()})+wallsSVG(ws,true)+sideWinSVG(P);
   const s=E.sel;
@@ -3398,6 +3426,38 @@ function edPopDraw(){
     :`<p>Nudge the ${t.nm}</p><div class="pr"><button class="tb pa" type="button" data-p="m" aria-label="${lb[0]}">${ic(ar[0])}</button><button class="tb pa" type="button" data-p="p" aria-label="${lb[1]}">${ic(ar[1])}</button><button class="tb" type="button" data-p="done">Done</button></div>`;
   b.hidden=false;const w=b.offsetWidth,h=b.offsetHeight;
   b.style.left=Math.max(8,Math.min(innerWidth-w-8,pp.cx-w/2))+'px';b.style.top=(pp.cy-h-28>8?pp.cy-h-28:Math.min(innerHeight-h-8,pp.cy+28))+'px';
+}
+/* Zoom on the tracing sheet: two fingers pinch and pan, the + and - buttons, or ctrl (a trackpad pinch) and the wheel;
+   the wheel alone pans a zoomed plan. The page itself never zooms (see touch-action in the styles). */
+function edZoomAt(z,px,py,pan){
+  if(!E||!E.vb)return;z=Math.max(1,Math.min(6,z));const X=(px-E.x0)/E.Sc,Y=(py-E.y0)/E.Sc,Sc=E.Sc0*z,b=E.vb(Sc);
+  E.zoom=z;E.pan={x:px+(pan?pan.x:0)-X*Sc-b[0],y:py+(pan?pan.y:0)-Y*Sc-b[1]};
+  E.pop=null;$('edPop').hidden=true;$('nmPick').hidden=true;edRender();edZoomSync();if(E.ai)rmPopSync();
+}
+function edZoomSync(){const z=E?E.zoom||1:1,B=$('edZoom').querySelectorAll('button');B[0].disabled=z>=5.99;B[1].disabled=B[2].disabled=z<=1.001;}
+const edCvXY=(x,y)=>{const r=$('edSvg').getBoundingClientRect();return[x-r.left,y-r.top];};
+$('edZoom').addEventListener('click',e=>{const b=e.target.closest('[data-z]');if(!b||!E)return;e.stopPropagation();const r=$('edSvg').getBoundingClientRect(),c=[r.width/2,r.height/2],z=E.zoom||1;
+  if(b.dataset.z==='in')edZoomAt(z*1.4,c[0],c[1]);else if(b.dataset.z==='out')edZoomAt(z/1.4,c[0],c[1]);else{E.zoom=1;E.pan={x:0,y:0};edZoomAt(1,c[0],c[1]);}});
+$('edZoom').addEventListener('pointerdown',e=>e.stopPropagation());
+{const PT=new Map();let G=null;
+  const two=()=>{const [a,b]=[...PT.values()];return{d:Math.hypot(a.x-b.x,a.y-b.y),m:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}};};
+  const cv=$('edCv');
+  cv.addEventListener('pointerdown',e=>{if(!E||e.pointerType==='mouse'||e.target.closest('#edZoom'))return;PT.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(PT.size===2&&!G){   // a second finger: drop whatever the first one started and pinch instead
+      E.rsel=null;E.sel=null;if(E.rd){E.rd=null;rmRefresh();}
+      if(E.drag){if(E.drag.moved)edRestore(E.P,E.drag.start);E.drag=null;}
+      const t=two(),[mx,my]=edCvXY(t.m.x,t.m.y);G={d0:Math.max(20,t.d),z0:E.zoom||1,X:(mx-E.x0)/E.Sc,Y:(my-E.y0)/E.Sc,m0:t.m};
+    }
+    if(G){e.stopPropagation();e.preventDefault();}},true);
+  cv.addEventListener('pointermove',e=>{if(!PT.has(e.pointerId))return;PT.get(e.pointerId).x=e.clientX;PT.get(e.pointerId).y=e.clientY;
+    if(!G)return;e.stopPropagation();e.preventDefault();if(PT.size<2)return;
+    const t=two(),[mx,my]=edCvXY(t.m.x,t.m.y),z=Math.max(1,Math.min(6,G.z0*t.d/G.d0)),Sc=E.Sc0*z,b=E.vb(Sc);
+    E.zoom=z;E.pan={x:mx-G.X*Sc-b[0],y:my-G.Y*Sc-b[1]};E.pop=null;$('edPop').hidden=true;$('nmPick').hidden=true;edRender();edZoomSync();},true);
+  const up=e=>{if(!PT.has(e.pointerId))return;PT.delete(e.pointerId);if(G){e.stopPropagation();e.preventDefault();if(!PT.size){G=null;if(E){edRender();edPanel();}}}};
+  cv.addEventListener('pointerup',up,true);cv.addEventListener('pointercancel',up,true);
+  cv.addEventListener('wheel',e=>{if(!E)return;const [px,py]=edCvXY(e.clientX,e.clientY);
+    if(e.ctrlKey){e.preventDefault();edZoomAt((E.zoom||1)*Math.exp(-e.deltaY*0.01),px,py);}
+    else if((E.zoom||1)>1.001){e.preventDefault();E.pan.x-=e.deltaX;E.pan.y-=e.deltaY;edRender();if(E.ai)rmPopSync();}},{passive:false});
 }
 $('edPop').addEventListener('click',e=>{const k=e.target.closest('[data-p]');if(!k||!E||!E.pop)return;const t=edPopTarget();if(!t)return;const p=k.dataset.p;
   if(p==='yes'){E.pop=null;$('edPop').hidden=true;edAct(t.del,{});return;}
@@ -3555,7 +3615,7 @@ function edFinalize(){
 }
 function edSetMode(m){
   if(!E||E.review||E.busy||E.mode===m||E.mode==='all')return;
-  edFinalize();E.dimTool=false;E.sepTool=false;E.dimA=null;E.pop=null;$('edPop').hidden=true;E.mode=m;E.ai=m==='layout';E.sel=null;E.rm=null;E.rsel=null;E.rd=null;E.drag=null;E.msg='';E.rsig=roomSig(E.P);E.wkKey='';
+  edFinalize();E.dimTool=false;E.sepTool=false;E.dimA=null;E.pop=null;$('edPop').hidden=true;$('rmPop').hidden=true;E.mode=m;E.ai=m==='layout';E.sel=null;E.rm=null;E.rsel=null;E.rd=null;E.drag=null;E.msg='';E.rsig=roomSig(E.P);E.wkKey='';
   edModesSync();edRender();edPanel();
 }
 function edModesSync(){
@@ -3688,7 +3748,7 @@ document.addEventListener('keydown',e=>{
     else if(s.t==='d'){const d=E.P.doors.find(x=>x.id===s.id);if(d)edAct('dnudge',{d:doorHor(d)?dx:dy});}
     else if(gr&&(gr.hor?dy:dx))edAct('wnudge',{d:gr.hor?dy:dx});}
 });
-addEventListener('resize',()=>{if(E){edRender();}});
+addEventListener('resize',()=>{if(E){edRender();if(E.ai)rmPopSync();}});
 /* ---------- prompt editing ----------
    Plans change only through words. The server function (netlify/functions/revise.mjs) asks Claude for a few small steps,
    this page applies them with the same editing code as before (so every code check still runs) and shows the result
@@ -3846,7 +3906,7 @@ function aiPanel(){
     h+='</div>';
   });
   h+=`<h3 class="sub">Code check</h3>`+edIssues(P,E.u).map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join('')+edCompare()+'</div>';
-  $('edSide').innerHTML=h;edDecorate();$('edUndo').disabled=!E.hist.length||busy;$('edDone').disabled=!E.dirty||busy;$('edReset').disabled=busy;edMeter();
+  $('edSide').innerHTML=h;edDecorate();rmPopSync();$('edUndo').disabled=!E.hist.length||busy;$('edDone').disabled=!E.dirty||busy;$('edReset').disabled=busy;edMeter();
   const open=$('ed').classList.contains('tools');
   $('edHandleTxt').textContent=open?'Hide panel':'Rooms and describe a change';$('edHandle').setAttribute('aria-expanded',String(open));
   Object.entries(isMob?{edReset:'Reset',edCancel:'Discard',edDone:'Review'}:{edReset:'Start over',edCancel:'Discard',edDone:'Review changes'}).forEach(([id,x])=>{$(id).textContent=x;});
@@ -4759,18 +4819,46 @@ function rmPanel(){
   h+='<p class="note">Drag a room onto another to swap them, or to the side of one to put it beside it. The other rooms make way. Rooms that no longer fit turn red.</p>';
   const reds=E.P.rooms.filter(q=>q.red&&!q.bk);
   const k=E.rsel,o=k!==null&&k!==undefined?rm.rooms[k]:null;
-  if(o){
-    const q=E.P.rooms.find(x=>x.rid===o.rid),r=q?[q.x,q.y,q.x+q.w,q.y+q.h]:(o.minor?o.r0:rm.cur[k]);
-    h+=`<div class="rmcard${q&&q.red?' red':''}"><b>${escapeHtml(o.n)}</b><span>${q?q.a.toFixed(1):o.a0.toFixed(1)} m² · ${Math.round((r[2]-r[0])*1000)} × ${Math.round((r[3]-r[1])*1000)} mm</span>`;
-    if(q&&q.red)h+=q.red.map(m=>`<p class="chk-bad">${escapeHtml(m)}</p>`).join('');
-    if(!o.minor)h+=`<div class="rmf"><label>Area m²<input id="rmA" inputmode="decimal" placeholder="${(q?q.a:o.a0).toFixed(1)}"></label><label>Width mm<input id="rmW" inputmode="numeric" placeholder="${Math.round((r[2]-r[0])*1000)}"></label><label>Depth mm<input id="rmD" inputmode="numeric" placeholder="${Math.round((r[3]-r[1])*1000)}"></label></div><button class="tb" id="rmGo" type="button"${E.busy?' disabled':''}>Apply size</button><p class="note">Leave a box empty to keep it free. The other rooms shrink to make space, and the unit grows a little if it has to.</p>`;
-    else h+='<p class="note">Small rooms move with the room they sit in.</p>';
-    if(q)h+=`<div class="rnrow"><input class="rnin" list="rnNames" maxlength="30" value="${escapeHtml(q.n)}" aria-label="Room name"><button class="tb" type="button" data-rename="${q.rid}">Rename</button></div><datalist id="rnNames">${SN_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>`;   // any room can be renamed
-    h+='</div>';
-  }else if(reds.length)h+=`<p class="chk-warn">${reds.length} room${reds.length>1?'s':''} to fix: ${reds.map(q=>escapeHtml(q.n)).join(', ')}. Click one to set its size.</p>`;
+  if(o)h+=`<p class="note">${escapeHtml(o.n)} is selected. Its size is in the box on the plan.</p>`;
+  else if(reds.length)h+=`<p class="chk-warn">${reds.length} room${reds.length>1?'s':''} to fix: ${reds.map(q=>escapeHtml(q.n)).join(', ')}. Click one to set its size.</p>`;
   else h+='<p class="note">Click a room to see its size.</p>';
   return h;
 }
+/* The selected room, in a box floating beside it on the plan: its size, its share of the net area, a typed size and its name. */
+function rmCard(rm,k,o){
+  let h='';{
+    const q=E.P.rooms.find(x=>x.rid===o.rid),r=q?[q.x,q.y,q.x+q.w,q.y+q.h]:(o.minor?o.r0:rm.cur[k]);
+    h+='<div>';
+    if(q&&q.red)h+=q.red.map(m=>`<p class="chk-bad">${escapeHtml(m)}</p>`).join('');
+    if(!o.minor)h+=`<div class="rmf"><label>Area m²<input id="rmA" inputmode="decimal" placeholder="${(q?q.a:o.a0).toFixed(1)}"></label><label>Width mm<input id="rmW" inputmode="numeric" placeholder="${Math.round((r[2]-r[0])*1000)}"></label><label>Depth mm<input id="rmD" inputmode="numeric" placeholder="${Math.round((r[3]-r[1])*1000)}"></label></div><button class="tb" id="rmGo" type="button"${E.busy?' disabled':''} title="Leave a box empty to keep it free. The other rooms make space.">Apply size</button>`;
+    else h+='<p class="note">Small rooms move with the room they sit in.</p>';
+    if(q)h+=`<div class="rnrow"><input class="rnin" list="rnNames" maxlength="30" value="${escapeHtml(q.n)}" aria-label="Room name"><button class="tb" type="button" data-rename="${q.rid}">Rename</button></div><datalist id="rnNames">${SN_NAMES.map(n=>`<option value="${n}">`).join('')}</datalist>`;   // any room can be renamed
+    h+='</div>';
+  }
+  return h;
+}
+function rmPopSync(){
+  const b=$('rmPop');if(!b)return;
+  const rm=E&&E.ai&&!E.rd&&!E.review&&!E.busy?E.rm:null,k=E?E.rsel:null,o=rm&&k!==null&&k!==undefined?rm.rooms[k]:null;
+  if(!o){b.hidden=true;return;}
+  const q=E.P.rooms.find(x=>x.rid===o.rid),r=q?[q.x,q.y,q.x+q.w,q.y+q.h]:(o.minor?o.r0:rm.cur[k]),a=q?q.a:o.a0,net=netOf(E.P);
+  const keep=document.activeElement&&b.contains(document.activeElement)?document.activeElement.id||'rnin':null;
+  let h=`<div class="rph"><b>${escapeHtml(o.n)}</b><button type="button" data-rp="x" aria-label="Close">\u00D7</button></div><dl><dt>Area</dt><dd>${a.toFixed(1)} m² · ${Math.round(a/FT2)} ft²</dd><dt>Size</dt><dd>${Math.round((r[2]-r[0])*1000)} × ${Math.round((r[3]-r[1])*1000)} mm</dd><dt>Of net area</dt><dd>${q&&isOutdoor(q)?'Outside, not counted':net>0?(a/net*100).toFixed(0)+'%':'-'}</dd></dl>`;
+  h+=rmCard(rm,k,o);b.classList.toggle('red',!!(q&&q.red));
+  b.innerHTML=h;b.hidden=false;
+  if(keep){const el=keep==='rnin'?b.querySelector('.rnin'):b.querySelector('#'+keep);if(el)el.focus();}
+  // by the room's name: above it if it fits, else below, always on screen
+  const sv=$('edSvg').getBoundingClientRect(),cv=$('edCv').getBoundingClientRect(),w=b.offsetWidth,hh=b.offsetHeight,
+    ax=sv.left+E.x0+(q&&q.lx!==undefined?q.lx:(r[0]+r[2])/2)*E.Sc,ay=sv.top+E.y0+(q&&q.ly!==undefined?q.ly:(r[1]+r[3])/2)*E.Sc,top0=Math.max(cv.top,8),bot0=Math.min(cv.bottom,innerHeight)-8;
+  const y=ay-hh-28>=top0?ay-hh-28:Math.max(top0,Math.min(bot0-hh,ay+28));
+  const ob=$('ed').getBoundingClientRect();   // the sheet is transformed, so a fixed box is placed within it
+  b.style.left=(Math.max(8,Math.min(innerWidth-w-8,ax-w/2))-ob.left)+'px';b.style.top=(y-ob.top)+'px';
+}
+$('rmPop').addEventListener('click',e=>{if(!E||!E.ai)return;const b=e.target.closest('button');if(!b)return;e.stopPropagation();
+  if(b.dataset.rp==='x'){E.rsel=null;rmRefresh();aiPanel();}
+  else if(b.id==='rmGo'){const n=id=>parseFloat(String(($(id)||{}).value||'').replace(',','.'));rmTyped(E.rsel,n('rmA'),n('rmW'),n('rmD'));}
+  else if(b.dataset.rename){const i=b.parentNode.querySelector('.rnin');roomRename(b.dataset.rename,i&&i.value);}});
+$('rmPop').addEventListener('keydown',e=>{if(e.key!=='Enter'||!e.target.closest('input'))return;e.preventDefault();const b=e.target.classList.contains('rnin')?e.target.parentNode.querySelector('[data-rename]'):$('rmGo');if(b)b.click();});
 
 /* ---------- furnishing a layout ----------
    While tracing, a unit shows only its rooms, walls, doors and windows. When the new layout is accepted, rmFurnish places
@@ -5584,6 +5672,7 @@ svg.addEventListener('click',e=>{if(MK.tool)return;if(Date.now()-adEat<400||e.ta
 const canEdit=()=>MANUAL||!document.body.classList.contains('no-ai');
 $('iClose').onclick=()=>{showInfo(null);if(!isMob)render();};
 $('grp').onclick=()=>{grouped=!grouped;render();save();};
+$('sZin').onclick=()=>$('zin').click();$('sZout').onclick=()=>$('zout').click();
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};
 $('zout').onclick=()=>{zoom=Math.max(0.4,zoom/1.2);render();save();};
 const navL=$('navL'),navR=$('navR');
