@@ -11,6 +11,9 @@ Drafting
 - Furniture is hidden. Only the building can be selected.
 - Walls: drag, nudge, trim either end 100 mm at a time, delete, rotate a wall you added, add a wall, add an interior alcove (three walls that move together).
 - Doors: slide, flip, change the swing, delete, and add one to a wall.
+- Deleting a door closes its opening with wall at once (`relayWalls`); other openings in that wall stay open.
+- A moved wall keeps the walls that met it: their ends move with it (`wallsMeeting`). An end that comes within 300 mm of a wall at right angles runs on to meet it, to its face at a T and right through at a corner, where the other wall runs on too so the corner is solid (`wallJoin`).
+- On a phone, tapping a wall, a door or a room separation opens a small box: Delete? Yes deletes it. No shows two arrows that nudge it 50 mm a tap (a wall or separation across its length, a door along its wall) and Done. Dragging still works.
 - Bump-outs and bump-ins: balcony, den, nook, recessed balcony, entry vestibule.
 - Footprint: width and depth change 100 mm at a time, up to 1 m from the original. Walls, floors and rooms that touch the changed side stretch with it (`fpMove`).
 - Leaving Drafting, or confirming, drops any furniture a wall now cuts through (`edFinalize`).
