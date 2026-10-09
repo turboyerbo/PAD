@@ -2,6 +2,11 @@ Edit modes
 
 The tracing sheet has three modes, chosen with the buttons beside the unit name. The same sheet, undo history and change budget carry across all three.
 
+Opening a unit
+- Tapping a unit in the strip opens its tracing sheet straight in Layout (AI) mode. The unit's details (iterations, share, export, delete) are behind Details in the editor header, which closes the sheet when nothing has changed. Where the assistant is not set up, a tap opens the details as before.
+- On a phone the plan opens full height with the tools folded into the pull-up sheet at the bottom.
+- On a phone the header is a thin ribbon of small icons: the three modes, Details, Undo, Start over, Discard, Review, and the change count. The last button switches to the larger labelled tabs and back; the choice is remembered on that phone.
+
 Furniture
 - Move, rotate, duplicate or delete a piece, and add pieces from the lists.
 - Kitchen layouts (U, L, galley) are here too.
@@ -26,6 +31,7 @@ Room separations (Drafting)
 
 Room areas and names (all modes)
 - Room areas follow the space. When walls or room separations move, each room whose name is alone in its space takes its area from that space, in proportion to how it started (`liveAreas`; a drawing's printed areas include part of the partitions). A room with a typed size keeps it. The net area and efficiency follow.
+- A room named Balcony, Terrace, Patio, Loggia or Deck is outside: it is left out of the net area and the unit gross, and the details list it as not counted (`isOutdoor`).
 - Any room can be renamed: tap it in Layout mode, or its name in Drafting, then type or pick a name and Rename. A space with no name (closed off by walls or by a separation) shows Tap to name; pick a name or type one.
 
 Layout (AI)
@@ -65,5 +71,5 @@ Dimensions
 - A dimension is kept as two points on walls (`dms`). If a wall moves away from either point, the dimension is hidden and Drafting offers to remove it; confirming drops it.
 
 Tool icons
-- Every tool button in the editor's three modes has a small line icon: the header buttons (Undo, Start over, Discard, Review changes) and every button in the side panel, including each furniture, wall and bump-out in the lists. The arrow nudges keep their arrows, and the kitchen templates keep their own pictures.
+- Every tool button in the editor's three modes has a small line icon: the header buttons (Details, Undo, Start over, Discard, Review changes, and the ribbon switch on a phone) and every button in the side panel, including each furniture, wall and bump-out in the lists. The arrow nudges keep their arrows, and the kitchen templates keep their own pictures.
 - Icons live in `ICON_ED` in index.html (paths on a 24 by 24 grid) and are drawn as a CSS mask, so they take the button's colour and survive the label being rewritten. `iconKey` decides which icon a button gets from its `data-act`. A new tool needs an entry in both. The smoke test fails when a tool has no icon.

@@ -60,6 +60,7 @@ The jump bar (top left, beside the wing bar) goes straight to a unit:
 
 - Type its number (12 or PAD-12) and press Enter, or pick it from the list.
 - The two end buttons jump to the first and last unit of the building. Home and End do the same from the keyboard.
-- The keyplan numbers every unit. Tapping one goes to it.
+- The keyplan numbers every unit. Tapping one goes to it. On a phone the keyplan then folds back to its small map so the plan is in view.
+- Closed, the keyplan stays in the corner as a small map, with the unit in view outlined on a phone. Tapping it opens it full size. It hides while a unit's details are open.
 
 A unit on another wing turns the view to that wing first. From the West wing to the East wing the view turns through both corners in one move. On a computer the unit's details open and it is outlined. On a phone the strip steps to it and the details stay closed, so the plan stays in view.
