@@ -788,6 +788,36 @@ try {
   await m.waitForTimeout(900);
   const count = await m.textContent('#mCount');
   if (!/^2 \//.test(count.trim())) errs.push('phone next arrow did not advance: ' + count);
+  // Drafting on a phone: tap a wall, door or separation and a small box asks Delete?; No gives arrows to nudge it.
+  // A deleted door leaves its wall closed.
+  {
+    await m.evaluate(() => { const T = window.__pad; T.openEditor(T.units().find(u => u.layout === '1B-07_1') || T.units()[0]); });
+    await m.waitForTimeout(600); if (await m.isVisible('#edModes [data-mode="draft"]')) await m.tap('#edModes [data-mode="draft"]'); await m.waitForTimeout(700);   // this page runs with all the tools (?manualedit)
+    await m.evaluate(() => document.querySelectorAll('.bub .bx').forEach(b => b.click())); await m.waitForTimeout(200);
+    const wp = await m.evaluate(() => { const T = window.__pad, E = T.edState(), r = document.getElementById('edSvg').getBoundingClientRect(), g = T.wallGroups(E.P).filter(q => q.b - q.a > 1 && q.pos > 1.5 && q.pos < (q.hor ? E.P.D : E.P.W) - 1.5).sort((a, b) => (b.b - b.a) - (a.b - a.a))[0], w = E.P.walls[g.idxs[0]];
+      return { x: r.left + E.x0 + (w.x + w.w / 2) * E.Sc, y: r.top + E.y0 + (w.y + w.h / 2) * E.Sc, pos: g.pos, i: g.idxs[0] }; });
+    await m.touchscreen.tap(wp.x, wp.y); await m.waitForTimeout(200);
+    if (!/Delete this wall\?/.test((await m.textContent('#edPop')) || '') || !(await m.isVisible('#edPop'))) errs.push('tapping a wall on a phone should ask Delete?');
+    else {
+      await m.click('#edPop [data-p="no"]'); await m.click('#edPop [data-p="p"]'); await m.click('#edPop [data-p="p"]');
+      const moved = await m.evaluate(i => { const T = window.__pad, E = T.edState(), g = T.wallGroups(E.P).find(q => q.idxs.includes(i)); return g ? g.pos : null; }, wp.i);
+      if (moved === null || Math.abs(Math.abs(moved - wp.pos) - 0.1) > 0.011) errs.push('the nudge arrows should move the wall 50 mm a tap: ' + wp.pos + ' to ' + moved);
+      await m.click('#edPop [data-p="done"]');
+      if (await m.isVisible('#edPop')) errs.push('Done should close the nudge box');
+    }
+    const dp = await m.evaluate(() => { const E = window.__pad.edState(), r = document.getElementById('edSvg').getBoundingClientRect(), d = E.P.doors.find(x => x.hy < E.P.D - 0.4);
+      return d ? { x: r.left + E.x0 + (d.hx + d.cx * d.w * 0.5) * E.Sc, y: r.top + E.y0 + (d.hy + d.cy * d.w * 0.5) * E.Sc, n: E.P.doors.length, hor: Math.abs(d.cx) > 0, mid: [d.hx + d.cx * d.w / 2, d.hy + d.cy * d.w / 2] } : null; });
+    if (dp) {
+      await m.touchscreen.tap(dp.x, dp.y); await m.waitForTimeout(200);
+      if (!/Delete this door\?/.test((await m.textContent('#edPop')) || '')) errs.push('tapping a door on a phone should ask Delete?');
+      else {
+        await m.click('#edPop [data-p="yes"]'); await m.waitForTimeout(150);
+        const r = await m.evaluate(mid => { const E = window.__pad.edState(); return { n: E.P.doors.length, closed: E.P.walls.some(w => mid[0] >= w.x - 0.02 && mid[0] <= w.x + w.w + 0.02 && mid[1] >= w.y - 0.08 && mid[1] <= w.y + w.h + 0.08) }; }, dp.mid);
+        if (r.n !== dp.n - 1 || !r.closed) errs.push('deleting a door should close its opening with wall: ' + JSON.stringify(r));
+      }
+    }
+    await m.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); }); await m.waitForTimeout(300);
+  }
   // Delete a unit from its panel, then undo the delete; a deleted sample unit stays deleted after a reload
   const del = await m.evaluate(async () => {
     const T = window.__pad, n0 = T.units().length, i = +document.getElementById('mCount').textContent.split(' / ')[0] - 1, idx = T.units()[i].idx;
