@@ -34,7 +34,7 @@ Room tags
 PAD name to Revit tag: Living LIVING, Kitchen KITCHEN, Bedroom BEDROOM, Den DEN, Bath W/C, Hall HALL, Closet CLOSET, Laundry LAUNDRY, Mech HVAC, Dining DINING. A PAD name with no Revit tag is sent in capitals and `tagMatchesRevit` is false.
 
 Areas
-- `plan.areas.netM2` is the net area PAD shows. It is the sum of PAD's room areas, less the area a recessed balcony or entry vestibule takes out. For a plan imported from a drawing, each room's area is the printed area from that drawing, so the net matches the drawing (547 ft2 in the sample).
+- `plan.areas.netM2` is the net area PAD shows. It is the sum of PAD's room areas, less the area a recessed balcony or entry vestibule takes out. A room named Balcony, Terrace, Patio, Loggia or Deck is marked `outdoor` and left out of the net area and of `unitGrossM2`. For a plan imported from a drawing, each room's area is the printed area from that drawing, so the net matches the drawing (547 ft2 in the sample).
 - Gross is to the wall centrelines. `grossWithCorridorM2` adds half of a 1.6 m shared corridor across the unit width, which is what PAD's efficiency uses.
 - Room `areaM2` is the number to print on the plan. `polygonAreaM2` is the area of the exported polygon. On a plan imported from a drawing the two differ by up to about 25%, because PAD stores rooms as rectangles with smaller rooms cut out, not true outlines (see the limits below). On a plan generated in PAD's Layout mode the two agree closely.
 

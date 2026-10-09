@@ -60,9 +60,9 @@ try {
   // Keyplan: both rows of units either side of a 1.6 m corridor, and the efficiency taken from it
   await g.click('.pitem'); await g.waitForSelector('body.view-app', { timeout: 5000 });
   await g.click('#add'); await g.click('#browseLay'); await g.waitForSelector('#lay:not([hidden])'); await g.click('.lcard'); await g.waitForTimeout(300);
-  if (await g.isVisible('#keyplan')) errs.push('the keyplan should be closed until it is opened from the navbar');
+  if (await g.evaluate(() => document.getElementById('keyplan').classList.contains('open'))) errs.push('the keyplan should be closed until it is opened from the navbar');
   await g.click('#hKeyplan');
-  if (!(await g.isVisible('#keyplan'))) errs.push('the Keyplan button in the navbar did not open the keyplan');
+  if (!(await g.evaluate(() => document.getElementById('keyplan').classList.contains('open')))) errs.push('the Keyplan button in the navbar did not open the keyplan');
   const kp = await g.evaluate(() => { const T = window.__pad, n = T.units().length, rows = document.querySelectorAll('#kpSvg .kp-u').length, mir = document.querySelectorAll('#kpSvg .kp-m').length; return { n, rows, mir, txt: document.getElementById('kpStats').textContent, eff: parseFloat(document.getElementById('kpStats').textContent) }; });
   if (!kp.n || kp.rows !== kp.n || kp.mir !== kp.n) errs.push('the keyplan should draw each unit and its mirror: ' + JSON.stringify(kp));
   if (!(kp.eff > 70 && kp.eff < 95)) errs.push('keyplan efficiency looks wrong: ' + kp.txt);
@@ -87,7 +87,11 @@ try {
     if ((await sel()) !== 'PAD-' + String(ids[0]).padStart(2, '0')) errs.push('tapping a unit in the keyplan did not go to it');
     await g.click('#kpMin'); await g.click('#iClose');
   }
-  if (await g.isVisible('#keyplan')) errs.push('the keyplan close button did not close it');
+  if (await g.evaluate(() => document.getElementById('keyplan').classList.contains('open'))) errs.push('the keyplan close button did not close it');
+  if (!(await g.isVisible('#keyplan')) || (await g.isVisible('#kpStats'))) errs.push('a closed keyplan should stay on screen as a small map');
+  await g.click('#keyplan'); await g.waitForTimeout(150);
+  if (!(await g.evaluate(() => document.getElementById('keyplan').classList.contains('open')))) errs.push('tapping the small keyplan did not open it');
+  await g.click('#kpMin');
   for (const id of ['hHomeBtn', 'hBuildings', 'grp', 'undo', 'reset', 'zout', 'zin', 'hKeyplan']) if (!(await g.locator('#' + id + ' svg.ic').count())) errs.push('navbar button without an icon: ' + id);
   await g.click('#hBuildings'); await g.waitForSelector('#proj', { state: 'visible', timeout: 3000 });
   // Building shape: a U around a courtyard (5180 Ninth Line). The keyplan draws the three wings, the strip shows one wing at a time,
@@ -96,14 +100,14 @@ try {
     await g.fill('#pName', 'Ninth Line U'); await g.click('#pShape [data-k="U"]'); await g.click('#pNew');
     await g.waitForSelector('body.view-app', { timeout: 5000 }).catch(() => errs.push('could not create a U-shaped building'));
     await g.waitForTimeout(200);
-    if (!(await g.isVisible('#keyplan'))) errs.push('a new U-shaped building should open with its keyplan');
+    if (!(await g.evaluate(() => document.getElementById('keyplan').classList.contains('open')))) errs.push('a new U-shaped building should open with its keyplan');
     const k0 = await g.evaluate(() => ({ cor: document.querySelectorAll('#kpSvg .kp-c').length, z: document.querySelectorAll('#kpSvg .kp-e').length, wb: !document.getElementById('wingbar').hidden, wn: document.getElementById('wName').textContent, pct: document.getElementById('kpPct').textContent }));
     if (k0.cor !== 3 || k0.z !== 8) errs.push('the U keyplan should show three corridors and eight empty end and corner zones: ' + JSON.stringify(k0));
     if (!k0.wb || k0.wn !== 'West wing') errs.push('the strip should start on the West wing: ' + JSON.stringify(k0));
     if (!/U-shape \u00B7 0 of 130\.3 m/.test(k0.pct)) errs.push('the U should measure 130.3 m along its corridors: ' + k0.pct);
     await g.click('#mClose').catch(() => {});
     await g.evaluate(() => { const T = window.__pad; T.addUnit({ n: 1, pri: 'balanced', seed: 4, brief: 'A nurse on night shifts' }); T.addUnit({ n: 2, pri: 'balanced', seed: 5, brief: 'A young couple' }); });
-    if (!(await g.isVisible('#keyplan'))) await g.click('#hKeyplan');
+    if (!(await g.evaluate(() => document.getElementById('keyplan').classList.contains('open')))) await g.click('#hKeyplan');
     await g.dispatchEvent('#kpSvg [data-zone="0:R"] >> nth=0', 'click'); await g.waitForTimeout(200);
     if (!(await g.isVisible('#modal')) || !(await g.isChecked('#fCorner'))) errs.push('tapping an empty corner zone should open a new corner unit there');
     else {
@@ -167,8 +171,11 @@ try {
   if (await off.isVisible('#iCustBox')) errs.push('Describe a change should be hidden until the assistant is set up');
   await off.close();
   const ai = await aiOpen(true);
-  if (!(await ai.isVisible('#iCustBox'))) errs.push('Describe a change should show once the assistant is set up');
+  const opened = await ai.evaluate(() => ({ ed: !document.getElementById('ed').hidden, info: !document.getElementById('info').hidden, mode: window.__pad.edState() && window.__pad.edState().mode }));
+  if (!opened.ed || opened.info || opened.mode !== 'layout') errs.push('tapping a unit should open it straight in Layout mode: ' + JSON.stringify(opened));
   else {
+    await ai.click('#edInfo'); await ai.waitForTimeout(300);
+    if (!(await ai.isVisible('#info')) || !(await ai.isVisible('#iCustBox')) || !(await ai.locator('#ed').isHidden())) errs.push('Details in the editor should close it and show the unit details');
     await ai.click('#iCust');
     await ai.waitForSelector('#aiText', { timeout: 3000 }).catch(() => errs.push('prompt box did not open'));
     if (await ai.locator('[data-act="add"], #edSvg [data-x]').count()) errs.push('drawing tools should not show in prompt mode');
@@ -338,6 +345,9 @@ try {
       await ai.evaluate(() => { const T = window.__pad, E = T.edState(), q = E.P.rooms.find(x => !x.bk && x.lx !== undefined); T.edSelect({ t: 'r', id: q.rid }); });
       await ai.fill('#edSide .rnin', 'Office'); await ai.click('#edSide [data-rename]'); await ai.waitForTimeout(150);
       if (!(await ai.evaluate(() => window.__pad.edState().P.rooms.some(q => q.n === 'Office')))) errs.push('renaming a room did not take');
+      // a room named Balcony is outside: it leaves the net area and the gross
+      const bal = await ai.evaluate(() => { const T = window.__pad, P = T.edState().P, q = P.rooms.find(x => x.n === 'Office'), n0 = T.netArea(P), g0 = T.grossArea(P); q.n = 'Balcony'; const r = { a: q.a, dn: n0 - T.netArea(P), dg: g0 - T.grossArea(P) }; q.n = 'Office'; return r; });
+      if (Math.abs(bal.dn - bal.a) > 0.01 || Math.abs(bal.dg - bal.a) > 0.01) errs.push('a balcony should not count in the net or gross area: ' + JSON.stringify(bal));
     }
     await ai.evaluate(() => { document.getElementById('edCancel').click(); document.getElementById('edCancel').click(); }); await ai.waitForTimeout(200);
     // every catalog layout is walkable from the entry to every room, also after the footprint grows
@@ -564,7 +574,7 @@ try {
   // Restoring the original layout from the iteration list
   const rest = await p.evaluate(() => {
     const T = window.__pad, u = T.units().find(x => x.n === 4);
-    document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    T.showInfo(u);   // a tap on the unit opens the editor; its details hold the iterations
     document.querySelector('[data-restore="1"]').click();
     const first = u.cur === 1 && !u.custom;
     document.querySelector('[data-restore="2"]').click();
@@ -795,11 +805,25 @@ try {
   await m.waitForTimeout(900);
   const count = await m.textContent('#mCount');
   if (!/^2 \//.test(count.trim())) errs.push('phone next arrow did not advance: ' + count);
+  // the small keyplan in the corner opens on a tap; a tap on a unit there goes to it and folds the keyplan back
+  await m.tap('#keyplan'); await m.waitForTimeout(200);
+  if (!(await m.evaluate(() => document.getElementById('keyplan').classList.contains('open')))) errs.push('tapping the small keyplan on a phone did not open it');
+  else {
+    await m.evaluate(() => { const u = window.__pad.units()[0]; document.querySelector(`#kpSvg .kp-u[data-idx="${u.idx}"]`).dispatchEvent(new MouseEvent('click', { bubbles: true })); }); await m.waitForTimeout(900);
+    const r = await m.evaluate(() => ({ open: document.getElementById('keyplan').classList.contains('open'), info: !document.getElementById('info').hidden, c: document.getElementById('mCount').textContent.trim() }));
+    if (r.open || r.info || !/^1 \//.test(r.c)) errs.push('a unit tapped in the phone keyplan should be brought into view with the keyplan folded: ' + JSON.stringify(r));
+    await m.click('#mNext'); await m.waitForTimeout(900);
+  }
   // Drafting on a phone: tap a wall, door or separation and a small box asks Delete?; No gives arrows to nudge it.
   // A deleted door leaves its wall closed.
   {
     await m.evaluate(() => { const T = window.__pad; T.openEditor(T.units().find(u => u.layout === '1B-07_1') || T.units()[0]); });
-    await m.waitForTimeout(600); if (await m.isVisible('#edModes [data-mode="draft"]')) await m.tap('#edModes [data-mode="draft"]'); await m.waitForTimeout(700);   // this page runs with all the tools (?manualedit)
+    await m.waitForTimeout(600);
+    // the phone editor header is a thin ribbon of icons; the button at its end switches to the larger tabs and back
+    const rib = async () => m.evaluate(() => ({ slim: document.getElementById('ed').classList.contains('slim'), h: document.querySelector('.ed-top').getBoundingClientRect().height }));
+    const r0 = await rib(); await m.tap('#edSlim'); await m.waitForTimeout(150); const r1 = await rib(); await m.tap('#edSlim'); await m.waitForTimeout(150); const r2 = await rib();
+    if (!r0.slim || r0.h > 48 || r1.slim || r1.h <= r0.h + 20 || !r2.slim) errs.push('the phone editor ribbon should be thin and switch to larger tabs: ' + JSON.stringify([r0, r1, r2]));
+    if (await m.isVisible('#edModes [data-mode="draft"]')) await m.tap('#edModes [data-mode="draft"]'); await m.waitForTimeout(700);   // this page runs with all the tools (?manualedit)
     await m.evaluate(() => document.querySelectorAll('.bub .bx').forEach(b => b.click())); await m.waitForTimeout(200);
     const wp = await m.evaluate(() => { const T = window.__pad, E = T.edState(), r = document.getElementById('edSvg').getBoundingClientRect(), g = T.wallGroups(E.P).filter(q => q.b - q.a > 1 && q.pos > 1.5 && q.pos < (q.hor ? E.P.D : E.P.W) - 1.5).sort((a, b) => (b.b - b.a) - (a.b - a.a))[0], w = E.P.walls[g.idxs[0]];
       return { x: r.left + E.x0 + (w.x + w.w / 2) * E.Sc, y: r.top + E.y0 + (w.y + w.h / 2) * E.Sc, pos: g.pos, i: g.idxs[0] }; });
@@ -828,12 +852,12 @@ try {
   // Delete a unit from its panel, then undo the delete; a deleted sample unit stays deleted after a reload
   const del = await m.evaluate(async () => {
     const T = window.__pad, n0 = T.units().length, i = +document.getElementById('mCount').textContent.split(' / ')[0] - 1, idx = T.units()[i].idx;
-    document.querySelector(`#strip .unit[data-idx="${idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    T.showInfo(T.units().find(u => u.idx === idx));
     document.getElementById('iDel').click(); document.getElementById('iDel').click();
     const gone = T.units().length === n0 - 1 && !T.units().some(u => u.idx === idx);
     document.querySelector('#toast .tb').click();
     const back = T.units().length === n0 && T.units().some(u => u.idx === idx);
-    document.querySelector(`#strip .unit[data-idx="${idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    T.showInfo(T.units().find(u => u.idx === idx));
     document.getElementById('iDel').click(); document.getElementById('iDel').click();
     await new Promise(r => setTimeout(r, 700));
     return { gone, back, n0, idx };

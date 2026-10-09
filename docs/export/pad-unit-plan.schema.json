@@ -111,13 +111,14 @@
         "polygon": { "$ref": "#/$defs/polygon" },
         "holes": { "type": "array", "items": { "$ref": "#/$defs/polygon" }, "description": "Rings to cut out of the polygon, such as a closet standing inside the room." },
         "extraParts": { "type": "array", "items": { "$ref": "#/$defs/polygon" }, "description": "Further separate pieces of the same room, when walls split it." },
-        "areaM2": { "type": "number", "description": "PAD's area. This is the area PAD adds up for the net area. Use it for area text." },
+        "areaM2": { "type": "number", "description": "PAD's area. This is the area PAD adds up for the net area, except for outdoor rooms. Use it for area text." },
         "areaSF": { "type": "integer", "description": "areaM2 in ft2, rounded, as the Revit area labels show it (for example 107 SF)." },
         "polygonAreaM2": { "type": "number", "description": "Area of polygon minus holes, 50 mm resolution. Differs from areaM2 on plans imported from a drawing: see EXPORT.md." },
         "areaNote": { "type": "string" },
         "labelPoint": { "$ref": "#/$defs/point", "description": "Where PAD puts the room name; use it for the A-AREA-IDEN text." },
         "labelHidden": { "type": "boolean" },
         "isBumpRoom": { "type": "boolean", "description": "A den or nook that sticks out of the front wall." },
+        "outdoor": { "type": "boolean", "description": "A room named Balcony, Terrace, Patio, Loggia or Deck. It is outside: left out of the net area and the unit gross area." },
         "layers": { "type": "object", "properties": { "outline": { "type": "string" }, "label": { "type": "string" } } }
       }
     },

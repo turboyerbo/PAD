@@ -501,6 +501,22 @@ body.mob .modes svg{width:13px;height:13px}
 body.mob .ed-act{grid-row:3;grid-column:1/-1;flex-wrap:nowrap;gap:5px}
 body.mob .ed-act .tb{flex:1;padding:6px 4px;font-size:11px;letter-spacing:.02em;white-space:nowrap}
 body.mob .ed-act .tb.primary{flex:1.3}
+/* phones: the header is a thin ribbon of small icons, or the larger tabs above (#edSlim switches) */
+#edSlim{display:none}
+body.mob #edSlim{display:inline-flex;align-items:center;justify-content:center;grid-row:1;grid-column:3;font-size:0;padding:5px 7px}
+body.mob #edSlim.ti::before{width:15px;height:15px;margin:0;transform:rotate(180deg)}
+body.mob .ed-top{grid-template-columns:1fr auto auto}
+body.mob .ed.slim .ed-top{display:flex;flex-wrap:nowrap;align-items:center;gap:3px;padding:3px 6px;overflow-x:auto;scrollbar-width:none}
+body.mob .ed.slim .ed-top>div:first-child{display:none}
+body.mob .ed.slim .modes{flex:none;gap:2px;order:1}
+body.mob .ed.slim .ed-act{flex:none;gap:2px;order:2;margin-left:4px}
+body.mob .ed.slim :is(.modes,.ed-act) .tb{flex:none;font-size:0;letter-spacing:0;padding:5px 7px;line-height:0;gap:0}
+body.mob .ed.slim .modes svg{width:16px;height:16px}
+body.mob .ed.slim .ed-act .ti::before{width:16px;height:16px;margin:0}
+body.mob .ed.slim .ed-top>.meter{order:3;margin-left:auto;flex:none}
+body.mob .ed.slim .meter .pip{display:none}
+body.mob .ed.slim #edSlim{order:4;flex:none}
+body.mob .ed.slim #edSlim.ti::before{transform:none}
 body.mob .ed-body{flex-direction:column}
 body.mob .ed-handle{display:flex;align-items:center;justify-content:center;gap:6px;flex:none;height:38px;border:0;border-top:1px solid var(--rule);background:rgba(255,255,255,.85);color:var(--draw);font:inherit;font-size:13px;font-weight:600;letter-spacing:.02em;padding:0 12px;padding-bottom:env(safe-area-inset-bottom,0px)}
 body.mob .ed-handle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -590,8 +606,14 @@ body.mob .mtop{order:1}body.mob .stage{order:2}body.mob .mbot{order:3}
 .keyplan.multi{width:280px}
 polygon.kp-u.sel{stroke:var(--accent);stroke-width:2}
 #kpForm input{width:100%;box-sizing:border-box;border:1px solid var(--ink);background:var(--fx-fill);padding:4px 6px;font:inherit;font-size:13px}
-.keyplan{display:none}
-.keyplan.open{display:block}
+/* closed, the keyplan stays on screen as a small map; a tap opens it full size, where a tap on a unit goes to it */
+.keyplan:not(.open){width:120px;padding:3px;cursor:zoom-in;background:rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(38,38,31,.15)}
+.keyplan:not(.open) :is(.kp-h,.kp-st,#kpForm){display:none}
+.keyplan:not(.open) #kpSvg{margin-top:0;max-height:90px;pointer-events:none}
+.keyplan:not(.open) .kp-n{display:none}
+body.mob .keyplan:not(.open){top:88px;right:8px;width:64px}
+body.infoon .keyplan:not(.open){display:none}
+body.mob .keyplan:not(.open) #kpSvg{max-height:60px}
 .kp-h button .ic{width:14px;height:14px}
 body.mob .keyplan{top:40px;right:6px;width:172px}
 /* home */
@@ -840,7 +862,7 @@ body.no-ai:not(.manual) .cust{display:none}
 
 <footer>
   <svg id="scalebar" height="26" width="200" aria-label="Scale bar"></svg>
-  <span class="hint" id="hint">Press the red arrows to scroll left or right. Tap a unit for its details, or press the arrow to add one.</span>
+  <span class="hint" id="hint">Red arrows scroll. Tap a unit to edit it.</span>
   <span class="legend"><i class="sw sw-b"></i>Baseline <i class="sw sw-a"></i>Added</span>
 </footer>
 
@@ -863,7 +885,7 @@ body.no-ai:not(.manual) .cust{display:none}
 <aside class="info" id="info" hidden aria-labelledby="iTitle">
   <div class="info-head"><div><span class="step" id="iKicker">Baseline unit</span><h2 id="iTitle">PAD-01</h2></div><button class="x" id="iClose" aria-label="Close unit details">×</button></div>
   <div class="ibrief" id="iBriefBox" hidden><p id="iBrief"></p><input id="iBriefIn" maxlength="160" aria-label="Who is this unit for"><button class="tb" id="iBriefEd" type="button">Edit</button></div>
-  <div class="cust" id="iCustBox"><p>Want a different version of this unit? A sheet of tracing paper slides over it. Drag rooms around, or describe the change in words, and the earlier version is kept.</p><button class="tb primary" id="iCust">Change this unit</button></div>
+  <div class="cust" id="iCustBox"><button class="tb primary" id="iCust">Edit layout</button></div>
   <div class="iters" id="iIters"></div>
   <div class="cmt"><button class="tb" id="iChat" type="button">Comment on this unit</button><button class="tb" id="iShare" type="button">Share this unit</button></div>
   <div class="dels"><button class="tb" id="iExp" type="button" title="Walls, doors, windows, rooms, furniture and areas as JSON, in metres">Export JSON</button><button class="tb danger" id="iDel" type="button">Delete this unit</button></div>
@@ -998,7 +1020,8 @@ body.no-ai:not(.manual) .cust{display:none}
       <button class="tb" type="button" data-mode="layout" aria-pressed="true" title="Resize rooms by typing or describe a change. The plan is regenerated to stay walkable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 11h10M13 3v18M13 15h8"/></svg>Layout (AI)</button>
     </div>
     <div class="meter" id="edMeter" role="status"></div>
-    <div class="ed-act"><button class="tb" id="edUndo" type="button">Undo</button><button class="tb" id="edReset" type="button">Start over</button><button class="tb" id="edCancel" type="button">Discard</button><button class="tb primary" id="edDone" type="button">Review changes</button></div>
+    <button class="tb ti ti-fat" id="edSlim" type="button" aria-pressed="true" aria-label="Larger buttons" title="Larger buttons"></button>
+    <div class="ed-act"><button class="tb" id="edInfo" type="button" title="Unit details, iterations, share and export">Details</button><button class="tb" id="edUndo" type="button">Undo</button><button class="tb" id="edReset" type="button">Start over</button><button class="tb" id="edCancel" type="button">Discard</button><button class="tb primary" id="edDone" type="button">Review changes</button></div>
   </div>
   <div class="ed-body">
     <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div></div>
@@ -1788,7 +1811,8 @@ function keyplanFigures(){
 const poly=(p,c,x)=>`<polygon class="${c}" points="${p.map(q=>f(q[0])+','+f(q[1])).join(' ')}"${x||''}/>`;
 function drawKeyplan(){
   const el=$('keyplan');if(!el)return;
-  el.classList.toggle('open',kpOpen);el.classList.toggle('multi',wings()>1);$('hKeyplan').setAttribute('aria-expanded',String(kpOpen));
+  el.classList.toggle('open',kpOpen);el.classList.toggle('multi',wings()>1);if(kpOpen){el.removeAttribute('title');el.removeAttribute('tabindex');el.removeAttribute('role');}else{el.title='Keyplan. Tap to open';el.tabIndex=0;el.setAttribute('role','button');}$('hKeyplan').setAttribute('aria-expanded',String(kpOpen));
+  let cur=selected;if(!cur)try{if(isMob)cur=mobList()[mobIdx]||null;}catch(x){}   // on a phone, the unit in view (before start-up has set the phone state, none)
   const k=keyplanFigures(),G=shapeGeom(),pct=Math.min(100,k.row/bldgLen*100);
   $('hKpTxt').textContent=k.L.length?`${k.row.toFixed(0)}/${bldgLen} m`:'';
   $('kpPct').textContent=(wings()>1?SHAPE_LABEL[SHAPE.kind]+' · ':'')+(k.L.length?`${k.row.toFixed(0)} of ${bldgLen} m`:`0 of ${bldgLen} m`);
@@ -1798,7 +1822,7 @@ function drawKeyplan(){
   // the end and corner zones, both sides of the corridor. A corner unit at that end of a wing fills its zone.
   const zu=(i,side)=>{const L=wingUnits(i),u=side==='L'?L[0]:L[L.length-1];return u&&u.corner===side?u:null;},inZ=new Set();
   const zoneSVG=(pl,pr,u,i,side,label)=>{zt+=2;
-    if(u){zd+=2;inZ.add(u);return poly(pl,'kp-u'+(selected===u?' sel':''),` data-idx="${u.idx}"`).replace('/>',`><title>${tagOf(u)} \u00B7 ${label}</title></polygon>`)+poly(pr,'kp-m');}
+    if(u){zd+=2;inZ.add(u);return poly(pl,'kp-u'+(cur===u?' sel':''),` data-idx="${u.idx}"`).replace('/>',`><title>${tagOf(u)} \u00B7 ${label}</title></polygon>`)+poly(pr,'kp-m');}
     const t=`><title>${label}. Tap to add an end unit here.</title></polygon>`;
     return poly(pl,'kp-e',` data-zone="${i}:${side}"`).replace('/>',t)+poly(pr,'kp-e',` data-zone="${i}:${side}"`).replace('/>',t);};
   const band=(i,s0,s1)=>[[G.at(i,s0,G.c),G.at(i,s0,G.h),G.at(i,s1,G.h),G.at(i,s1,G.c)],[G.at(i,s0,-G.c),G.at(i,s0,-G.h),G.at(i,s1,-G.h),G.at(i,s1,-G.c)]];
@@ -1810,7 +1834,7 @@ function drawKeyplan(){
   // the other units along each wing, from the end of its first zone
   for(let i=0;i<G.n;i++){
     let x=i===0?zs0:G.zs(i);const lim=SHAPE.len[i]-(i===nl?ze1:G.ze(i));
-    wingUnits(i).filter(u=>!inZ.has(u)).forEach(u=>{const W=u.plan.W,D=Math.min(u.plan.D,G.dep+2),sel=selected===u?' sel':'';if(x+W>lim+0.01)over=true;
+    wingUnits(i).filter(u=>!inZ.has(u)).forEach(u=>{const W=u.plan.W,D=Math.min(u.plan.D,G.dep+2),sel=cur===u?' sel':'';if(x+W>lim+0.01)over=true;
       uu+=poly([G.at(i,x,-G.c),G.at(i,x+W,-G.c),G.at(i,x+W,-G.c-D),G.at(i,x,-G.c-D)],'kp-m');
       uu+=poly([G.at(i,x,G.c),G.at(i,x+W,G.c),G.at(i,x+W,G.c+D),G.at(i,x,G.c+D)],'kp-u'+sel,` data-idx="${u.idx}"`).replace('/>',`><title>${tagOf(u)}${wings()>1?' \u00B7 '+SHAPE.names[i]:''}</title></polygon>`);x+=W;});}
   // each unit's number, so a unit can be found and tapped
@@ -1827,6 +1851,8 @@ function drawKeyplan(){
 }
 $('hKeyplan').onclick=e=>{e.stopPropagation();kpOpen=!kpOpen;drawKeyplan();save();};
 $('mKeyplan').onclick=()=>{$('mMenu').hidden=true;kpOpen=!kpOpen;drawKeyplan();save();};
+$('keyplan').addEventListener('click',e=>{if(kpOpen)return;e.stopPropagation();e.preventDefault();kpOpen=true;drawKeyplan();save();},true);
+$('keyplan').addEventListener('keydown',e=>{if(!kpOpen&&(e.key==='Enter'||e.key===' ')){e.preventDefault();kpOpen=true;drawKeyplan();save();}});
 $('kpMin').onclick=()=>{kpOpen=false;drawKeyplan();save();};
 document.addEventListener('click',e=>{if(kpOpen&&!e.target.closest('#keyplan,#hKeyplan,#mKeyplan')&&e.target.isConnected){kpOpen=false;drawKeyplan();save();}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&kpOpen&&!/INPUT|TEXTAREA/.test(e.target.tagName)){kpOpen=false;drawKeyplan();save();}});
@@ -1853,7 +1879,7 @@ $('kpSvg').addEventListener('click',e=>{
   const zn=e.target.closest('[data-zone]');
   if(zn){const [i,side]=zn.dataset.zone.split(':');goWing(+i,()=>openModal(side,{corner:true}));return;}
   const r=e.target.closest('[data-idx]');if(!r)return;const u=units.find(x=>x.idx===+r.dataset.idx);if(!u)return;
-  jumpTo(u,true);drawKeyplan();
+  jumpTo(u);if(isMob)kpOpen=false;drawKeyplan();save();   // a phone goes to the unit and folds the keyplan back to its small map, so the plan is in view
 });
 const tagOf=u=>'PAD-'+String(u.idx).padStart(2,'0');
 
@@ -2100,12 +2126,13 @@ function mobSync(){
   $('mDetail').setAttribute('aria-pressed',String(detail));$('mDetailTxt').textContent=detail?'Hide details':'Show details';
   mobFocus();
 }
+let kpFocus=null;
 function mobFocus(){
   const list=mobList();
   if(!list.length){mobIdx=0;$('mCount').textContent='0 / 0';$('mFocus').textContent='No units yet';$('mPrev').disabled=$('mNext').disabled=true;return;}
   const mid=scroller.scrollLeft+scroller.clientWidth/2;let best=0,bd=1e9;
   list.forEach((u,i)=>{const dd=Math.abs(PADL+(u.ox+u.plan.W/2)*S-mid);if(dd<bd){bd=dd;best=i;}});
-  mobIdx=best;const u=list[best];
+  mobIdx=best;const u=list[best];if(u!==kpFocus){kpFocus=u;drawKeyplan();}   // the keyplan marks the unit in view
   $('mCount').textContent=`${best+1} / ${list.length}`;
   $('mPrev').disabled=best<=0;$('mNext').disabled=best>=list.length-1;
   $('mFocus').innerHTML=`<b>${tagOf(u)}</b><span>${escapeHtml(TYPEU(u))}</span>`;
@@ -2134,7 +2161,7 @@ $('mReset').onclick=()=>{mMenu.hidden=true;mobIdx=0;$('reset').click();};
 mq.addEventListener('change',()=>{setMob();render();});
 function priText(u){if(u.layout)return layoutName(u.layout);if(u.minimal)return 'minimum';return u.pri==='other'?(Object.keys(u.plan.o).map(k=>KWNAME[k]).join(', ')||(u.other||'other').slice(0,22)):PRI_LABEL[u.pri].toLowerCase();}
 function showInfo(u){
-  selected=u;drawKeyplan();const info=$('info');
+  selected=u;drawKeyplan();const info=$('info');document.body.classList.toggle('infoon',!!u);
   if(delArm){clearTimeout(delArm);delArm=0;}$('iDel').textContent='Delete this unit';
   if(!u){info.hidden=true;return;}
   $('iDimsBox').hidden=!(u.dimx&&(Object.keys(u.dimx.h||{}).length||Object.keys(u.dimx.o||{}).length));
@@ -2148,7 +2175,7 @@ function showInfo(u){
   rows.push(['Occupants shown',u.people.length]);
   $('iList').innerHTML=rows.map(([k,v])=>`<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
   const rm=u.plan.rooms.slice().sort((p,q)=>q.a-p.a);const net=netA(u);
-  $('iRooms').innerHTML=rm.map(q=>`<dt>${escapeHtml(q.n)}</dt><dd>${q.a.toFixed(1)} m²</dd>`).join('')+`<dt class="tot">Total net area</dt><dd class="tot">${net.toFixed(1)} m²</dd><dt class="tot">Total gross area</dt><dd class="tot">${gross(u).toFixed(1)} m²</dd><dt class="tot">Efficiency</dt><dd class="tot">${eff(u).toFixed(1)}%</dd><dt>Corridor frontage</dt><dd>${(u.plan.W*CORR).toFixed(1)} m²</dd>`;
+  $('iRooms').innerHTML=rm.map(q=>`<dt>${escapeHtml(q.n)}${isOutdoor(q)?' <small>(outside, not counted)</small>':''}</dt><dd>${q.a.toFixed(1)} m²</dd>`).join('')+`<dt class="tot">Total net area</dt><dd class="tot">${net.toFixed(1)} m²</dd><dt class="tot">Total gross area</dt><dd class="tot">${gross(u).toFixed(1)} m²</dd><dt class="tot">Efficiency</dt><dd class="tot">${eff(u).toFixed(1)}%</dd><dt>Corridor frontage</dt><dd>${(u.plan.W*CORR).toFixed(1)} m²</dd>`;
   $('iNote').textContent=u.pri==='other'&&u.other?`Brief: "${u.other}"`:(u.layout?'Starts from the DXF baseline plan '+layoutName(u.layout)+' in the Digital Toolkit. Describe a change to make a variation of it.':u.src==='base'?(BASELINE_IS_PLACEHOLDER?'Placeholder layout. It will be replaced by the matching unit from the printed PAD set.':'Matches the printed PAD set.'):'Generated on screen from the options chosen. Not part of the printed set.');
   drawIters(u);info.hidden=false;infoCount();
 }
@@ -2840,11 +2867,11 @@ function openEditor(u){
   let mr=0;P.rooms.forEach(q=>{if(q.rid>mr)mr=q.rid;});P.rooms.forEach(q=>{if(q.rid===undefined)q.rid=++mr;});
   E={mode:MANUAL?'all':'layout',amt:1,rsig:'',u,P,orig:edClone(P),sel:null,hist:[],drag:null,nid:Math.max(mx,dm),base:null,dirty:false,dis:new Set(),msg:'',used:0,last:null,review:false,ai:!MANUAL,aiRun:false,busy:false,prompts:[],log:[],draft:'',rm:null,rsel:null,rd:null,rmEdited:false};E.base=edOverlaps(P);E.gbase=guBase(P,u);E.snapKeep=snapLoose(P);try{E.abase=areaBase(P);}catch(x){E.abase={};}E.asig=JSON.stringify([P.W,P.D,P.walls,P.doors,P.seps]);{const c=edClone(P);c.nodes=P.nodes;try{snapRooms(c,E.snapKeep);guAudit(c,u).forEach(x=>E.gbase.add(x.key));}catch(e){}}   /* what the checks' own snapping turns up on the untouched plan is part of how it started */E.wsig='';E.fsig=guSig(P);E.gdid=[];E.gleft=[];
   $('edTitle').textContent=tagOf(u)+' \u00B7 '+(u.n===0?'Studio':u.n+' bedroom')+(u.corner?' corner':'')+' \u00B7 Iteration '+nextIter(u);
-  $('edCancel').textContent='Discard';E.rsig=roomSig(P);edModesSync();
+  $('edCancel').textContent='Discard';E.rsig=roomSig(P);edModesSync();slimSync();
   document.documentElement.style.setProperty('--hbar',((isMob?(document.querySelector('.mtop')||{}).offsetHeight:(document.querySelector('.bar')||{}).offsetHeight)||80)+'px');
   const el=$('ed');el.hidden=false;document.body.classList.add('tracing');
-  if(E.ai&&isMob)el.classList.add('tools');
-  edRender();edPanel();
+  el.classList.remove('tools');   // on a phone the plan opens full height; the tools are in the pull-up sheet
+  edRender();edPanel();edRender();   // again once the panel has its size, so the plan fits the space left
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(E)el.classList.add('in');}));
 }
 /* ---------- balconies, bump-outs and bump-ins ---------- */
@@ -2874,8 +2901,10 @@ function cutOf(P,b){
   const r=b.kind==='loggia'?[b.x,0.3,b.x+b.w,0.3+b.d]:[b.x,P.D-0.2-b.d,b.x+b.w,P.D-0.2];
   return P.rooms.filter(q=>!q.bk).reduce((s,q)=>{const ox=Math.min(r[2],q.x+q.w)-Math.max(r[0],q.x),oy=Math.min(r[3],q.y+q.h)-Math.max(r[1],q.y);return s+(ox>0&&oy>0?ox*oy:0);},0);
 }
-const netArea=P=>(P.netAdj||0)+P.rooms.reduce((s,q)=>s+q.a,0)-bumpsOf(P).reduce((s,b)=>s+cutOf(P,b),0);
-const grossArea=P=>P.W*(P.D-0.25)+bumpsOf(P).reduce((s,b)=>s+(b.kind==='den'||b.kind==='nook'?b.w*b.d:BUMPS[b.kind].out?0:-b.w*b.d),0);
+/* A room named Balcony, Terrace, Patio, Loggia or Deck is outside: not in the net area and not in the gross. */
+const OUTDOOR=/^(balcon|terrace|patio|loggia|deck)/i,isOutdoor=q=>OUTDOOR.test(q&&q.n||''),outdoorArea=P=>P.rooms.reduce((s,q)=>s+(isOutdoor(q)?q.a:0),0);
+const netArea=P=>(P.netAdj||0)+P.rooms.reduce((s,q)=>s+(isOutdoor(q)?0:q.a),0)-bumpsOf(P).reduce((s,b)=>s+cutOf(P,b),0);
+const grossArea=P=>P.W*(P.D-0.25)-outdoorArea(P)+bumpsOf(P).reduce((s,b)=>s+(b.kind==='den'||b.kind==='nook'?b.w*b.d:BUMPS[b.kind].out?0:-b.w*b.d),0);
 const balconyArea=P=>bumpsOf(P).filter(b=>b.kind==='balcony').reduce((s,b)=>s+b.w*b.d,0);
 /* Window glass left after the openings are taken out, so a balcony door replaces the window behind it. */
 function winSegs(P){
@@ -3102,7 +3131,8 @@ function kitchenIssues(P,u){
 }
 /* ---------- tracing paper: a short design session with a limited number of changes ---------- */
 const TRACE_BUDGET=5;   // new things you may touch on one sheet. Keep adjusting the thing you are on for free.
-const netOf=P=>netArea(P),grossOf=P=>grossAll(P);
+const netOf=P=>netArea(P),encOf=P=>netArea(P)+outdoorArea(P),   // encOf: everything the walls enclose, so naming a space Balcony does not count as a change in size
+  grossOf=P=>grossAll(P);
 const nextIter=u=>(u.iters?Math.max(...u.iters.map(i=>i.n)):1)+1;
 function ensureIters(u){if(!u.iters){u.iters=[{n:1,note:u.custom?'Earlier edits':'Original layout',at:null,d:u.custom||null}];u.cur=1;}}
 function edKey(){const s=E.sel;return s?s.t+':'+(s.id!==undefined?s.id:s.wi):'x'+(++E.nid);}
@@ -3172,7 +3202,7 @@ $('ecOk').onclick=()=>{
   ensureIters(u);const n=nextIter(u);
   u.iters.push({n,note,at:Date.now(),d,changes});u.cur=n;
   if(u.iters.length>13)u.iters.splice(1,u.iters.length-13);
-  edClose(false);applyCustom(u,d);render();save();showInfo(u);toast(`${tagOf(u)} iteration ${n} saved.`);
+  edClose(false);applyCustom(u,d);render();save();toast(`${tagOf(u)} iteration ${n} saved.`);
 };
 /* The sheet becomes a new unit beside the others, a variation of this one. The original stays as it was. */
 $('ecNew').onclick=()=>{
@@ -3202,6 +3232,10 @@ $('edCancel').onclick=()=>{
   b.textContent='Click again to discard';discArm=setTimeout(()=>{discArm=0;b.textContent='Discard';},3000);
 };
 $('edDone').onclick=edReview;
+let SLIM=(()=>{try{return localStorage.getItem('pad-slim')!=='0';}catch(e){return true;}})();
+function slimSync(){const b=$('edSlim'),t=SLIM?'Larger buttons':'Thin ribbon';$('ed').classList.toggle('slim',!!isMob&&SLIM);b.setAttribute('aria-pressed',String(SLIM));b.setAttribute('aria-label',t);b.title=t;}
+$('edSlim').onclick=()=>{SLIM=!SLIM;try{localStorage.setItem('pad-slim',SLIM?'1':'0');}catch(e){}slimSync();if(E)edRender();};
+$('edInfo').onclick=()=>{if(!E)return;if(E.dirty){toast('Review or discard the changes first.');return;}const u=E.u;edClose(true);showInfo(u);render();};
 function edClose(apply){
   $('edPop').hidden=true;
   const pr=pendingRemote;pendingRemote=null;const el=$('ed');
@@ -3449,7 +3483,7 @@ $('edHandle').onclick=()=>edToggleTools();
 /* A small icon beside every tool in the editor, so a tool can be found by its picture. Each key is a path on a 24 by 24 grid, drawn as a line icon
    in the button's own colour (a CSS mask, so the icon survives the label being rewritten). edDecorate adds the right one to every button in the side panel. */
 const ICON_ED={
-  undo:'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',reset:'M4 4v6h6M4.5 10A8 8 0 1 1 6 17',discard:'M6 6l12 12M18 6L6 18',review:'M5 12l4 4 10-10',
+  undo:'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',reset:'M4 4v6h6M4.5 10A8 8 0 1 1 6 17',discard:'M6 6l12 12M18 6L6 18',review:'M5 12l4 4 10-10',info:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 11v6M12 7.5v.5',slim:'M4 7h16M4 12h16M4 17h16',fat:'M6 9l6 6 6-6',
   rot:'M20 12a8 8 0 1 1-2.5-5.8M20 4v4h-4',dup:'M9 9h10v10H9zM5 15V5h10',del:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   tidy:'M5 19L17 7M15 5l4 4M4 5v3M2.5 6.5h3M20 15v3M18.5 16.5h3',clean:'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
   flip:'M3 8h15M14 4l4 4-4 4M21 16H6M10 12l-4 4 4 4',swing:'M5 19V5M5 5a14 14 0 0 1 14 14',door:'M6 21V4h12v17M3 21h18M14 12h.01',
@@ -3504,7 +3538,7 @@ function edDecorate(root){
     const k=iconKey(b);if(k&&ICON_ED[k])b.classList.add('ti','ti-'+k);
   });
 }
-[['edUndo','undo'],['edReset','reset'],['edCancel','discard'],['edDone','review']].forEach(([id,k])=>$(id).classList.add('ti','ti-'+k));
+[['edInfo','info'],['edUndo','undo'],['edReset','reset'],['edCancel','discard'],['edDone','review']].forEach(([id,k])=>$(id).classList.add('ti','ti-'+k));
 const edHide=()=>E.mode==='layout'||E.mode==='draft';   // furniture is hidden while the building itself is edited
 const roomSig=P=>JSON.stringify(P.rooms.filter(q=>!q.bk).map(q=>[q.n,q.x,q.y,q.w,q.h]));
 const edPalOk=gp=>{const dr=/^(Walls|Balcony)/.test(gp.g);return E.mode==='all'||(E.mode==='draft')===dr;};
@@ -4578,7 +4612,7 @@ function padExport(u){
   const rooms=P.rooms.map((q,i)=>{const pl=polys[i],A=shoelace(pl.polygon)-pl.holes.reduce((s,h)=>s+Math.abs(shoelace(h)),0);
     return{id:'R'+(i+1),name:q.n,tag:EXP_TAG[q.n]||q.n.toUpperCase(),tagMatchesRevit:!!EXP_TAG[q.n],polygon:pl.polygon,holes:pl.holes,extraParts:pl.extraParts.length?pl.extraParts:undefined,areaM2:r3(q.a),areaSF:sf(q.a),polygonAreaM2:r3(A),
       areaNote:Math.abs(A-q.a)>0.15?'PAD area differs from the polygon: PAD takes the printed area of the source plan, and the polygon is traced from the room rectangle with smaller rooms cut out':undefined,labelPoint:pt(q.lx,q.ly),
-      labelHidden:q.hl?true:undefined,isBumpRoom:q.bk?true:undefined,layers:{outline:EXP_LAYERS.roomOutline,label:EXP_LAYERS.roomLabel}};});
+      labelHidden:q.hl?true:undefined,isBumpRoom:q.bk?true:undefined,outdoor:isOutdoor(q)?true:undefined,layers:{outline:EXP_LAYERS.roomOutline,label:EXP_LAYERS.roomLabel}};});
   // ---- furniture
   const bodyDims=p=>p.w!==undefined?[p.w,p.d]:p.k==='rtable'?[2*(p.r||0.45),2*(p.r||0.45)]:p.k==='plant'?[(p.s||0.45),(p.s||0.45)]:(FDIM[p.k]||[0.6,0.6]);
   const furniture=P.furn.map((p,i)=>{const[w,d]=bodyDims(p),m=EXP_FURN[p.k]||[KN[p.k]||p.k,EXP_LAYERS.furniture,null],blk=typeof m[2]==='function'?m[2](p):m[2];
@@ -4638,7 +4672,7 @@ function rmTry(rm,tree,W,D){
 /* Small variations (up to 40%) keep the plan as it is and change a few things on it: the proportion of the footprint at the
    same area (narrower and longer, or the other way), a wall nudged, a door slid. Larger ones re-fit the rooms with the room engine. */
 function rmVariationLight(){
-  const P=E.P,a=E.amt,tol=a/100,net0=netOf(E.orig),before=edSnap(P),was=new Set(aiBad(P)),pick=A=>A[Math.floor(Math.random()*A.length)];
+  const P=E.P,a=E.amt,tol=a/100,net0=encOf(E.orig),before=edSnap(P),was=new Set(aiBad(P)),pick=A=>A[Math.floor(Math.random()*A.length)];
   const steps=1+Math.floor(a/15),stuck0=edRoute(P).stuck.length,B=JSON.parse(before);
   let done=null;
   for(let i=0;i<220&&!done;i++){   // more tries: a candidate that leaves a room without its walls is skipped
@@ -4648,7 +4682,7 @@ function rmVariationLight(){
       const r=Math.random(),fp=j===0&&(i<60||(a<=10?r<0.7:r<0.4));
       if(fp){
         const dw=0.1*pick([-1,1])*(1+Math.floor(Math.random()*Math.max(1,Math.ceil(a/10))));
-        if(fpMove(P,'W',f(dw))){const s1=edSnap(P);let bd=0,bn=1e9;for(let k=-12;k<=12;k++){if(fpMove(P,'D',f(k*0.05))){const C=edClone(P);snapRooms(C,E.snapKeep);const e=Math.abs(netOf(C)-net0);   /* net area as it will be once the rooms snap to the walls */if(e<bn){bn=e;bd=k*0.05;}}edRestore(P,s1);delete P.grid;}
+        if(fpMove(P,'W',f(dw))){const s1=edSnap(P);let bd=0,bn=1e9;for(let k=-12;k<=12;k++){if(fpMove(P,'D',f(k*0.05))){const C=edClone(P);snapRooms(C,E.snapKeep);const e=Math.abs(encOf(C)-net0);   /* net area as it will be once the rooms snap to the walls */if(e<bn){bn=e;bd=k*0.05;}}edRestore(P,s1);delete P.grid;}
           if(bd&&fpMove(P,'D',f(bd)))ops.push(dw<0?'narrower and longer':'wider and shorter');else if(!bd)ops.push(dw<0?'narrower':'wider');}
       }else if(a>=3&&r<0.15&&!P.rooms.some(q=>!q.bk&&q.n==='Laundry')){
         const x=addRoom(P,'laundry');if(x.ok)ops.push(`added a laundry room in the ${x.host.toLowerCase()}`);
@@ -4669,7 +4703,7 @@ function rmVariationLight(){
     // net area is checked below, as it will be once the rooms snap to the walls
     if(aiBad(P).some(m=>!was.has(m))){no('bad');continue;}
     delete P.grid;if(edRoute(P).stuck.length>stuck0){no('stuck');continue;}
-    {const Pc=edClone(P),sn=snapRooms(Pc,E.snapKeep);liveAreas(Pc,E.abase);if(sn.dropped.length){no('drop');continue;}if(sn.blanks.length>snapBlanks(E.orig).length){no('blank');continue;}if(Math.abs(netOf(Pc)-net0)/net0>tol){no('snapnet');continue;}Pc.nodes=P.nodes;try{cleanPlan(Pc);}catch(e){}const s2=snapRooms(Pc,E.snapKeep);liveAreas(Pc,E.abase);if(Math.abs(netOf(Pc)-net0)/net0>tol){no('snapnet');continue;}delete Pc.grid;if(s2.dropped.length||edRoute(Pc).stuck.length>stuck0){no('stuck2');continue;}snapRooms(P,E.snapKeep);delete P.grid;}
+    {const Pc=edClone(P),sn=snapRooms(Pc,E.snapKeep);liveAreas(Pc,E.abase);if(sn.dropped.length){no('drop');continue;}if(sn.blanks.length>snapBlanks(E.orig).length){no('blank');continue;}if(Math.abs(encOf(Pc)-net0)/net0>tol){no('snapnet');continue;}Pc.nodes=P.nodes;try{cleanPlan(Pc);}catch(e){}const s2=snapRooms(Pc,E.snapKeep);liveAreas(Pc,E.abase);if(Math.abs(encOf(Pc)-net0)/net0>tol){no('snapnet');continue;}delete Pc.grid;if(s2.dropped.length||edRoute(Pc).stuck.length>stuck0){no('stuck2');continue;}snapRooms(P,E.snapKeep);delete P.grid;}
     done=ops;
   }
   if(!done){
@@ -4678,7 +4712,7 @@ function rmVariationLight(){
     return aiPanel();
   }
   edClean();
-  const cap=s=>s[0].toUpperCase()+s.slice(1),o=Object.assign({W:B.dim[0].W,D:B.dim[0].D,side:P.side,sideWins:P.sideWins},B),entry={text:`Variation at ${a}%`,say:`Net area ${netOf(P).toFixed(1)} m², ${(Math.abs(netOf(P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`,changes:[...new Set(done.map(cap))],miss:[],issues:[],did:true};
+  const cap=s=>s[0].toUpperCase()+s.slice(1),o=Object.assign({W:B.dim[0].W,D:B.dim[0].D,side:P.side,sideWins:P.sideWins},B),entry={text:`Variation at ${a}%`,say:`Net area ${netOf(P).toFixed(1)} m², ${(Math.abs(encOf(P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`,changes:[...new Set(done.map(cap))],miss:[],issues:[],did:true};
   E.hist.push({s:before,spent:true,last:E.last});E.used++;E.last='v'+(++E.nid);E.dirty=true;E.prompts.push(entry.text);E.log.unshift(entry);
   E.rm=null;E.sel=null;edRender();aiPanel();
 }
@@ -4688,7 +4722,7 @@ function rmVariation(){
   if(E.amt<=40)return rmVariationLight();
   const rm=E.rm||rmEnsure();
   if(!rm){E.msg='This unit has too few rooms to vary.';return aiPanel();}
-  const a=E.amt,tol=a/100,net0=netOf(E.orig),leaves=rmLeaves(rm.tree),pick=A=>A[Math.floor(Math.random()*A.length)],base=E.P.rooms.filter(q=>q.red&&!q.bk).length;
+  const a=E.amt,tol=a/100,net0=encOf(E.orig),leaves=rmLeaves(rm.tree),pick=A=>A[Math.floor(Math.random()*A.length)],base=E.P.rooms.filter(q=>q.red&&!q.bk).length;
   const o=E.orig,W0=rm.W,D0=rm.D,steps=1+Math.floor(a/15),sig=JSON.stringify(rm.tree);
   let best=null,good=null;const vs=E.vstat={tries:0,nul:0,reds:0,stuck:0,dev:0,same:0};
   for(let i=0;i<300&&!good;i++){
@@ -4716,7 +4750,7 @@ function rmVariation(){
     return aiPanel();
   }
   E.rm=rm;rm.W=pickd.W;rm.D=pickd.D;
-  rmCommit(pickd.tree,`Variation at ${a}%`,en=>{edClean();en.say=en.say||`Net area ${netOf(E.P).toFixed(1)} m², ${(Math.abs(netOf(E.P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`;});
+  rmCommit(pickd.tree,`Variation at ${a}%`,en=>{edClean();en.say=en.say||`Net area ${netOf(E.P).toFixed(1)} m², ${(Math.abs(encOf(E.P)-net0)/net0*100).toFixed(1)}% from the sheet underneath.`;});
 }
 /* The Rooms block of the side panel. */
 function rmPanel(){
@@ -4901,7 +4935,7 @@ function rmFurnish(P,u){
    A room is the space its walls enclose, with doorways counted as closed. Its colour fills that space, whatever its shape.
    A room that does not sit in one enclosed space is taken off and the space is left blank until someone names it.
    Several rooms may share one open space (a kitchen open to the living room) as long as they do not sit on top of each other. */
-const SN_NAMES=['Bedroom','Primary Bedroom','Living','Dining','Kitchen','Den','Bath','Hall','Entry','Closet','Laundry','Mech'];
+const SN_NAMES=['Bedroom','Primary Bedroom','Living','Dining','Kitchen','Den','Bath','Hall','Entry','Closet','Laundry','Mech','Balcony'];
 function roomRegions(P,nb,sp){   // nb: leave out the walls of balconies and bump-outs (their area is counted with the bump); sp: room separations close spaces too (colours and room outlines; the checks go by the walls)
   const key=JSON.stringify([nb?1:0,P.W,P.D,P.walls.map(w=>[w.x,w.y,w.w,w.h]),P.doors.map(d=>[d.hx,d.hy,d.cx,d.cy,d.w]),sp?(P.seps||[]).map(q=>[q.x1,q.y1,q.x2,q.y2]):0]),slot=(nb?'_rgn':'_rg')+(sp?'s':'');
   if(P[slot]&&P[slot].key===key)return P[slot];
@@ -5363,7 +5397,7 @@ async function guSearch(from,u,base,opt){
     // keep the rooms the owner had: no main room loses more than a quarter of its area
     if(Pc.rooms.some(q=>{if(q.bk)return false;const o=was[q.rid];return o&&o>=3&&q.a<0.75*o;}))return;
     if(Pc.rooms.filter(q=>q.red&&!q.bk).length>reds0)return;   // the repairs can turn a room red too
-    const sc=g.did.length*3+Math.abs(netOf(Pc)-net0)/net0*100+(tree===tree0?0:2);
+    const sc=g.did.length*3+Math.abs(encOf(Pc)-net0)/net0*100+(tree===tree0?0:2);
     if(!best||sc<best.sc)best={sc,P:Pc,did:g.did};
   };
   while(performance.now()-t0<ms){
@@ -5544,7 +5578,10 @@ document.addEventListener('keydown',e=>{if(DSEL&&(e.key==='Delete'||e.key==='Bac
 document.addEventListener('pointerdown',e=>{if(DSEL&&!e.target.closest('#dimBar')&&!e.target.closest('.adim')){DSEL=null;hideDimBar();if(view==='app')render();}});
 scroller.addEventListener('scroll',hideDimBar,{passive:true});
 $('iDims').onclick=()=>{if(!selected)return;delete selected.dimx;render();save();showInfo(selected);toast('Dimensions restored.');};
-svg.addEventListener('click',e=>{if(MK.tool)return;if(Date.now()-adEat<400||e.target.closest('.adim'))return;const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);showInfo(selected===u?null:u);render();});
+svg.addEventListener('click',e=>{if(MK.tool)return;if(Date.now()-adEat<400||e.target.closest('.adim'))return;const g=e.target.closest('.unit');if(!g)return;const u=units.find(x=>x.idx==g.dataset.idx);if(!u)return;
+  if(canEdit()){openEditor(u);return;}   // a tap opens the unit straight in Layout mode; its details are one button away in the editor
+  showInfo(selected===u?null:u);render();});
+const canEdit=()=>MANUAL||!document.body.classList.contains('no-ai');
 $('iClose').onclick=()=>{showInfo(null);if(!isMob)render();};
 $('grp').onclick=()=>{grouped=!grouped;render();save();};
 $('zin').onclick=()=>{zoom=Math.min(2.5,zoom*1.2);render();save();};
@@ -5864,7 +5901,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
