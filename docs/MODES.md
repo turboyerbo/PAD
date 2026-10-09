@@ -5,6 +5,8 @@ The tracing sheet has three modes, chosen with the buttons beside the unit name.
 Opening a unit
 - Tapping a unit in the strip opens its tracing sheet straight in Layout (AI) mode. The unit's details (iterations, share, export, delete) are behind Details in the editor header, which closes the sheet when nothing has changed. Where the assistant is not set up, a tap opens the details as before.
 - On a phone the plan opens full height with the tools folded into the pull-up sheet at the bottom.
+- Zoom: the + and - buttons at the bottom right of the sheet, two fingers (pinch to zoom, move to pan), or ctrl and the wheel (a trackpad pinch) on a computer, where the wheel alone pans a zoomed plan. The third button fits the plan again. Zooming is not a change to the plan. The page itself never zooms on a double tap (`touch-action: manipulation` on the page, and text boxes on an iPhone use 16 px text so tapping one does not zoom).
+- In Layout (AI) mode, tapping a room shows a small box beside its name: its area (m2 and ft2), width by depth, its share of the net area, a typed size (Apply size) and Rename (`rmPopSync`). The cross or a tap on an empty spot closes it; dragging the room hides it.
 - On a phone the header is a thin ribbon of small icons: the three modes, Details, Undo, Start over, Discard, Review, and the change count. The last button switches to the larger labelled tabs and back; the choice is remembered on that phone.
 
 Furniture
