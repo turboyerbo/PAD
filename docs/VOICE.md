@@ -83,6 +83,9 @@ What is left is the logo, the building's units and the conversation (a column on
 ## The conversation panel
 
 On a computer it is a column on the right; on a phone (or a window narrower than 760 px) it is a sheet at the bottom. The plan fits beside or above it.
+On a phone the panel is compact (`vCompact`, class `cmp`) so the plan keeps the screen: a title line (save, mute, close), the last answer on one or
+two lines (tap it to open or close the whole conversation), the chips in one row that scrolls sideways, and the microphone beside the text box
+with small attach, sketch and send buttons. It takes about 160 px; the building's units fill the rest of the screen above it (`--vah`, `vaRoom`).
 
 - **Header**: the unit, Save once something has changed (opens the review), and close (asks first when there are unsaved changes).
 - **Conversation**: what you said on the right, the answers on the left, the last 30 turns.
