@@ -59,6 +59,7 @@ node tests/smoke.mjs
 | The catalog of starting layouts (gallery, sample building, new units; see docs/LAYOUTS.md) | `LAYOUTS`, `useLayout`, `layoutCard`, `tools/dxf-to-layouts.mjs` |
 | Tracing paper session (change budget, ghost layer, review, iterations) | `TRACE_BUDGET`, `edPush`, `edReview`, `edSummary`, `restoreIter` |
 | Kitchen templates (U, L, galley) and kitchen code checks | `kTemplate`, `kitchenIssues`, `kitchenNeed`, `applyKitchen` |
+| Voice: talk and point, spoken suggestions, red dimensions under 860 mm, kitchen layouts to flip through (docs/VOICE.md) | `vHeard`, `vIssues`, `vNarrow`, `vWiden`, `vMoveHere`, `vKitOpts`, `vBar` |
 | Balcony, bump-outs (den, nook) and bump-ins (recessed balcony, entry vestibule) | `BUMPS`, `syncBumps`, `addBump`, `netArea`, `grossArea` |
 | Resting people (lying on the sofa, getting out of bed) | `seatPeople`, `restSetup`, `restAct` |
 | Accounts, buildings and chat data layer (Supabase or demo) | `window.PADBE`, the first script block |

@@ -383,6 +383,43 @@ body.chat-open .info{right:356px}
 .ed-top .tb.primary{background:#fff;color:var(--navy)}
 .ed-body{flex:1;min-height:0;display:flex}
 .ed-cv{flex:1;min-width:0;position:relative;overflow:hidden}
+/* voice: the bar over the plan, red dimensions, the kitchen being shown, the pointed spot (docs/VOICE.md) */
+.ed.vfirst .ed-side,.ed.vfirst .ed-handle,.ed.vfirst #edModes,.ed.vfirst #edReset,.ed.vfirst #edUndo,.ed.vfirst #edSlim{display:none!important}   /* voice first: talk and point; the bar's menu button brings the tools back */
+.vbar{position:absolute;left:8px;right:56px;bottom:8px;z-index:4;max-width:760px;margin:0 auto;background:rgba(255,255,255,.96);border:1px solid var(--draw);box-shadow:0 2px 10px rgba(38,38,31,.18);padding:8px 10px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+.vrow{display:flex;align-items:center;gap:10px;min-width:0}
+.vmic{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.vmic svg,.vic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.vmic.on{background:var(--markup);animation:vpulse 1.2s ease-in-out infinite}
+.vmic:disabled{opacity:.5;cursor:default}
+.vmic:focus-visible,.vic:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes vpulse{50%{box-shadow:0 0 0 8px rgba(179,38,30,.15)}}
+.vcap{flex:1;min-width:0;font-size:14px;line-height:1.35;color:var(--ink)}
+.vcap .vyou{font-style:italic;color:var(--ink-2)}
+.vside{flex:none;display:flex;gap:2px}
+.vic{width:34px;height:34px;border:0;background:none;color:var(--ink-2);display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px}
+.vic[aria-pressed="true"]{background:var(--paper);color:var(--accent)}
+.vic svg{width:19px;height:19px}
+.vtype{display:flex;gap:6px}
+.vtype input{flex:1;min-width:0;font:inherit;font-size:16px;padding:6px 8px;border:1px solid var(--rule)}
+.vchips{display:flex;flex-wrap:wrap;gap:6px}
+.vchips .chip{cursor:pointer;font-size:13px;padding:5px 11px}
+.vd path{stroke:var(--markup);stroke-width:1.5;fill:none}
+.vd text{fill:var(--markup);font-family:var(--narrow);font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.vd.on path{stroke-width:2.6}
+.vd.on{animation:vblink 1.6s ease-in-out infinite}
+@keyframes vblink{50%{opacity:.45}}
+.vk rect,.vk circle,.vk path{fill:var(--furn-fill);stroke:var(--furn);stroke-width:1.4;vector-effect:non-scaling-stroke}
+.vk path{fill:none}
+.vk.flip rect:first-child{fill-opacity:.9}
+.vpin{position:absolute;z-index:3;width:28px;height:28px;margin:-14px 0 0 -14px;pointer-events:none;border:2px solid var(--accent);border-radius:50%;box-sizing:border-box}
+.vpin::before,.vpin::after{content:'';position:absolute;background:var(--accent);left:50%;top:50%}
+.vpin::before{width:2px;height:40px;margin:-20px 0 0 -1px}
+.vpin::after{width:40px;height:2px;margin:-1px 0 0 -20px}
+body.mob .vbar{left:6px;right:52px;bottom:6px;padding:6px 8px}
+body.mob .vcap{font-size:13px}
+body.mob .vchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -8px;padding:0 8px}
+body.mob .vchips .chip{flex:none}
+@media (prefers-reduced-motion:reduce){.vmic.on,.vd.on{animation:none}}
 .edzoom{position:absolute;right:8px;bottom:8px;z-index:3;display:flex;flex-direction:column;border:1px solid var(--draw);background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(38,38,31,.15)}
 .edzoom button{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:0;border-bottom:1px solid var(--rule);background:none;color:var(--draw);padding:0;cursor:pointer;touch-action:manipulation}
 .edzoom button:last-child{border-bottom:0}.edzoom button:disabled{opacity:.35;cursor:default}
@@ -1049,7 +1086,8 @@ body.no-ai:not(.manual) .cust{display:none}
     <div class="ed-act"><button class="tb" id="edInfo" type="button" title="Unit details, iterations, share and export">Details</button><button class="tb" id="edUndo" type="button">Undo</button><button class="tb" id="edReset" type="button">Start over</button><button class="tb" id="edCancel" type="button">Discard</button><button class="tb primary" id="edDone" type="button">Review changes</button></div>
   </div>
   <div class="ed-body">
-    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div>
+    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div><div class="vpin" id="vPin" hidden aria-hidden="true"></div>
+      <div class="vbar" id="vBar" hidden role="region" aria-label="Talk to the plan"></div>
       <div class="edzoom" id="edZoom" role="group" aria-label="Zoom"><button type="button" data-z="in" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-z="out" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button type="button" data-z="fit" aria-label="Fit the plan" title="Fit the plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div></div>
     <button class="ed-handle" id="edHandle" type="button" aria-expanded="false" aria-controls="edSide"><span id="edHandleTxt">Tools</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
     <aside class="ed-side" id="edSide"></aside>
@@ -2900,6 +2938,7 @@ function openEditor(u){
   el.classList.remove('tools');   // on a phone the plan opens full height; the tools are in the pull-up sheet
   edRender();edPanel();edRender();   // again once the panel has its size, so the plan fits the space left
   requestAnimationFrame(()=>requestAnimationFrame(()=>{if(E)el.classList.add('in');}));
+  vOpen();
 }
 /* ---------- balconies, bump-outs and bump-ins ---------- */
 /* Each one sits on the front (window) wall, or around the entry door for a vestibule. Walls, floors and rooms they need are rebuilt by syncBumps. */
@@ -3093,7 +3132,7 @@ function kPieces(runs){
   return out;
 }
 /* Build a layout of the chosen kind inside the kitchen room, or say why it does not fit. */
-function kTemplate(P,kind){
+function kTemplate(P,kind,all,want){   // all: every arrangement that fits, longest counter first; want: the walls of one chosen arrangement ('top,left')
   const K=kRoom(P);if(!K)return{ok:false,reason:'This unit has no kitchen room.'};
   const E=kEdges(P,K),bl=kBlocked(P,K),T=BASE_D,names=Object.keys(E),far=a=>a==='lo'?'hi':'lo';
   const run=(n,lo,hi,anchor)=>{
@@ -3124,7 +3163,9 @@ function kTemplate(P,kind){
     const[cook,fr]=ra.len>=rb.len?[ra,rb]:[rb,ra];add([place(rc,['sink'],'hi'),place(cook,['cook'],far(an)),place(fr,['fridge'],far(an))]);
   });
   if(!cfgs.length)return{ok:false,reason:KWHY[kind]};
-  const best=cfgs.sort((p,q)=>q.reduce((s,r)=>s+r.len,0)-p.reduce((s,r)=>s+r.len,0))[0];
+  const tot=c=>c.reduce((s,r)=>s+r.len,0);cfgs.sort((p,q)=>tot(q)-tot(p));
+  if(all)return{ok:true,opts:cfgs.map(c=>({items:kPieces(c),len:tot(c),walls:c.map(r=>r.n)}))};
+  const best=(want&&cfgs.find(c=>c.map(r=>r.n).join(',')===want))||cfgs[0];
   return{ok:true,items:kPieces(best)};
 }
 function kIcon(k){
@@ -3277,7 +3318,7 @@ function slimSync(){const b=$('edSlim'),t=SLIM?'Larger buttons':'Thin ribbon';$(
 $('edSlim').onclick=()=>{SLIM=!SLIM;try{localStorage.setItem('pad-slim',SLIM?'1':'0');}catch(e){}slimSync();if(E)edRender();};
 $('edInfo').onclick=()=>{if(!E)return;if(E.dirty){toast('Review or discard the changes first.');return;}const u=E.u;edClose(true);showInfo(u);render();};
 function edClose(apply){
-  $('edPop').hidden=true;$('rmPop').hidden=true;
+  vStop();$('edPop').hidden=true;$('rmPop').hidden=true;
   const pr=pendingRemote;pendingRemote=null;const el=$('ed');
   E=null;el.classList.remove('in');document.body.classList.remove('tracing');$('edConfirm').hidden=true;
   const hide=()=>{if(!el.classList.contains('in'))el.hidden=true;};
@@ -3301,7 +3342,7 @@ function restoreIter(u,n){
 function edRender(){
   if(!E.drag&&!E.rd&&!E.busy){const ws=JSON.stringify([E.P.W,E.P.D,E.P.walls,E.P.doors,E.P.seps]);if(ws!==E.wsig){const first=!E.wsig;E.wsig=ws;if(!first){const r=snapRooms(E.P,E.snapKeep);E.rm=null;if(r.dropped.length)E.msg=`${r.dropped.join(', ')} no longer fit ${r.dropped.length>1?'their':'its'} walls and ${r.dropped.length>1?'were':'was'} taken off. Tap the blank space to name it.`;}}}
   {const as=JSON.stringify([E.P.W,E.P.D,E.P.walls,E.P.doors,E.P.seps]);if(as!==E.asig){E.asig=as;try{liveAreas(E.P,E.abase);}catch(x){}}}   // the room areas follow the walls and separations as they move
-  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight),M=isMob?10:30,adT=E.mode==='layout'?0:AD_TOP,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P)+adT;
+  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight-vRoom()),M=isMob?10:30,adT=E.mode==='layout'?0:AD_TOP,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P)+adT;
   const Sc0=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),vb=sc=>[(cw-P.W*sc)/2,(ch-(P.D+CORR+outTop(P)+adT)*sc)/2+(outTop(P)+adT)*sc];   // room above the window wall for the width strings
   // zoom (pinch, the + and - buttons, or ctrl and the wheel) scales the fitted plan; pan moves it, never so far that it leaves the canvas
   const z=E.zoom||1,Sc=Sc0*z,b0=vb(Sc);if(z<=1.001)E.pan={x:0,y:0};const pn=E.pan||(E.pan={x:0,y:0}),lx=Math.max(0,(Wt*Sc-cw)/2+cw*0.3),ly=Math.max(0,(Dt*Sc-ch)/2+ch*0.3);
@@ -3321,9 +3362,9 @@ function edRender(){
   if(E.ai)g+=`<g id="rmOv">${rmOverlay()}</g>`+edWalkerSVG();
   const fs=Math.max(8,Math.min(12,Sc*0.22));
   $('edSvg').setAttribute('width',cw);$('edSvg').setAttribute('height',ch);$('edSvg').setAttribute('viewBox',`0 0 ${cw} ${ch}`);
-  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide())+snapBlankSVG(P,x0,y0,Sc)+(E.mode!=='layout'?adSVG(E.u,P,x0,y0,Sc,f(Math.max(7,Math.min(10,Sc*0.2))),false)+dmSVG(P,x0,y0,Sc,fs,E.sel&&E.sel.t==='m'?E.sel.id:null):'')+'<g id="dmOv"></g>';
+  $('edSvg').innerHTML=DEFS+`<g transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${g}</g>`+roomLabels(fu,x0,y0,null,Sc,fs,edHide())+snapBlankSVG(P,x0,y0,Sc)+(E.mode!=='layout'?adSVG(E.u,P,x0,y0,Sc,f(Math.max(7,Math.min(10,Sc*0.2))),false)+dmSVG(P,x0,y0,Sc,fs,E.sel&&E.sel.t==='m'?E.sel.id:null):'')+(E.ai?vSVG(P,x0,y0,Sc):'')+'<g id="dmOv"></g>';
   if(E.ai){edWalkPlace();if(!wkRaf&&!reduce){wkT=0;wkRaf=requestAnimationFrame(edWalkLoop);}}
-  edBubbles(cw);
+  edBubbles(cw);vAfterRender();
 }
 /* Comment bubbles over each dead-end hall. */
 function edBubbles(cw){
@@ -3839,7 +3880,7 @@ function aiOps(ops){
 }
 async function aiCall(prompt,plan,repair){
   try{
-    const r=await fetch('/api/revise',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt,plan,repair,amount:E?E.amt:1})}),j=await r.json().catch(()=>({}));
+    const r=await fetch('/api/revise',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({prompt,plan,repair,amount:E?E.amt:1},vCtx()))}),j=await r.json().catch(()=>({}));
     return r.ok?j:{error:j.error||'The assistant could not be reached.'};
   }catch(e){return{error:'The assistant could not be reached. Check the connection.'};}
 }
@@ -3940,6 +3981,355 @@ $('edSide').addEventListener('click',e=>{
   else if(b.id==='rmGo'){const n=id=>parseFloat(String(($(id)||{}).value||'').replace(',','.'));rmTyped(E.rsel,n('rmA'),n('rmW'),n('rmD'));}
   else if(b.dataset.ex){E.draft=b.dataset.ex;aiPanel();const t=$('aiText');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}}
 });
+/* ---------- voice: talk to the plan (Layout (AI) mode; see docs/VOICE.md) ----------
+   The owner speaks (or types) and points. The page measures the plan after every change and offers one thing at a time,
+   out loud and as a caption: a clear width under 860 mm drawn as a red dimension, a bath open to another room, a kitchen with
+   no counters, a room nobody can walk to. The buttons that used to sit in the panel are offered as spoken suggestions instead.
+   Simple requests (wider, move the wall here, the kitchen layouts, undo) run on the page. Anything else goes to the assistant
+   with the spot the owner pointed at. */
+const VMIN=0.86,VAIM=0.9;   // clear width people walk through, and what a widening aims for
+const VSR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const VC={first:true,mute:false,rec:null,interim:'',reply:'',sug:null,dis:new Set(),said:new Set(),off:new Set(),wait:null,armed:false,follow:false,lastVoice:false,typing:false,t:0,narrow:[],busy:false};
+const VKIT={mode:null,opts:[],i:0,best:0,sig:'',kept:null};
+try{VC.first=localStorage.getItem('pad.voice')!=='0';VC.mute=localStorage.getItem('pad.voice.mute')==='1';}catch(e){}
+const vYes=/^(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|go for it|sounds good|let'?s do it|absolutely|correct|right)\b/;
+const vNo=/^(no|nope|nah|not now|later|skip|leave it|never mind|nevermind|cancel)\b/;
+const mm=v=>Math.round(v*1000);
+const vRoomName=n=>String(n||'room').toLowerCase().replace(/^primary bedroom$/,'primary bedroom');
+/* ---- what the voice measures ---- */
+/* Clear widths under 860 mm between two parallel wall faces, nothing between them, in a room people walk through. */
+function vNarrow(P){
+  const W=P.walls.filter(w=>!w.bw&&!w.rail),out=[];
+  const skip=/closet|wic|walk-in|mech|laundry|storage|linen|pantry|bath|ensuite|wash|powder|wc/i;
+  const roomAt=(x,y)=>P.rooms.find(q=>!q.bk&&!isOutdoor(q)&&x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h);
+  [true,false].forEach(hor=>{
+    const L=W.filter(w=>(w.w>w.h)===hor&&Math.max(w.w,w.h)>=0.3);
+    L.forEach(A=>L.forEach(B=>{
+      if(A===B)return;
+      const a1=hor?A.y+A.h:A.x+A.w,b0=hor?B.y:B.x,g=b0-a1;if(g<0.3||g>=VMIN-0.0005)return;
+      const lo=Math.max(hor?A.x:A.y,hor?B.x:B.y),hi=Math.min(hor?A.x+A.w:A.y+A.h,hor?B.x+B.w:B.y+B.h);if(hi-lo<0.45)return;
+      const r=hor?[lo,a1,hi,b0]:[a1,lo,b0,hi];
+      if(W.some(w=>w!==A&&w!==B&&w.x<r[2]-0.01&&w.x+w.w>r[0]+0.01&&w.y<r[3]-0.01&&w.y+w.h>r[1]+0.01))return;
+      const m=(lo+hi)/2,cx=hor?m:(a1+b0)/2,cy=hor?(a1+b0)/2:m,q=roomAt(cx,cy);if(!q||skip.test(q.n))return;
+      out.push({t:'narrow',hor,g,lo,hi,a1,b0,cx,cy,room:q.n,A,B});
+    }));
+  });
+  out.sort((p,q)=>p.g-q.g);const keep=[];
+  out.forEach(o=>{if(!keep.some(k=>k.hor===o.hor&&Math.abs(k.cx-o.cx)<0.7&&Math.abs(k.cy-o.cy)<0.7))keep.push(o);});
+  return keep.map(o=>Object.assign(o,{key:'n:'+o.room+':'+Math.round(o.cx*5)+':'+Math.round(o.cy*5)}));
+}
+/* A bath whose walls do not close it off from another room (doorways count as closed). */
+function vOpenBath(P){
+  let G;try{G=roomRegions(P,false,false);}catch(e){return null;}
+  const R=P.rooms.filter(q=>!q.bk&&!isOutdoor(q));
+  for(const q of R){if(!/^(bath|ensuite|washroom|powder)/i.test(q.n))continue;const m=lblReg(G,q);if(m<0)continue;
+    const o=R.find(x=>x!==q&&!/^(bath|ensuite|washroom|powder)/i.test(x.n)&&lblReg(G,x)===m);if(o)return{t:'bath',key:'b:'+q.rid+':'+o.rid,bath:q,other:o};}
+  return null;
+}
+/* No kitchen, or a kitchen with no counters and no layout chosen yet. */
+function vKitchen(P){
+  const K=kRoom(P);if(!K)return{t:'nokit',key:'k:none'};
+  if(P.pref&&P.pref[0]&&P.pref[0].kit)return null;
+  const has=k=>P.furn.some(p=>p.k===k&&kIn(K,p));
+  return has('sink')||has('counter')?null:{t:'kit',key:'k:'+K.rid};
+}
+function vIssues(){
+  const P=E.P,o=[];
+  const b=vOpenBath(P);if(b)o.push(b);
+  const k=vKitchen(P);if(k)o.push(k);
+  if(E.wk&&E.wk.stuck&&E.wk.stuck.length)o.push({t:'stuck',key:'s:'+E.wk.stuck.join(','),rooms:E.wk.stuck});
+  VC.narrow.forEach(n=>o.push(n));
+  return o.filter(x=>!VC.dis.has(x.key)&&!VC.off.has(x.t));
+}
+function vLine(x){
+  if(x.t==='narrow')return`${/^(hall|corridor|entry|foyer|vestibule)/i.test(x.room)?`This ${vRoomName(x.room)} is`:`The way through the ${vRoomName(x.room)} is`} ${mm(x.g)} mm wide. That is under 860 mm, so it might be too narrow. Do you want to revise this area?`;
+  if(x.t==='bath')return`The ${vRoomName(x.bath.n)} is open to the ${vRoomName(x.other.n)}. Do you want me to add a wall with a door?`;
+  if(x.t==='nokit')return'This unit does not have a kitchen yet. Do you want me to add one to get started?';
+  if(x.t==='kit')return'The kitchen has no counters yet. Do you want me to lay one out?';
+  if(x.t==='stuck')return`Nobody can walk to the ${x.rooms.map(vRoomName).join(' or the ')}. Do you want me to add a door?`;
+  return'';
+}
+/* ---- kitchens: every arrangement that fits, best first ---- */
+const KSIDE={top:'window wall',bottom:'corridor side',left:'left wall',right:'right wall'};
+function vKitOpts(){
+  const P=E.P,K=kRoom(P);if(!K)return[];
+  const Pt=Object.assign({},P,{furn:[]}),baths=P.rooms.filter(q=>!q.bk&&/^(bath|ensuite|washroom)/i.test(q.n)),out=[];
+  const gap=(b,p)=>Math.hypot(Math.max(b.x-p.x,0,p.x-b.x-b.w),Math.max(b.y-p.y,0,p.y-b.y-b.h));
+  Object.keys(KINDS).forEach(kind=>{let r;try{r=kTemplate(Pt,kind,true);}catch(e){return;}if(!r.ok)return;
+    r.opts.forEach(o=>{
+      const sink=o.items.find(i=>i.k==='sink'),sd=sink&&baths.length?Math.min(...baths.map(b=>gap(b,sink))):9;
+      const side=sink?[['top',Math.abs(sink.y-K.y)],['bottom',Math.abs(sink.y-K.y-K.h)],['left',Math.abs(sink.x-K.x)],['right',Math.abs(sink.x-K.x-K.w)]].sort((a,b)=>a[1]-b[1])[0][0]:null;
+      const w=o.walls.join(',');if(out.some(x=>x.kind===kind&&x.w===w))return;
+      out.push({kind,w,items:o.items,len:o.len,sd,side,score:o.len-0.8*Math.min(sd,2.5)+(kind==='l'?0.3:kind==='u'?0.2:0)});
+    });});
+  return out.sort((a,b)=>b.score-a.score).slice(0,6);
+}
+const vKitSay=o=>`${KINDS[o.kind]}, sink on the ${KSIDE[o.side]||'counter'}${o.sd<0.5?', back to back with the bath plumbing':''}, ${o.len.toFixed(1)} m of counter.`;
+function vKitStart(){
+  const o=vKitOpts();
+  if(!o.length){const K=kRoom(E.P);return vSay(K?'None of the kitchen layouts fit this kitchen. Try making it larger first.':'There is no kitchen room to lay out yet.');}
+  Object.assign(VKIT,{mode:'flip',opts:o,i:0,best:0,sig:E.wsig,kept:null});VC.sug=null;edRender();
+  vSay(`I put in the one I think fits best: ${vKitSay(o[0])} ${o.length>1?`Do you want to see the other ${o.length-1===1?'layout':(o.length-1)+' layouts'} that fit?`:'Do you want to keep it?'}`);
+}
+function vKitShow(i){
+  const n=VKIT.opts.length;if(!n)return;VKIT.i=((i%n)+n)%n;edRender();
+  vSay(`Option ${VKIT.i+1} of ${n}${VKIT.i===VKIT.best?', my pick':''}: ${vKitSay(VKIT.opts[VKIT.i])}${VKIT.i===n-1?' That is the last one.':''}`);
+}
+function vKitUse(){
+  const o=VKIT.opts[VKIT.i];if(!o)return;
+  if(!edPush('vkit')){return vSay(FULL_MSG());}
+  E.P.pref=[{kit:o.kind,w:o.w}];E.rm=null;
+  VKIT.kept={items:o.items,sig:E.wsig};VKIT.mode=null;edRender();if(E.ai)aiPanel();
+  const mine=VKIT.i===VKIT.best;
+  vSay(mine?`Done, the ${KINDS[o.kind]}. It is drawn in full when you save.`:`Done, the ${KINDS[o.kind]}. I had suggested the ${KINDS[VKIT.opts[VKIT.best].kind]}, so I will keep in mind that you prefer this one.`);
+}
+function vKitCancel(){VKIT.mode=null;edRender();vSay('Kitchen left as it was.');}
+/* ---- acting on the plan ---- */
+const vGroupOf=(P,w)=>wallGroups(P).find(g=>g.idxs.some(i=>P.walls[i]===w))||null;
+/* Widen a narrow spot: try moving each of its two walls away from the other on a copy, keep the move that adds the fewest problems. */
+function vWiden(n){
+  const P=E.P,u=E.u,need=Math.ceil((VAIM-n.g)/0.05-1e-6)*0.05,cands=[];
+  const before=vNarrow(P);
+  [[n.A,-1],[n.B,1]].forEach(([w,sg])=>{const g=vGroupOf(P,w);if(!g)return;for(let k=0;k<=8;k++){const d=sg*(need+0.05*k);   // the smallest move that works, up to 400 mm more than needed
+    const C=edClone(P);C.nodes=JSON.parse(JSON.stringify(P.nodes||{}));const gc=wallGroups(C).find(x=>x.idxs[0]===g.idxs[0]);if(!gc)break;
+    const p0=gc.pos;if(!moveWall(C,gc,d))break;const moved=Math.abs(C.walls[gc.idxs[0]][gc.hor?'y':'x']-p0);
+    let bad=0;try{bad=edIssues(C,u).filter(x=>x[0]==='bad').length*10+guNew(guAudit(C,u),E.gbase).length;}catch(e){bad=99;}
+    const after=vNarrow(C);   // never squeeze somewhere else to make this one wider
+    bad+=after.filter(x=>!before.some(y=>y.key===x.key)).length*20+after.filter(x=>x.g<n.g-0.01).length*40;
+    cands.push({g,d,bad,moved,worse:after.some(x=>x.g<n.g-0.01)});
+  }});
+  if(!cands.length)return vSay(`Both walls of this ${vRoomName(n.room)} are outer walls, so they stay. Point to another wall and say move it here.`);
+  cands.sort((a,b)=>a.bad-b.bad||a.moved-b.moved);const c=cands[0];
+  if(c.worse)return vSay(`Moving either wall makes another spot tighter than this one. Point to where the wall should go and say move it here, or describe the change.`);
+  if(!edPush('vw'+c.g.idxs[0]))return vSay(FULL_MSG());
+  const p0=c.g.pos;if(!moveWall(E.P,c.g,c.d)){edUnpush();return vSay('That wall cannot move that far.');}
+  const moved=Math.abs(E.P.walls[c.g.idxs[0]][c.g.hor?'y':'x']-p0);
+  E.rm=null;VC.sug=null;edRender();if(E.ai)aiPanel();
+  const now=n.g+moved;vSay(`I moved the wall ${mm(moved)} mm. It is now ${mm(now)} mm clear${now>=VMIN?', which works':''}. Say undo to take it back.`);
+}
+/* The spot the owner pointed at in the last 30 seconds. */
+const vPoint=()=>E&&E.vpt&&Date.now()-E.vpt.t<30000?E.vpt:null;
+/* Move the nearest interior wall so its centre lands on the spot. The wall of a flagged narrow spot wins a close call. */
+function vMoveHere(){
+  const pt=vPoint();if(!pt){VC.wait='move';return vSay('Point to the spot on the plan and I will move the wall there.',true);}
+  const P=E.P,act=VC.sug&&VC.sug.t==='narrow'?VC.sug:null;let best=null;
+  wallGroups(P).forEach(g=>{
+    const c=g.hor?pt.x:pt.y;if(c<g.a-0.4||c>g.b+0.4)return;
+    let d=Math.abs((g.hor?pt.y:pt.x)-(g.pos+g.t/2));
+    if(act&&g.idxs.some(i=>P.walls[i]===act.A||P.walls[i]===act.B))d-=0.6;
+    if(!best||d<best.d)best={g,d};
+  });
+  if(!best||best.d>2.4)return vSay('I could not find a wall near that spot. Point a little closer to the wall you want to move.');
+  const g=best.g,d=(g.hor?pt.y:pt.x)-(g.pos+g.t/2);
+  if(Math.abs(d)<0.05)return vSay('That wall is already there.');
+  if(!edPush('vw'+g.idxs[0]))return vSay(FULL_MSG());
+  const p0=g.pos;if(!moveWall(P,g,d)){edUnpush();return vSay('That wall cannot move there. It would make a room too small.');}
+  const moved=E.P.walls[g.idxs[0]][g.hor?'y':'x']-p0;E.rm=null;VC.sug=null;E.vpt=null;
+  edRender();if(E.ai)aiPanel();
+  vSay(`Moved it ${mm(Math.abs(moved))} mm. ${vRoomCheck()}`);
+}
+/* Is there enough room? The narrow spots, then anyone who cannot be reached. */
+function vRoomCheck(){
+  const N=vNarrow(E.P),st=E.wk&&E.wk.stuck||[];
+  if(!N.length&&!st.length)return'Everywhere people walk is at least 860 mm clear, and every room can be reached.';
+  let s=N.length?`The tightest spot is ${mm(N[0].g)} mm in the ${vRoomName(N[0].room)}${N.length>1?`, and ${N.length-1} more under 860`:''}.`:'Every walkway is at least 860 mm clear.';
+  if(st.length)s+=` Nobody can reach the ${st.map(vRoomName).join(' or the ')}.`;
+  return s;
+}
+/* Anything else goes to the assistant, with the spot and the flagged problem. */
+function vCtx(){
+  if(!E||!E.vctx)return{};
+  const c=E.vctx,o={};
+  if(c.pt){const t=E.wt||{};let w=null,bd=9;Object.keys(t).forEach(id=>{const v=t[id],a=v.hor?c.pt.x:c.pt.y;if(a<v.a-0.4||a>v.b+0.4)return;const d=Math.abs((v.hor?c.pt.y:c.pt.x)-v.pos);if(d<bd){bd=d;w=id;}});
+    o.point={x:r2(c.pt.x),y:r2(c.pt.y),wall:w&&bd<2?w:undefined};}
+  if(c.note)o.context=String(c.note).slice(0,300);
+  return o;
+}
+async function vAsk(text){
+  if(!AIREADY){return vSay('The assistant is not switched on for this site, so I can only do the simple things here: widen a narrow spot, move a wall to where you point, lay out the kitchen, undo.');}
+  const s=VC.sug,pt=vPoint();
+  E.vctx={pt,note:s?vLine(s).replace(/ Do you want.*$/,''):''};
+  const n=E.log.length;VC.busy=true;vBar();vSay('Working on it.',true);
+  try{await aiRun(text);}finally{E&&(E.vctx=null);VC.busy=false;}
+  if(!E)return;
+  const q=E.log.length>n?E.log[0]:null;VC.sug=null;
+  if(!q)return vSay(E.msg||'Nothing changed.');
+  vSay((q.say||(q.did?'Done.':'Nothing changed.'))+(q.did?' Say undo to take it back.':''));
+}
+/* ---- what was heard ---- */
+function vHeard(raw,voice){
+  if(!E||!E.ai)return;
+  const text=String(raw||'').trim();if(!text)return;
+  const t=text.toLowerCase().replace(/[.!?,]+$/,'').trim();VC.lastVoice=!!voice;VC.armed=true;VC.you=text;
+  try{speechSynthesis.cancel();}catch(e){}
+  if(/^(mute|be quiet|quiet|stop talking|shh)\b/.test(t)){VC.mute=true;vSave();return vSay('Muted. I will show what I would say.',true);}
+  if(/^(unmute|talk|speak)\b/.test(t)){VC.mute=false;vSave();return vSay('I will talk again.');}
+  if(/^undo\b|take (it|that) back/.test(t)){if(!E.hist.length)return vSay('There is nothing to undo.');edAct('undo');VKIT.kept=null;return vSay('Undone.');}
+  if(/what can i (do|say)|^help\b|what are (my|the) options/.test(t))return vSay(vHelp());
+  if(VKIT.mode==='flip'){
+    if(/\b(next|another|other|more|forward|show me)\b/.test(t)&&!/\b(back|previous)\b/.test(t))return vKitShow(VKIT.i+1);
+    if(/\b(back|previous|before)\b/.test(t))return vKitShow(VKIT.i-1);
+    const m=t.match(/\b(?:option|number)\s+(\d|one|two|three|four|five|six)\b/);if(m){const k=['one','two','three','four','five','six'].indexOf(m[1]);return vKitShow((k>=0?k+1:+m[1])-1);}
+    if(/\b(yours|your pick|your choice|the first|best one|you picked)\b/.test(t))return vKitShow(VKIT.best);
+    if(/^(cancel|stop|never mind|nevermind|leave it|no kitchen)\b/.test(t))return vKitCancel();
+    if(vYes.test(t)&&VKIT.i===0&&VKIT.opts.length>1&&!VKIT.seen){VKIT.seen=true;return vKitShow(1);}
+    if(vYes.test(t)||/\b(use|keep|take|choose|pick|go with|like) (this|that|it|this one|that one)\b|^(this|that) one\b|perfect|looks good/.test(t))return vKitUse();
+    if(vNo.test(t))return VKIT.i===0?vKitUse():vKitShow(VKIT.best);
+  }
+  if(VC.sug){
+    const s=VC.sug;
+    if(/stop suggesting|don'?t suggest|stop asking/.test(t)){VC.off.add(s.t);VC.sug=null;vBar();return vSay('I will stop suggesting that.');}
+    if(vNo.test(t)){VC.dis.add(s.key);VC.sug=null;vBar();return vSay('Okay.',true);}
+    if(vYes.test(t)||/^(revise|fix|widen|add|lay)/.test(t)&&t.split(' ').length<=3)return vAccept(s);
+  }
+  if(/kitchen/.test(t)&&/(option|layout|configur|show|different|other|add|lay|put|design|arrange)/.test(t))return vKitStart();
+  if(/(wider|widen|more room|more space|enlarge|bigger|less tight|too tight|too narrow)/.test(t)){
+    const N=VC.narrow,pt=vPoint();
+    const n=VC.sug&&VC.sug.t==='narrow'?VC.sug:pt&&N.length?N.slice().sort((a,b)=>Math.hypot(a.cx-pt.x,a.cy-pt.y)-Math.hypot(b.cx-pt.x,b.cy-pt.y))[0]:N[0];
+    if(n&&(!/kitchen|bed|living|bath|room/.test(t)||t.includes(vRoomName(n.room))))return vWiden(n);
+  }
+  if(/\b(move|put|shift|slide|bring|push|pull|drag)\b/.test(t)&&/\b(here|there|this spot|this point|to this|where i)/.test(t)&&/\b(wall|it|that|this)\b/.test(t))return vMoveHere();
+  if(/enough room|is (it|that|this) (ok|okay|wide enough|enough)|how wide|measure|check (it|the plan|again)|anything wrong|what'?s wrong|any problems/.test(t)){
+    VC.dis.clear();const s=vIssues()[0];return vSay(s?vRoomCheck()+' '+vLine(s):vRoomCheck());
+  }
+  if(/^(review|save|i'?m done|done|finish|wrap up)\b/.test(t)){if(!E.dirty)return vSay('Nothing has changed yet, so there is nothing to save.');vSay('Here are the changes to review.',true);return $('edDone').click();}
+  if(/variation|surprise me|another version|try something/.test(t)){if(typeof rmVariation==='function'){rmVariation();return vSay(E.msg||'Here is a variation.');}}
+  if(/^(show|open) (the )?(tools|panel|buttons)|^tools\b/.test(t)){vFirst(false);return vSay('The tools are back. Say hide the tools to put them away.',true);}
+  if(/^hide (the )?(tools|panel|buttons)/.test(t)){vFirst(true);return vSay('Tools hidden.',true);}
+  return vAsk(text);
+}
+function vAccept(s){
+  VC.sug=null;VC.dis.add(s.key);
+  if(s.t==='narrow')return vWiden(s);
+  if(s.t==='kit')return vKitStart();
+  if(s.t==='nokit')return vAsk('Add a kitchen to this unit. Name a space Kitchen, or carve one out of the living area beside the bath plumbing.');
+  if(s.t==='bath')return vAsk(`Close the ${s.bath.n} off from the ${s.other.n} with a wall, and add a door into the ${s.bath.n}.`);
+  if(s.t==='stuck')return vAsk(`Add a door so the ${s.rooms.join(' and the ')} can be reached from the entry.`);
+}
+function vHelp(){
+  const o=['say wider at a red dimension','point and say move the wall here','ask for kitchen layouts','say undo','say review when you are done'];
+  if(AIREADY)o.splice(3,0,'or describe any change, like add a balcony or make the bedroom bigger');
+  return'You can '+o.join(', ')+'.';
+}
+/* ---- listening and speaking ---- */
+function vSay(t,quiet){
+  VC.reply=String(t||'');VC.t=Date.now();vBar();
+  const ask=/\?\s*$/.test(VC.reply);VC.follow=ask&&VC.lastVoice&&!!VSR;
+  if(VC.mute||quiet||!VC.armed||!('speechSynthesis' in window))return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(VC.reply.replace(/m²/g,'square metres'));u.rate=1.04;
+    u.onend=()=>{if(VC.follow&&E&&E.ai&&!VC.rec){VC.follow=false;vListen();}};speechSynthesis.speak(u);}catch(e){}
+}
+function vListen(){
+  VC.armed=true;
+  if(!VSR){VC.typing=true;vBar();const i=$('vIn');if(i)i.focus();return;}
+  if(VC.rec){try{VC.rec.stop();}catch(e){}return;}
+  try{speechSynthesis.cancel();}catch(e){}
+  const r=new VSR();r.lang=navigator.language||'en-CA';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
+  let fin='',err='';
+  r.onresult=e=>{let s='',done=false;for(let i=0;i<e.results.length;i++){s+=e.results[i][0].transcript;if(e.results[i].isFinal)done=true;}VC.interim=s;if(done)fin=s;vBar();};
+  r.onerror=e=>{err=e.error==='not-allowed'||e.error==='service-not-allowed'?'The microphone is blocked. Allow it for this site, or tap the keyboard to type.':e.error==='no-speech'||e.error==='aborted'?'':'I could not hear that. Try again, or tap the keyboard to type.';};
+  r.onend=()=>{VC.rec=null;const s=(fin||VC.interim||'').trim();VC.interim='';vBar();if(s)vHeard(s,true);else if(err)vSay(err,true);};
+  VC.rec=r;try{r.start();}catch(e){VC.rec=null;}vBar();
+}
+function vSave(){try{localStorage.setItem('pad.voice',VC.first?'1':'0');localStorage.setItem('pad.voice.mute',VC.mute?'1':'0');}catch(e){}}
+function vFirst(on){VC.first=on;vSave();$('ed').classList.toggle('vfirst',on&&!!E&&E.ai);if(E){$('ed').classList.remove('tools');edRender();}}
+/* ---- drawing ---- */
+function vSVG(P,x0,y0,Sc){
+  const X=v=>f(x0+v*Sc),Y=v=>f(y0+v*Sc),fs=Math.max(10,Math.min(13,Sc*0.24));let s='';
+  VC.narrow=vNarrow(P);
+  VC.narrow.forEach(n=>{
+    const on=VC.sug&&VC.sug.key===n.key,m=(n.lo+n.hi)/2,tk=0.09;
+    const[x1,y1,x2,y2]=n.hor?[m,n.a1,m,n.b0]:[n.a1,m,n.b0,m];
+    const tick=(x,y)=>`<path d="M${X(x-tk)} ${Y(y+tk)}L${X(x+tk)} ${Y(y-tk)}"/>`;
+    const tx=n.hor?X(m)+5:X((n.a1+n.b0)/2),ty=n.hor?Y((n.a1+n.b0)/2):Y(m)-5;
+    s+=`<g class="vd${on?' on':''}" data-k="${escapeHtml(n.key)}"><path d="M${X(x1)} ${Y(y1)}L${X(x2)} ${Y(y2)}"/>${tick(x1,y1)}${tick(x2,y2)}<text x="${tx}" y="${ty}" font-size="${f(fs)}" text-anchor="${n.hor?'start':'middle'}" dominant-baseline="${n.hor?'middle':'auto'}">${mm(n.g)}</text></g>`;
+  });
+  const its=VKIT.mode==='flip'&&VKIT.opts[VKIT.i]?VKIT.opts[VKIT.i].items:VKIT.kept&&VKIT.kept.sig===E.wsig?VKIT.kept.items:null;
+  if(its){let k='';its.forEach(p=>{const[w,d]=dimsOf(p);
+      k+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot||0})"><rect x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/>`+
+        (p.k==='sink'?`<rect x="${f(-w/2+0.08)}" y="${f(-d/2+0.08)}" width="${f(w-0.16)}" height="${f(d-0.16)}" rx="0.05"/>`:p.k==='cook'?[[-1,-1],[1,-1],[-1,1],[1,1]].map(([a,b])=>`<circle cx="${f(a*w/4)}" cy="${f(b*d/4)}" r="${f(Math.min(w,d)/7)}"/>`).join(''):p.k==='fridge'?`<path d="M${f(-w/2)} ${f(-d/2)}L${f(w/2)} ${f(d/2)}M${f(w/2)} ${f(-d/2)}L${f(-w/2)} ${f(d/2)}"/>`:'')+'</g>';});
+    s+=`<g class="vk${VKIT.mode==='flip'?' flip':''}" transform="translate(${f(x0)} ${f(y0)}) scale(${f(Sc)})">${k}</g>`;}
+  return s;
+}
+const VIC={mic:'<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',kb:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
+  snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',off:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',tools:'<path d="M4 6h16M4 12h16M4 18h16"/>'};
+const vI=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${VIC[k]}</svg>`;
+function vChips(){
+  if(VKIT.mode==='flip')return[['Back','back'],['Next','next'],['Use this one','use this one'],['Cancel','cancel']];
+  if(VC.sug)return[['Yes','yes'],['Not now','not now']];
+  const c=[];
+  if(VC.narrow.length)c.push(['Make it wider','make it wider']);
+  if(kRoom(E.P))c.push(['Kitchen layouts','show kitchen layouts']);
+  c.push(['Is there enough room?','is there enough room']);
+  if(E.hist.length)c.push(['Undo','undo']);
+  if(E.dirty)c.push(['Review changes','review']);
+  if(AIREADY)c.push(['Suggest a variation','suggest a variation']);
+  return c.slice(0,5);
+}
+function vBar(){
+  const b=$('vBar');if(!b)return;
+  if(!E||!E.ai||E.review){b.hidden=true;return;}
+  b.hidden=false;
+  const live=!!VC.rec,busy=VC.busy||E.busy;
+  const cap=live?(VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:'<span class="vyou">Listening...</span>'):busy?'<span class="vsay">Working on it...</span>':
+    VC.reply?`<span class="vsay">${escapeHtml(VC.reply)}</span>`:`<span class="vsay">${VSR?'Tap the microphone and tell me what to change. Point at the plan for here and there.':'Type what to change. Tap the plan for here and there.'}</span>`;
+  b.innerHTML=`<div class="vrow"><button class="vmic${live?' on':''}" id="vMic" type="button" aria-label="${live?'Stop listening':'Talk'}" title="${live?'Stop listening':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>
+    <div class="vcap" aria-live="polite">${cap}</div>
+    <div class="vside"><button class="vic" type="button" data-v="kb" aria-label="Type instead" title="Type instead" aria-pressed="${VC.typing}">${vI('kb')}</button><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" title="${VC.mute?'Unmute the voice':'Mute the voice'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button><button class="vic" type="button" data-v="tools" aria-label="${VC.first?'Show the tools':'Hide the tools'}" title="${VC.first?'Show the tools':'Hide the tools'}" aria-pressed="${!VC.first}">${vI('tools')}</button></div></div>
+    ${VC.typing?`<form class="vtype" id="vForm"><input id="vIn" maxlength="600" autocomplete="off" placeholder="Say it in words, like make the hall wider" aria-label="What to change"><button class="tb" type="submit"${busy?' disabled':''}>Go</button></form>`:''}
+    <div class="vchips">${vChips().map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>`;
+}
+let vTimer=0;
+/* Height the voice bar takes at the bottom of the plan, so the plan fits above it. */
+function vRoom(){if(!E||!E.ai||E.review)return 0;const b=$('vBar');return(b&&!b.hidden&&b.offsetHeight?b.offsetHeight:isMob?84:92)+(isMob?10:16);}
+if(window.ResizeObserver){let vh=0;new ResizeObserver(()=>{const h=$('vBar').offsetHeight;if(E&&E.ai&&Math.abs(h-vh)>6){vh=h;requestAnimationFrame(()=>{if(E)edRender();});}else vh=h;}).observe($('vBar'));}
+/* The spot the owner pointed at: a small cross over the plan, gone after 30 seconds. */
+function vPinSync(){
+  const p=$('vPin'),pt=E&&E.ai?vPoint():null;if(!p)return;
+  if(!pt){p.hidden=true;return;}
+  p.hidden=false;p.style.left=f(E.x0+pt.x*E.Sc)+'px';p.style.top=f(E.y0+pt.y*E.Sc)+'px';
+  clearTimeout(vPinSync.t);vPinSync.t=setTimeout(vPinSync,30500-(Date.now()-pt.t));
+}
+function vAfterRender(){
+  const el=$('ed'),was=el.classList.contains('vfirst'),now=VC.first&&E.ai;
+  el.classList.toggle('vfirst',now);if(was!==now)requestAnimationFrame(()=>{if(E)edRender();});   // the panel came or went, so fit the plan to the new space
+  vBar();vPinSync();
+  clearTimeout(vTimer);
+  if(!E.ai||E.busy||E.drag||E.rd||E.review||VKIT.mode)return;
+  vTimer=setTimeout(vCheck,650);
+}
+/* After a change settles: offer the first thing that needs attention, once. */
+function vCheck(){
+  if(!E||!E.ai||E.busy||E.review||VKIT.mode||VC.busy||VC.rec)return;
+  const L=vIssues(),s=L[0]||null;
+  if(VC.sug&&L.some(x=>x.key===VC.sug.key))return;
+  VC.sug=s;
+  if(s){const was=VC.said.has(s.key);VC.said.add(s.key);if(s.t==='narrow')edRender();vSay(vLine(s),was);}
+  else vBar();
+}
+function vOpen(){
+  VC.sug=null;VC.reply='';VC.interim='';VC.dis.clear();VC.said.clear();VC.wait=null;VC.typing=!VSR;VC.busy=false;
+  Object.assign(VKIT,{mode:null,opts:[],i:0,best:0,sig:'',kept:null,seen:false});
+  if(E)E.vpt=null;VC.armed=true;   // the unit was opened with a tap, so the browser lets the voice speak
+  vBar();vPinSync();
+}
+function vStop(){clearTimeout(vTimer);if(VC.rec){try{VC.rec.abort();}catch(e){}VC.rec=null;}try{speechSynthesis.cancel();}catch(e){}VC.follow=false;$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;}
+$('vBar').addEventListener('click',e=>{
+  if(!E)return;const b=e.target.closest('button');if(!b)return;VC.armed=true;
+  if(b.id==='vMic')return vListen();
+  if(b.dataset.say)return vHeard(b.dataset.say,false);
+  if(b.dataset.v==='kb'){VC.typing=!VC.typing;vBar();const i=$('vIn');if(i)i.focus();return;}
+  if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute)try{speechSynthesis.cancel();}catch(x){}vBar();return;}
+  if(b.dataset.v==='tools')return vFirst(!VC.first);
+});
+$('vBar').addEventListener('submit',e=>{e.preventDefault();const i=$('vIn');if(!i)return;const v=i.value;i.value='';vHeard(v,false);});
+/* Tapping the plan marks "here". A move that was waiting for a spot happens at once. */
+$('edSvg').addEventListener('pointerdown',e=>{
+  if(!E||!E.ai||E.review)return;VC.armed=true;
+  const pt=edPt(e);E.vpt={x:pt.x,y:pt.y,t:Date.now()};
+  if(VC.wait==='move'){VC.wait=null;e.preventDefault();e.stopImmediatePropagation();vMoveHere();return;}
+  vPinSync();
+},true);
 /* Room areas follow the space: when walls or room separations move, each room whose name is alone in its space takes
    its area from that space, in proportion to how it started (a drawing's printed areas include part of the partitions).
    A room with a typed size keeps it. A space that only now became a room's own is measured as it is. */
@@ -4940,7 +5330,7 @@ function rmFurnish(P,u){
     const Pt=Object.assign({},P,{furn:[],rooms:P.rooms.map(q=>q.n==='Kitchen'?Object.assign({},q,{x:f(kit.F[0]),y:f(kit.F[1]),w:f(kit.F[2]-kit.F[0]),h:f(kit.F[3]-kit.F[1])}):q)});
     const pref=P.pref&&P.pref[0]&&P.pref[0].kit,order=[pref,'l','u','gal2','gal1'].filter((x,i,a)=>x&&a.indexOf(x)===i);
     // the first template whose pieces all stand clear of walls (a closet inside the kitchen, say) and of door swings
-    let got=null;for(const k of order){const r=kTemplate(Pt,k);if(r.ok&&r.items.every(it=>{const b=fzBox(it);return!wr.some(w=>fzX(b,w,0.01))&&!db.some(d2=>fzX(b,d2,0));})){got=r.items;break;}}
+    let got=null;for(const k of order){const r=kTemplate(Pt,k,false,k===pref?P.pref[0].w:undefined);if(r.ok&&r.items.every(it=>{const b=fzBox(it);return!wr.some(w=>fzX(b,w,0.01))&&!db.some(d2=>fzX(b,d2,0));})){got=r.items;break;}}
     if(got)got.forEach(it=>{const p=Object.assign({},it);delete p.id;add(p);});
     else{   // a counter run with sink, cooktop and fridge along the longest free wall
       const o=kit,runs=FZ_SIDES.map(s=>({s,len:span(s,o)[1]-span(s,o)[0]})).sort((a,b)=>b.len-a.len);
@@ -6035,7 +6425,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
