@@ -40,6 +40,20 @@ The assistant gets three things (`vSketchSend`, `vCtx`, and `sketch` in `revise.
 - a picture of the plan (`vSketchImage`): walls, room separations dashed, room names and a labelled 1 m grid, with the sketch in red, as a JPEG.
   It goes with the first request only; the repair rounds keep the strokes.
 
+**Read on the page first** (`vSketchRead`), with no assistant, so sketching works even where the assistant is off:
+- **A door**: a straight stroke along a wall or across an opening, with an arrow or a hook to one side (`vSketchDoor`, `vDoorAt`). The door goes
+  on that wall at the stroke, 820 mm or what fits, opening to the arrow's side. In an opening, a wall is drawn across it first, in line with the
+  wall beside it. A door already there is redrawn the way it was sketched. The line drawn is tried first, then the room edges within 500 mm,
+  keeping the one that leaves no space without its room. A second traced wall on the same line is opened too, and a room separation beside the
+  new wall goes. If the door opens into a space cut off from its room by a separation, that separation goes.
+- **A room moved**: a loop round a room (or a stroke starting in it) and an arrow to another room (`vSketchMove`, `roomMove`). The room's name goes
+  where the arrow ends (the main room there, not a closet inside it). The room there gives way: the old space joins the room it is open to (the
+  separations round it go), or, behind walls, takes the other name. "Swap" swaps them. The furniture is placed again.
+- **A table**: small loops in the room, or words about a table and chairs, put a dining table with chairs there (`vTableAt`): the largest that fits
+  (1600 by 900 with six chairs, 1200 by 800 with four, or a round table with four), nearest the spot drawn. It stays when the furniture is placed again
+  (`P.pref` {yes}).
+- Each is one change on the sheet; undo takes it back. Anything else goes to the assistant as below.
+
 The function tells Claude how to read a sketch: a straight stroke is usually a wall, a short stroke across a wall a door, a loop an area, a stroke
 from one place to another a move. The sketch is a note to the assistant and never becomes plan geometry.
 

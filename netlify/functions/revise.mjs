@@ -35,7 +35,7 @@ async function countDay(limit) {
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
-const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint', 'add_room', 'grow_room', 'add_corridor_door', 'name_space', 'remove_room', 'remove_item'];
+const OPS = ['move_wall', 'add_wall', 'remove_wall', 'move_door', 'flip_door', 'remove_door', 'add_door', 'add_bump', 'resize_bump', 'remove_bump', 'kitchen_layout', 'set_footprint', 'add_room', 'grow_room', 'add_corridor_door', 'name_space', 'remove_room', 'remove_item', 'move_room', 'add_item'];
 const KINDS = ['bed', 'ns', 'sofa', 'arm', 'ctable', 'rtable', 'ltable', 'desk', 'dresser', 'closet', 'shelf', 'tv', 'rug', 'plant', 'wd', 'counter', 'sink', 'cook', 'fridge', 'island', 'wc', 'van', 'tub', 'shower'];
 
 const TOOL = {
@@ -58,11 +58,13 @@ const TOOL = {
             dy: { type: 'number', description: 'Metres toward the corridor (negative is toward the windows).' },
             d: { type: 'number', description: 'Metres. For a wall: across the wall (horizontal walls move down with positive, vertical walls move right). For a door: along its wall (right or down with positive). For resize_bump: change in width, see dd for depth.' },
             dd: { type: 'number', description: 'resize_bump only: change in depth, metres.' },
-            kind: { type: 'string', description: 'remove_item: the piece, one of ' + KINDS.join(', ') + '. add_bump: balcony, den, nook, loggia or vestibule. kitchen_layout: u, l, gal2 or gal1.' },
-            x: { type: 'number', description: 'name_space: a point inside the blank space, metres. remove_room and remove_item: the point the user pointed at, when there is one, to pick which.' }, y: { type: 'number' }, rot: { type: 'number', description: '0, 90, 180 or 270.' },
+            kind: { type: 'string', description: 'add_item: ltable (dining table with chairs) or rtable (round table with chairs), at x, y. remove_item: the piece, one of ' + KINDS.join(', ') + '. add_bump: balcony, den, nook, loggia or vestibule. kitchen_layout: u, l, gal2 or gal1.' },
+            x: { type: 'number', description: 'add_door: the spot for the middle of the door (on a wall, or in an opening between walls), with room = the room it opens into. add_item: the centre of the table. name_space: a point inside the blank space, metres. remove_room and remove_item: the point the user pointed at, when there is one, to pick which.' }, y: { type: 'number' }, rot: { type: 'number', description: '0, 90, 180 or 270.' },
             w: { type: 'number' }, h: { type: 'number' },
             hor: { type: 'boolean', description: 'add_wall: true for a wall that runs left to right.' },
-            room: { type: 'string', description: 'remove_room: the room to take out, like Bath or Den (with x, y when there are several). name_space: the room name, one of Bedroom, Primary Bedroom, Living, Dining, Kitchen, Den, Bath, Hall, Entry, Closet, Laundry, Mech. grow_room: the room to grow, like Bedroom or Bath. add_corridor_door: the room beside the corridor to give the door to (optional).' },
+            to: { type: 'string', description: 'move_room: the room whose place the moved room takes, like Den.' },
+            swap: { type: 'boolean', description: 'move_room: true to swap the two rooms; otherwise the room there gives way and the old space joins the room it is open to.' },
+            room: { type: 'string', description: 'move_room: the room to move, like Kitchen. add_door with x, y: the room the door opens into. remove_room: the room to take out, like Bath or Den (with x, y when there are several). name_space: the room name, one of Bedroom, Primary Bedroom, Living, Dining, Kitchen, Den, Bath, Hall, Entry, Closet, Laundry, Mech. grow_room: the room to grow, like Bedroom or Bath. add_corridor_door: the room beside the corridor to give the door to (optional).' },
             host: { type: 'string', description: 'add_room: the room to carve the new room out of (optional), like Bedroom or Living.' },
             width: { type: 'number', description: 'set_footprint: new unit width in metres.' },
             depth: { type: 'number', description: 'set_footprint: new unit depth in metres.' },
@@ -124,7 +126,11 @@ Sketches:
   usually means a door there. A loop marks an area: a room to add or name, or a thing to change in it. A stroke from one place to another
   means move it there. The user's words say which.
 - Turn the sketch into the steps you have: move_wall by the distance between a wall's at and the stroke, add_wall along a stroke that runs
-  wall to wall, add_door on the wall a stroke crosses, add_room or name_space for a loop.`;
+  wall to wall, add_door on the wall a stroke crosses, add_room or name_space for a loop.
+- A short straight stroke on a wall or across an opening, with an arrow or a hook to one side, is a door that opens to that side: add_door with
+  x, y at the middle of the stroke and room = the room on the arrow's side. An opening gets a wall across it with the door in it.
+- A loop round a room with an arrow to another room means move that room there: move_room (room, to). The room there gives way; say swap
+  only when the user says swap. Small loops or a rectangle with small marks around it is a table with chairs: add_item ltable at its centre.`;
 
 function clean(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
 

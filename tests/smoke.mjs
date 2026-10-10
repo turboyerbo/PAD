@@ -1005,6 +1005,23 @@ try {
         if ((await v.evaluate(() => window.__pad.edState().P.rooms.filter(q => !q.bk).length)) !== rm0.rooms) errs.push('undo should bring the room back');
       }
     }
+    // sketches the page reads itself: a door with its swing, and a room moved with an arrow plus a table drawn in; neither goes to the assistant
+    {
+      sent = null;
+      const dr = await v.evaluate(async () => { const T = window.__pad, E = T.edState(), P = E.P, g = T.wallGroups(P).filter(g => g.b - g.a > 2).sort((a, b) => (b.b - b.a) - (a.b - a.a))[0]; if (!g) return null;
+        const d0 = P.doors.length, m = (g.a + g.b) / 2, c = g.pos + g.t / 2, raw = g.hor ? [[m - 0.4, c + 0.04], [m + 0.4, c - 0.03], [m + 0.1, c + 0.5]] : [[c + 0.04, m - 0.4], [c - 0.02, m + 0.4], [c + 0.5, m + 0.1]];
+        T.vHeard('let me sketch it'); T.vSK().strokes = [{ kind: 'path', raw }]; T.vHeard('a door here'); T.vHeard('send'); await new Promise(r => setTimeout(r, 200));
+        const r = { d0, d1: E.P.doors.length, reply: T.vState().VC.reply, blanks: T.snapBlanks(E.P).length, open: T.guAudit(E.P, E.u).filter(x => x.t === 'dopen').length };
+        T.vHeard('undo'); r.back = E.P.doors.length; return r; });
+      if (dr && (dr.d1 !== dr.d0 + 1 || !/door in the wall/.test(dr.reply) || dr.blanks || dr.open || dr.back !== dr.d0 || sent)) errs.push('a door sketched on a wall should be put in on the page, with its doorway open, and undo should take it out: ' + JSON.stringify(dr));
+      const mv = await v.evaluate(async () => { const T = window.__pad, E = T.edState(), P = E.P, K = P.rooms.find(q => q.n === 'Kitchen'), D = P.rooms.find(q => q.n === 'Den'); if (!K || !D) return null;
+        const circ = (x, y, r, n) => { const a = []; for (let i = 0; i <= n; i++) a.push([x + r * Math.cos(i / n * 6.283), y + r * Math.sin(i / n * 6.283)]); return a; }, kc = [K.x + K.w / 2, K.y + K.h / 2], dc = [D.x + D.w / 2, D.y + D.h / 2];
+        T.vHeard('let me sketch it'); T.vSK().strokes = [{ kind: 'loop', raw: circ(kc[0], kc[1], Math.min(K.w, K.h) / 2 + 0.3, 30) }, { kind: 'path', raw: [kc, [(kc[0] + dc[0]) / 2 + 1.2, (kc[1] + dc[1]) / 2], [dc[0] + 0.3, dc[1]]] }, { kind: 'loop', raw: circ(dc[0], dc[1], 0.35, 14) }, { kind: 'loop', raw: circ(dc[0] - 0.6, dc[1], 0.12, 8) }];
+        T.vHeard("move the kitchen to where I've shown it with the arrow and put a table and chairs if they fit"); T.vHeard('send'); await new Promise(r => setTimeout(r, 300));
+        const K2 = E.P.rooms.find(q => q.n === 'Kitchen'), r = { reply: T.vState().VC.reply, at: !!K2 && dc[0] >= K2.x && dc[0] <= K2.x + K2.w && dc[1] >= K2.y && dc[1] <= K2.y + K2.h, den: E.P.rooms.some(q => q.n === 'Den'), counters: E.P.furn.filter(p => /^(sink|cook|fridge)$/.test(p.k)).length, blanks: T.snapBlanks(E.P).length };
+        T.vHeard('undo'); r.back = E.P.rooms.some(q => q.n === 'Den'); return r; });
+      if (mv && (!mv.at || !/^I moved the kitchen to where the den was/.test(mv.reply) || !mv.counters || mv.blanks || !mv.back || sent)) errs.push('a kitchen circled with an arrow to the den should move there on the page, with its counters placed again: ' + JSON.stringify(mv));
+    }
     // anything else goes to the assistant, with the spot that was pointed at
     await v.mouse.click(tgt ? tgt.cx : 700, tgt ? tgt.cy : 400); await v.waitForTimeout(100);
     await v.evaluate(() => window.__pad.vHeard('add a balcony there')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});
