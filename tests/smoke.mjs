@@ -988,6 +988,22 @@ try {
     await v.waitForTimeout(300);
     if (!sent || sent.prompt !== 'add a balcony there' || !sent.point || typeof sent.point.x !== 'number') errs.push('a spoken request should reach the assistant with the pointed spot: ' + JSON.stringify(sent && { prompt: sent.prompt, point: sent.point }));
     if (!/Added a balcony/.test(await v.evaluate(() => window.__pad.vState().VC.reply))) errs.push('the assistant answer should be read back');
+    // the sketchpad: draw over the plan, say what it means, send; the assistant gets the words, the strokes in metres and a picture
+    await v.evaluate(() => window.__pad.vHeard('let me sketch it')); await v.waitForTimeout(200);
+    if (await v.isHidden('#vSketch')) errs.push('let me sketch it should lay a sheet over the plan');
+    else {
+      const bx = await v.locator('#edSvg').boundingBox(), cx = bx.x + bx.width * 0.35, cy = bx.y + bx.height * 0.45;
+      await v.mouse.move(cx, cy); await v.mouse.down(); await v.mouse.move(cx + 90, cy, { steps: 8 }); await v.mouse.up();
+      await v.mouse.move(cx + 40, cy - 30); await v.mouse.down(); await v.mouse.move(cx + 40, cy + 30, { steps: 6 }); await v.mouse.up();
+      sent = null;
+      await v.evaluate(() => window.__pad.vHeard('a wall along here with a door in the middle'));
+      await v.evaluate(() => window.__pad.vHeard('send')); await v.waitForFunction(() => !window.__pad.edState().busy && !window.__pad.vState().VC.busy, null, { timeout: 8000 }).catch(() => {});
+      await v.waitForTimeout(300);
+      const sk = sent && sent.sketch;
+      if (!sent || !/wall along here/.test(sent.prompt) || !sk || !Array.isArray(sk.strokes) || sk.strokes.length !== 2 || sk.strokes[0].kind !== 'line' || !/^data:image\/jpeg;base64,/.test(sk.image || ''))
+        errs.push('send should pass the words, two strokes and a picture to the assistant: ' + JSON.stringify(sent && { prompt: sent.prompt, n: sk && sk.strokes && sk.strokes.length, k: sk && sk.strokes && sk.strokes[0] && sk.strokes[0].kind, img: !!(sk && sk.image) }));
+      if (await v.isVisible('#vSketch')) errs.push('the sheet should be put away after sending');
+    }
     // measure a room on request: both dimensions drawn and read out
     await v.evaluate(() => window.__pad.vHeard('can you show the hall width as a dimension line')); await v.waitForTimeout(200);
     const ms = await v.evaluate(() => ({ dims: document.querySelectorAll('#edSvg .vmz').length, reply: window.__pad.vState().VC.reply }));
@@ -996,7 +1012,7 @@ try {
     await v.evaluate(() => { document.getElementById('vIn') || 0; window.__heard.push('how wide is the bath', 'is there enough room'); });
     const you0 = await v.evaluate(() => window.__pad.vState().VC.log.filter(m => m.w === 'you').length);
     await v.click('#vMic');
-    const conv = await v.waitForFunction(n => window.__pad.vState().VC.log.filter(m => m.w === 'you').length >= n + 2, you0, { timeout: 8000 }).then(() => true).catch(() => false);
+    const conv = await v.waitForFunction(() => { const L = window.__pad.vState().VC.log.slice(-6).map(m => m.t); return L.includes('how wide is the bath') && L.includes('is there enough room') && L[L.length - 1] !== 'is there enough room'; }, null, { timeout: 8000 }).then(() => true).catch(() => false);   // the log keeps the last 40 lines, so look for the two requests rather than count
     if (!conv) errs.push('after one tap on the microphone it should keep listening and answer two requests in a row: ' + JSON.stringify(await v.evaluate(() => window.__pad.vState().VC.log.slice(-4))));
     if ((await v.locator('#vLog .vm.you').count()) < 2) errs.push('the conversation should show in the panel');
     await v.evaluate(() => window.__heard.push('pause'));

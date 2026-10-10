@@ -437,6 +437,8 @@ body.chat-open .info{right:356px}
 .vk rect,.vk circle,.vk path{fill:var(--furn-fill);stroke:var(--furn);stroke-width:1.4;vector-effect:non-scaling-stroke}
 .vk path{fill:none}
 .vk.flip rect:first-child{fill-opacity:.9}
+.vsketch{position:absolute;left:0;top:0;z-index:3;touch-action:none;cursor:crosshair}
+.vsketch.busy{pointer-events:none;opacity:.6}
 .vpin{position:absolute;z-index:3;width:28px;height:28px;margin:-14px 0 0 -14px;pointer-events:none;border:2px solid var(--accent);border-radius:50%;box-sizing:border-box}
 .vpin::before,.vpin::after{content:'';position:absolute;background:var(--accent);left:50%;top:50%}
 .vpin::before{width:2px;height:40px;margin:-20px 0 0 -1px}
@@ -1130,7 +1132,7 @@ body.no-ai:not(.manual) .cust{display:none}
     <div class="ed-act"><button class="tb" id="edInfo" type="button" title="Unit details, iterations, share and export">Details</button><button class="tb" id="edUndo" type="button">Undo</button><button class="tb" id="edReset" type="button">Start over</button><button class="tb" id="edCancel" type="button">Discard</button><button class="tb primary" id="edDone" type="button">Review changes</button></div>
   </div>
   <div class="ed-body">
-    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div><div class="vpin" id="vPin" hidden aria-hidden="true"></div>
+    <div class="ed-cv" id="edCv"><svg id="edSvg" xmlns="http://www.w3.org/2000/svg"></svg><div class="ed-bub" id="edBub"></div><div class="vpin" id="vPin" hidden aria-hidden="true"></div><canvas class="vsketch" id="vSketch" hidden aria-label="Sketch for the assistant"></canvas>
       <div class="vbar" id="vBar" hidden role="region" aria-label="Talk to the plan"></div>
       <div class="edzoom" id="edZoom" role="group" aria-label="Zoom"><button type="button" data-z="in" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-z="out" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><button type="button" data-z="fit" aria-label="Fit the plan" title="Fit the plan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button></div></div>
     <button class="ed-handle" id="edHandle" type="button" aria-expanded="false" aria-controls="edSide"><span id="edHandleTxt">Tools</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
@@ -3926,7 +3928,7 @@ function aiOps(ops){
 }
 async function aiCall(prompt,plan,repair){
   try{
-    const r=await fetch('/api/revise',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({prompt,plan,repair,amount:E?E.amt:1},vCtx()))}),j=await r.json().catch(()=>({}));
+    const r=await fetch('/api/revise',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({prompt,plan,repair,amount:E?E.amt:1},vCtx(!!repair)))}),j=await r.json().catch(()=>({}));
     return r.ok?j:{error:j.error||'The assistant could not be reached.'};
   }catch(e){return{error:'The assistant could not be reached. Check the connection.'};}
 }
@@ -4188,26 +4190,99 @@ function vRoomCheck(){
   return s;
 }
 /* Anything else goes to the assistant, with the spot and the flagged problem. */
-function vCtx(){
+function vCtx(repair){
   if(!E||!E.vctx)return{};
   const c=E.vctx,o={};
   if(c.pt){const t=E.wt||{};let w=null,bd=9;Object.keys(t).forEach(id=>{const v=t[id],a=v.hor?c.pt.x:c.pt.y;if(a<v.a-0.4||a>v.b+0.4)return;const d=Math.abs((v.hor?c.pt.y:c.pt.x)-v.pos);if(d<bd){bd=d;w=id;}});
     o.point={x:r2(c.pt.x),y:r2(c.pt.y),wall:w&&bd<2?w:undefined};}
   if(c.note)o.context=String(c.note).slice(0,300);
+  if(c.sketch)o.sketch=repair?{strokes:c.sketch.strokes}:c.sketch;   // the picture goes once; the repair rounds keep the strokes
   return o;
 }
 async function vAsk(text){
   if(!AIREADY){VC.offerDraft=true;return vSay('The assistant is not switched on for this site, so I can only do the simple things here: widen a narrow spot, move a wall to where you point, measure a room, lay out the kitchen, undo. Or you can draw it yourself.');}
   const s=VC.sug,pt=vPoint();
-  E.vctx={pt,note:s?vLine(s).replace(/ Do you want.*$/,''):''};
+  E.vctx={pt,note:s?vLine(s).replace(/ Do you want.*$/,''):'',sketch:VC.sketch||null};if(!VC.sketch)VC.lastAsk=text;
   const n=E.log.length;VC.busy=true;vHearStop();vSay('Working on it.',true,true);
   try{await vLayoutDo(()=>aiRun(text));}finally{E&&(E.vctx=null);VC.busy=false;}
   if(!E)return;
   const q=E.log.length>n?E.log[0]:null;VC.sug=null;
-  const last=' Say it another way and I will try again, or you can draw it yourself.';
+  const last=VC.sketch?' Try the sketch again with a few words about it, or you can draw it yourself.':' Say it another way, sketch it on the plan, or draw it yourself.';
   if(!q){VC.offerDraft=true;return vSay((E.msg||'Nothing changed.')+last);}
   VC.offerDraft=!q.did;
   vSay((q.say||(q.did?'Done.':'Nothing changed.'))+(q.did?' Say undo to take it back.':last));
+}
+/* ---- sketchpad: when words are not enough ----
+   "Let me sketch it" (or Sketch it, offered when the assistant could not make a change) lays a clear sheet over the plan. The owner draws in
+   red with a finger or the mouse and talks while drawing. "Send" passes the words, the strokes in plan metres (each a line, a loop or a path)
+   and a picture of the plan with a metre grid and the sketch to the assistant. The sketch is a note to the assistant, never plan geometry. */
+const VSK={on:false,keep:false,strokes:[],cur:null,text:[]};
+function vSketchOpen(){
+  if(!E)return;if(!AIREADY)return vSay('Sketching needs the assistant, and it is not switched on for this site.');
+  VSK.on=true;VSK.keep=false;VSK.strokes=[];VSK.text=[];VSK.cur=null;VC.offerDraft=false;VC.sug=null;vSketchSync();
+  vSay('Sketch on the plan with your finger or the mouse, and tell me what it means while you draw. Say send when you are done.');
+}
+function vSketchClose(){VSK.on=false;VSK.keep=false;VSK.strokes=[];VSK.cur=null;VSK.text=[];vSketchSync();}
+/* Fewer points: a stroke keeps its shape within 60 mm. */
+function vSimplify(pts,tol){
+  if(pts.length<3)return pts;
+  const d=(p,a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1e-9;return Math.abs(dy*p[0]-dx*p[1]+b[0]*a[1]-b[1]*a[0])/L;};
+  let m=0,k=0;for(let i=1;i<pts.length-1;i++){const v=d(pts[i],pts[0],pts[pts.length-1]);if(v>m){m=v;k=i;}}
+  if(m<=tol)return[pts[0],pts[pts.length-1]];
+  return[...vSimplify(pts.slice(0,k+1),tol).slice(0,-1),...vSimplify(pts.slice(k),tol)];
+}
+function vStroke(raw){
+  const pts=vSimplify(raw,0.06).slice(0,40).map(([x,y])=>[r2(x),r2(y)]),a=raw[0],b=raw[raw.length-1];
+  let len=0;for(let i=1;i<raw.length;i++)len+=Math.hypot(raw[i][0]-raw[i-1][0],raw[i][1]-raw[i-1][1]);
+  const kind=Math.hypot(b[0]-a[0],b[1]-a[1])<0.4&&len>1.2?'loop':pts.length===2?'line':'path';
+  return{kind,pts};
+}
+/* The sheet: a canvas over the plan, redrawn from plan metres whenever the plan moves or zooms. */
+function vSketchSync(){
+  const c=$('vSketch');if(!c)return;const show=!!E&&(VSK.on||VSK.keep);c.hidden=!show;c.classList.toggle('busy',VSK.keep&&!VSK.on);
+  if(!show)return;
+  const cv=$('edCv'),dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);c.style.width=w+'px';c.style.height=h+'px';}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  g.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--markup').trim()||'red';g.lineWidth=3.5;g.lineCap='round';g.lineJoin='round';
+  [...VSK.strokes.map(s=>s.raw),VSK.cur].filter(Boolean).forEach(p=>{if(p.length<2)return;g.beginPath();p.forEach(([x,y],i)=>{const X=E.x0+x*E.Sc,Y=E.y0+y*E.Sc;i?g.lineTo(X,Y):g.moveTo(X,Y);});g.stroke();});
+}
+$('vSketch').addEventListener('pointerdown',e=>{if(!E||!VSK.on)return;e.preventDefault();VC.idle=Date.now();const p=edPt(e);VSK.cur=[[p.x,p.y]];try{$('vSketch').setPointerCapture(e.pointerId);}catch(x){}});
+$('vSketch').addEventListener('pointermove',e=>{if(!VSK.cur)return;const p=edPt(e),l=VSK.cur[VSK.cur.length-1];if(Math.hypot(p.x-l[0],p.y-l[1])>0.02){VSK.cur.push([p.x,p.y]);vSketchSync();}});
+const vSkUp=()=>{if(!VSK.cur)return;const raw=VSK.cur;VSK.cur=null;if(raw.length>1&&VSK.strokes.length<12){const s=vStroke(raw);s.raw=raw;VSK.strokes.push(s);}vSketchSync();vBar();};
+$('vSketch').addEventListener('pointerup',vSkUp);$('vSketch').addEventListener('pointercancel',vSkUp);
+/* A picture for the assistant: the walls and room names on a metre grid, with the sketch in red. */
+function vSketchImage(){
+  const P=E.P,pad=0.6,s=Math.max(30,Math.min(90,900/Math.max(P.W+2*pad,P.D+2*pad))),W=Math.round((P.W+2*pad)*s),H=Math.round((P.D+2*pad)*s);
+  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#000';
+  const X=x=>(x+pad)*s,Y=y=>(y+pad)*s;
+  g.fillStyle=css('--sheet');g.fillRect(0,0,W,H);
+  g.strokeStyle=css('--rule');g.lineWidth=1;g.fillStyle=css('--ink-2');g.font=`${Math.round(s*0.17)}px sans-serif`;
+  for(let x=0;x<=P.W+1e-6;x++){g.beginPath();g.moveTo(X(x),Y(0));g.lineTo(X(x),Y(P.D));g.stroke();g.fillText(x+' m',X(x)+2,Y(0)-5);}
+  for(let y=0;y<=P.D+1e-6;y++){g.beginPath();g.moveTo(X(0),Y(y));g.lineTo(X(P.W),Y(y));g.stroke();g.fillText(y+' m',2,Y(y)+4);}
+  g.fillStyle=css('--navy');P.walls.forEach(w=>{if(w.bw||w.rail)return;g.fillRect(X(w.x),Y(w.y),Math.max(1,w.w*s),Math.max(1,w.h*s));});
+  g.strokeStyle=css('--ink-2');g.lineWidth=1.5;g.setLineDash([6,5]);(P.seps||[]).forEach(q=>{g.beginPath();g.moveTo(X(q.x1),Y(q.y1));g.lineTo(X(q.x2),Y(q.y2));g.stroke();});g.setLineDash([]);   // room separations: where a room ends with no wall
+  g.fillStyle=css('--ink');g.textAlign='center';g.font=`600 ${Math.round(s*0.2)}px sans-serif`;
+  P.rooms.filter(q=>!q.bk).forEach(q=>g.fillText(q.n.toUpperCase(),X(q.lx!==undefined?q.lx:q.x+q.w/2),Y(q.ly!==undefined?q.ly:q.y+q.h/2)));
+  g.strokeStyle=css('--markup');g.lineWidth=Math.max(3,s*0.06);g.lineCap='round';g.lineJoin='round';
+  VSK.strokes.forEach(st=>{g.beginPath();st.raw.forEach(([x,y],i)=>i?g.lineTo(X(x),Y(y)):g.moveTo(X(x),Y(y)));g.stroke();});
+  return c.toDataURL('image/jpeg',0.82);
+}
+async function vSketchSend(){
+  if(!VSK.strokes.length)return vSay('Draw on the plan first, then say send.');
+  const words=VSK.text.join('. ')||VC.lastAsk||'Make the change shown in the sketch.';
+  const sk={strokes:VSK.strokes.map(s=>({kind:s.kind,pts:s.pts})),image:vSketchImage()};
+  VSK.on=false;VSK.keep=true;vSketchSync();
+  VC.sketch=sk;
+  try{await vAsk(words);}finally{VC.sketch=null;vSketchClose();}
+}
+/* While the sheet is out: send, undo a stroke, clear, cancel; anything else is what the sketch means. */
+function vSketchHeard(text,t){
+  if(/^(send( it)?|done|that'?s it|go|finished|ok(ay)? send|send the sketch)\b/.test(t))return vSketchSend();
+  if(/^(undo|take (that|it) back|remove the last)/.test(t)){VSK.strokes.pop();vSketchSync();return vSay(VSK.strokes.length?'Took back the last stroke.':'The sheet is clear.',true);}
+  if(/^(clear|start over|erase|wipe)/.test(t)){VSK.strokes=[];vSketchSync();return vSay('Cleared. Draw again.',true);}
+  if(/^(cancel|never mind|nevermind|stop sketching|close the sketch|no sketch)/.test(t)){vSketchClose();return vSay('Sketch put away.');}
+  VSK.text.push(text);return vSay(VSK.strokes.length?'Got it. Keep drawing, or say send.':'Got it. Now draw it on the plan, then say send.',true);
 }
 /* ---- what was heard ---- */
 function vHeard(raw,voice,chip){
@@ -4224,7 +4299,9 @@ function vHeard(raw,voice,chip){
   VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}
   const arm=VC.discArm;VC.discArm=false;
   if(/^(pause|stop listening|that'?s (all|it for now)|that is all|good ?bye|bye|i'?m done talking)\b/.test(t)){vConv(false);return vSay('Okay. Tap the microphone when you need me.');}
-  if(/draw it myself|by hand|let me draw|i'?ll draw/.test(t))return vDraft();
+  if(VSK.on)return vSketchHeard(text,t);
+  if(/\bsketch\b|let me (draw|show you)|i'?ll show you|draw it on the plan/.test(t))return vSketchOpen();
+  if(/draw it myself|by hand|i'?ll draw it myself/.test(t))return vDraft();
   if(/\b(layout mode|layout view|change the layout|move (the )?rooms|rearrange( the)? rooms)\b/.test(t))return vMode('layout');
   if(/\b(drafting|draft) (mode|view)\b|^drafting\b|open (the )?drafting/.test(t))return vMode('draft');
   if(/\bfurniture (mode|view)\b|^furniture$/.test(t))return vMode('furn');
@@ -4407,9 +4484,11 @@ const VIC={mic:'<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z"/><pat
   snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',off:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',tools:'<path d="M4 6h16M4 12h16M4 18h16"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
 const vI=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${VIC[k]}</svg>`;
 function vChips(){
+  if(VSK.on)return[['Send','send'],['Undo stroke','undo'],['Clear','clear'],['Cancel','cancel']];
   if(VKIT.mode==='flip')return[['Back','back'],['Next','next'],['Use this one','use this one'],['Cancel','cancel']];
   if(VC.sug)return[['Yes','yes'],['Not now','not now']];
   const c=[];
+  if(VC.offerDraft&&AIREADY)c.push(['Sketch it','sketch it']);
   if(VC.offerDraft)c.push(['Draw it myself','draw it myself']);
   if(VC.first)c.push(E.mode==='all'?['Layout mode','layout mode']:['Normal view','normal view']);
   if(kRoom(E.P))c.push(['Kitchen layouts','show kitchen layouts']);
@@ -4459,7 +4538,7 @@ function vPinSync(){
 function vAfterRender(){
   const el=$('ed'),was=el.classList.contains('vfirst'),now=VC.first;
   el.classList.toggle('vfirst',now);if(was!==now)requestAnimationFrame(()=>{if(E)edRender();});   // the panel came or went, so fit the plan to the new space
-  vBar();vPinSync();
+  vBar();vPinSync();vSketchSync();
   if(VC.conv&&!VC.rec)setTimeout(vHear,300);
   clearTimeout(vTimer);
   if(!vIn()||E.busy||E.drag||E.rd||E.review||VKIT.mode)return;
@@ -4482,7 +4561,7 @@ function vOpen(){
   let on=false;try{on=localStorage.getItem('pad.voice.conv')==='1';}catch(e){}
   if(on&&VSR)setTimeout(()=>{if(vIn())vConv(true,true);},700);   // the last conversation was left on: keep listening
 }
-function vStop(){clearTimeout(vTimer);vHearStop();VC.rec=null;VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;
+function vStop(){clearTimeout(vTimer);vSketchClose();vHearStop();VC.rec=null;VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;
   setTimeout(()=>{if(E)return;vaSync();   // back on the strip: the conversation carries on there, or stops in the classic app
     if(vaOn()&&VA.started){if(VC.conv||VC.log.length)vSay(`Back to ${PROJ?PROJ.name:'the building'}. ${units.length?'Which unit next?':''}`);}else vConv(false,true);},450);}
 $('vBar').addEventListener('click',e=>{
@@ -6747,7 +6826,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),VSK:()=>VSK,vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);

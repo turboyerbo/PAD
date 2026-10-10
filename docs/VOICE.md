@@ -27,6 +27,22 @@ route cannot reach it). Room sizes and clear widths are the owner's call: the vo
 warn about them (`SIZEMSG`, and the `room` type from `guAudit` is left out). Asked directly ("how wide is the hall", "is there enough room"),
 the voice still measures and answers.
 
+## Sketchpad: when words are not enough
+
+When the assistant could not make a change, the voice offers **Sketch it** (and Draw it myself). "Let me sketch it" or "let me show you" opens it
+at any time. A clear sheet lies over the plan (`#vSketch`); draw in red with a finger or the mouse, up to 12 strokes, and talk while drawing:
+what is said while the sheet is out is kept as the request ("a wall along here with a door in the middle"). If nothing is said, the request that
+failed is used. "Send" sends it; "undo" takes back the last stroke; "clear" wipes the sheet; "cancel" puts it away.
+
+The assistant gets three things (`vSketchSend`, `vCtx`, and `sketch` in `revise.mjs`):
+- the words;
+- the strokes in plan metres, simplified to within 60 mm, each marked `line`, `loop` (ends meet) or `path`;
+- a picture of the plan (`vSketchImage`): walls, room separations dashed, room names and a labelled 1 m grid, with the sketch in red, as a JPEG.
+  It goes with the first request only; the repair rounds keep the strokes.
+
+The function tells Claude how to read a sketch: a straight stroke is usually a wall, a short stroke across a wall a door, a loop an area, a stroke
+from one place to another a move. The sketch is a note to the assistant and never becomes plan geometry.
+
 ## Everywhere: the whole app by voice
 
 With voice first on, the voice runs the whole app, not only the editor (`vaOn`, `vaHeard`, `vaBar`). Every view hides its buttons:
