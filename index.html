@@ -446,6 +446,23 @@ body.mob .vcap{font-size:13px}
 body.mob .vchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -8px;padding:0 8px}
 body.mob .vchips .chip{flex:none}
 @media (prefers-reduced-motion:reduce){.vmic.on,.vd.on,.vstate .dots i{animation:none}}
+/* voice everywhere: with voice first on, every view hides its buttons and the conversation runs the app */
+body.vapp :is(.bar,#keyplan,#sZoom,#navbox,.nav,.add,footer,#mob .mtop,#mob .mbot,#mMenu,.info,.modal,.chat,.msheet,.land-card,.land-lead,#proj>*,#dimBar,#toast){display:none!important}
+body.vapp.view-proj #proj{background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%)}
+@media (min-width:761px){body.vapp.view-app:not(.mob) .stage{margin-right:404px}}
+body.vapp.mob .stage{flex:none;height:50vh;height:50dvh;width:100vw;align-self:stretch}   /* phone: the units sit above the conversation sheet */
+.vapp{position:fixed;z-index:30}
+.vapp.vbar.full.side{top:12px;right:12px;bottom:12px;left:auto;width:380px}
+.vapp.vbar.full:not(.side){top:auto;left:6px;right:6px;bottom:6px;max-height:calc(50vh - 12px);max-height:calc(50dvh - 12px)}
+.vapp.greet{inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%);color:#fff;text-align:center;cursor:pointer;padding:24px}
+.vg{display:flex;flex-direction:column;align-items:center;gap:22px;max-width:560px}
+.vg img{height:96px;width:auto}
+.vg h1{font-family:var(--display);font-weight:600;font-size:clamp(24px,4.4vw,38px);line-height:1.2;margin:0;text-wrap:balance}
+.vg p{margin:0;font-size:15px;opacity:.8}
+.vorb{width:96px;height:96px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;animation:vorb 2.4s ease-in-out infinite}
+.vorb svg{width:40px;height:40px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes vorb{50%{box-shadow:0 0 0 18px rgba(2,116,190,.22)}}
+@media (prefers-reduced-motion:reduce){.vorb{animation:none}}
 .edzoom{position:absolute;right:8px;bottom:8px;z-index:3;display:flex;flex-direction:column;border:1px solid var(--draw);background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(38,38,31,.15)}
 .edzoom button{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:0;border-bottom:1px solid var(--rule);background:none;color:var(--draw);padding:0;cursor:pointer;touch-action:manipulation}
 .edzoom button:last-child{border-bottom:0}.edzoom button:disabled{opacity:.35;cursor:default}
@@ -1098,6 +1115,7 @@ body.no-ai:not(.manual) .cust{display:none}
   </div>
 </div>
 
+<div class="vapp" id="vApp" hidden role="region" aria-label="Talk to PAD"></div>
 <div class="ed" id="ed" hidden role="dialog" aria-modal="true" aria-labelledby="edTitle">
   <i class="tape tl" aria-hidden="true"></i><i class="tape tr" aria-hidden="true"></i>
   <div class="ed-top">
@@ -1994,8 +2012,8 @@ const AD_TOP=1.25;   // metres above the window wall kept for the overall width 
 let ADL='';
 function computeScale(){
   document.body.classList.toggle('detail',detail);
-  const h=scroller.clientHeight;TOP=(isMob?(lite()?14:60):(grouped?88:70))+(isMob?40:34);   // room for the jump and wing bars
-  const avail=h-TOP-(isMob?(lite()?8:66):66)-12;
+  const h=scroller.clientHeight,va=document.body.classList.contains('vapp');TOP=va?(isMob?34:70):(isMob?(lite()?14:60):(grouped?88:70))+(isMob?40:34);   // room for the jump and wing bars (hidden when the voice runs the app)
+  const avail=h-TOP-(va?(isMob?54:66):isMob?(lite()?8:66):66)-12;
   let s=Math.max(18,Math.min(90,avail/(DM+BM+AD_TOP+CORR+0.2)));
   if(isMob)s=Math.max(12,Math.min(s,scroller.clientWidth*0.82/6.5,scroller.clientWidth*0.94/Math.max(1,...units.map(u=>u.plan.W+0.4))));   // phone: the middle unit takes about 80% of the width, and the widest unit always fits
   S=s*zoom;TOP+=(BM+AD_TOP)*S;
@@ -4187,7 +4205,13 @@ async function vAsk(text){
 }
 /* ---- what was heard ---- */
 function vHeard(raw,voice,chip){
-  if(!E||!E.ai)return;
+  if(!E){   // outside the editor: buildings and units
+    if(!vaOn())return;const text=String(raw||'').trim();if(!text)return;
+    VC.lastVoice=!!voice;VC.armed=true;VC.idle=Date.now();vLog('you',chip?text.charAt(0).toUpperCase()+text.slice(1):text);
+    VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}
+    return vaHeard(text,text.toLowerCase().replace(/[.!?,]+$/,'').trim());
+  }
+  if(!E.ai)return;
   const text=String(raw||'').trim();if(!text)return;
   const t=text.toLowerCase().replace(/[.!?,]+$/,'').trim();VC.lastVoice=!!voice;VC.armed=true;VC.you=text;VC.idle=Date.now();
   vLog('you',chip?text.charAt(0).toUpperCase()+text.slice(1):text);
@@ -4270,7 +4294,7 @@ function vSay(t,quiet,nolog){
 }
 /* One listening turn, when the conversation is on and nothing else is happening. */
 function vHear(){
-  if(!VC.conv||!VSR||VC.rec||VC.speaking||VC.busy||!E||!E.ai||E.review||E.busy)return;
+  if(!VC.conv||!VSR||VC.rec||VC.speaking||VC.busy||!(E?E.ai&&!E.review&&!E.busy:vaOn()&&VA.started))return;
   if(Date.now()-VC.idle>90000){VC.conv=false;vSay('I will stop listening for now. Tap the microphone when you want to keep going.',true);return;}
   const r=new VSR();r.lang=navigator.language||'en-CA';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
   let fin='',err='';
@@ -4297,7 +4321,7 @@ function vListen(){
   if(!VC.conv)vSay('Paused. Tap the microphone to keep talking.',true,true);
 }
 function vSave(){try{localStorage.setItem('pad.voice',VC.first?'1':'0');localStorage.setItem('pad.voice.mute',VC.mute?'1':'0');}catch(e){}}
-function vFirst(on){VC.first=on;vSave();$('ed').classList.toggle('vfirst',on&&!!E&&E.ai);if(E){$('ed').classList.remove('tools');edRender();}}
+function vFirst(on){VC.first=on;vSave();$('ed').classList.toggle('vfirst',on&&!!E&&E.ai);if(E){$('ed').classList.remove('tools');edRender();}vaSync();if(!E&&view==='app')render();}
 /* Drafting, the last resort: when the assistant cannot make a change, offer to draw it by hand. */
 function vDraft(){
   VC.offerDraft=false;vHearStop();
@@ -4373,7 +4397,7 @@ function vChips(){
 }
 const vSide=()=>VC.first&&!!E&&E.ai&&!isMob&&innerWidth>760;
 function vBar(){
-  const b=$('vBar');if(!b)return;
+  vaBar();const b=$('vBar');if(!b)return;
   if(!E||!E.ai||E.review){b.hidden=true;return;}
   b.hidden=false;const full=VC.first;b.classList.toggle('full',full);b.classList.toggle('side',vSide());
   const live=!!VC.rec,busy=VC.busy||E.busy,speak=VC.speaking;
@@ -4429,14 +4453,16 @@ function vCheck(){
   else vBar();
 }
 function vOpen(){
-  VC.sug=null;VC.reply='';VC.interim='';VC.dis.clear();VC.said.clear();VC.wait=null;VC.typing=!VSR;VC.busy=false;VC.log=[];VC.dims=null;VC.offerDraft=false;VC.discArm=false;
+  VC.sug=null;VC.reply='';VC.interim='';VC.dis.clear();VC.said.clear();VC.wait=null;VC.typing=!VSR;VC.busy=false;VC.dims=null;VC.offerDraft=false;VC.discArm=false;
   Object.assign(VKIT,{mode:null,opts:[],i:0,best:0,sig:'',kept:null,seen:false});
   if(E)E.vpt=null;VC.armed=true;   // the unit was opened with a tap, so the browser lets the voice speak
   vBar();vPinSync();
   let on=false;try{on=localStorage.getItem('pad.voice.conv')==='1';}catch(e){}
   if(on&&VSR)setTimeout(()=>{if(E&&E.ai)vConv(true,true);},700);   // the last conversation was left on: keep listening
 }
-function vStop(){clearTimeout(vTimer);VC.conv=false;vHearStop();VC.rec=null;VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;}
+function vStop(){clearTimeout(vTimer);vHearStop();VC.rec=null;VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;
+  setTimeout(()=>{if(E)return;vaSync();   // back on the strip: the conversation carries on there, or stops in the classic app
+    if(vaOn()&&VA.started){if(VC.conv||VC.log.length)vSay(`Back to ${PROJ?PROJ.name:'the building'}. ${units.length?'Which unit next?':''}`);}else vConv(false,true);},450);}
 $('vBar').addEventListener('click',e=>{
   if(!E)return;const b=e.target.closest('button');if(!b)return;VC.armed=true;
   if(b.id==='vMic')return vListen();
@@ -4455,6 +4481,155 @@ $('edSvg').addEventListener('pointerdown',e=>{
   if(VC.wait==='move'){VC.wait=null;e.preventDefault();e.stopImmediatePropagation();vMoveHere();return;}
   vPinSync();
 },true);
+/* ---------- voice everywhere: the whole app by talking (docs/VOICE.md, Everywhere) ----------
+   With voice first on, every view hides its buttons: the landing card, the building list, the app bar, the keyplan, the arrows,
+   the footer and the phone menus. What is left is the logo, the units, and the conversation. Browsers only let a page speak or
+   listen after a first touch, so the first screen says hello and a tap anywhere starts the conversation; after that it is all talk. */
+const VA={started:false,touched:false,list:[],wait:null,last:null};
+const vaSignedIn=()=>!!BE.user();
+/* The voice runs the app outside the editor when voice first is on and the person can start (signed in, or a guest where there are no accounts). */
+const vaOn=()=>VC.first&&!E&&!MANUAL&&(view==='land'||view==='proj'||view==='app')&&(vaSignedIn()||BE.mode==='demo');
+const vaGreetNow=()=>vaOn()&&!VA.started;
+function vaSync(){
+  const on=vaOn(),was=document.body.classList.contains('vapp');document.body.classList.toggle('vapp',on);
+  if(on!==was&&view==='app')requestAnimationFrame(()=>{if(view==='app'&&!E)render();});   // the strip has a different space to fitdocument.body.classList.toggle('vgreet',on&&!VA.started);
+  if(on&&view==='app'&&!modal.hidden)modal.hidden=true;   // a new building opens its unit dialog; the voice asks instead
+  vaBar();
+}
+const VNUM={zero:0,oh:0,one:1,first:1,two:2,second:2,to:2,too:2,three:3,third:3,four:4,fourth:4,for:4,five:5,fifth:5,six:6,sixth:6,seven:7,seventh:7,eight:8,eighth:8,nine:9,ninth:9,ten:10,tenth:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20};
+const vaNum=s=>{if(s==null)return null;if(/^\d+$/.test(s))return+s;return s in VNUM?VNUM[s]:null;};
+const vaUnitSay=u=>`${tagOf(u)}, ${u.n===0?'a studio':`a ${u.n} bedroom`}, ${netArea(u.plan).toFixed(1)} square metres net`;
+function vaSummary(){
+  if(!units.length)return'This building has no units yet. Say add a one bedroom, or add a studio, to start.';
+  const c={};units.forEach(u=>{const k=u.n===0?'studio':u.n+' bedroom';c[k]=(c[k]||0)+1;});
+  const parts=Object.entries(c).map(([k,n])=>`${n} ${k}${n>1?'s':''}`);
+  return`${PROJ?PROJ.name+' has':'There are'} ${units.length} unit${units.length>1?'s':''}: ${parts.join(', ')}. Say open and the unit number, like open PAD-0${units[0].idx}, or ask me to add one.`;
+}
+async function vaList(){try{VA.list=await BE.listProjects();}catch(e){VA.list=[];}return VA.list;}
+function vaListSay(){
+  const L=VA.list;if(!L.length)return'You have no buildings yet. Say start a new building, and give it a name.';
+  const names=L.slice(0,5).map(p=>p.name);
+  return`You have ${L.length} building${L.length>1?'s':''}: ${names.join(', ')}${L.length>5?', and more':''}. Which one shall we open, or shall I start a new one?`;
+}
+/* The first tap: start the conversation and say hello. */
+async function vaStart(){
+  if(VA.started)return;VA.started=true;VC.armed=true;vaSync();
+  if(!vaSignedIn()&&BE.mode==='demo'){try{await BE.signInGuest();}catch(e){}}
+  if(view==='land'){homeHold=false;await showProjects();}
+  const me=BE.user(),nm=me&&me.name&&SOCIAL?' '+String(me.name).split(' ')[0]:'';
+  if(view==='app'){vSay(`Hello${nm}, let's start designing some layouts. ${vaSummary()}`);}
+  else{await vaList();vSay(`Hello${nm}, let's start designing some layouts. ${vaListSay()}`);}
+  if(VSR)vConv(true);
+}
+/* A building said by name: the one sharing the most words with what was heard. */
+function vaFindProject(t){
+  const words=s=>String(s).toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>1&&!/^(the|a|an|open|building|go|to|show|me|my|please|lets|let|s)$/.test(w));
+  const h=new Set(words(t));let best=null,bs=0;
+  VA.list.forEach(p=>{const w=words(p.name);if(!w.length)return;const sc=w.filter(x=>h.has(x)).length/w.length;if(sc>bs){bs=sc;best=p;}});
+  return bs>=0.5?best:null;
+}
+function vaFindUnit(t){
+  let m=t.match(/\b(?:pad|unit|number|apartment|suite)\s*-?\s*(?:zero\s+|oh\s+)?(\d+|[a-z]+)\b/);
+  if(m){const n=vaNum(m[1]);if(n!=null)return units.find(u=>u.idx===n)||null;}
+  m=t.match(/\b(first|second|third|fourth|fifth|last|new|newest) (one|unit)\b/)||t.match(/\bthe (first|second|third|fourth|fifth|last|new) one\b/);
+  if(m){if(m[1]==='last')return units[units.length-1]||null;if(m[1]==='new'||m[1]==='newest')return VA.last||null;const n=vaNum(m[1]);return units[n-1]||null;}
+  if(/\b(open|edit|design) (it|that|that one)\b/.test(t))return VA.last||null;
+  return null;
+}
+function vaOpenUnit(u){
+  if(!u)return vSay('I could not find that unit. '+vaSummary());
+  VA.last=u;vSay(`Opening ${vaUnitSay(u)}.`,false);openEditor(u);
+}
+function vaAdd(n){
+  if(!PROJ)return vSay('Open a building first. '+vaListSay());
+  if(PROJ.role!=='owner'&&!canEdit())return vSay('This building is shared with you, so I cannot add units to it.');
+  setPlace('R');$('fCorner').checked=false;pick={n};const before=new Set(units);quickAdd(n);
+  const u=units.find(x=>!before.has(x));
+  if(!u){const m=$('quickMsg');return vSay(m&&!m.hidden?m.textContent:'That unit could not be added.');}VA.last=u;vSay(`Added ${vaUnitSay(u)}. Do you want to open it?`);VA.wait='open-new';
+}
+async function vaNewBuilding(name){
+  name=String(name||'').trim().replace(/^(called|named)\s+/,'').replace(/[.!?]+$/,'').slice(0,80);
+  if(!name){VA.wait='name';return vSay('What should I call the building?');}
+  name=name.replace(/\b\w/g,c=>c.toUpperCase());
+  try{const r=await BE.createProject(name,{base:false,added:[],custom:[]});await openProject(r.id);modal.hidden=true;vaSync();
+    vSay(`I made ${name}. It is empty. Say add a one bedroom, or add a studio, to start.`);}
+  catch(e){vSay('I could not make that building: '+e.message);}
+}
+function vaHelp(){
+  if(view==='app')return'You can say add a one bedroom, open PAD-03, what is in this building, back to my buildings, or pause.';
+  return'You can say the name of a building to open it, start a new building, what are my buildings, or pause.';
+}
+/* What was heard outside the editor. */
+async function vaHeard(text,t){
+  if(/^(pause|stop listening|that'?s (all|it for now)|that is all|good ?bye|bye|i'?m done talking)\b/.test(t)){vConv(false);return vSay('Okay. Tap the microphone when you need me.');}
+  if(/^(mute|be quiet|quiet|stop talking|shh)\b/.test(t)){VC.mute=true;vSave();return vSay('Muted. I will show what I would say.',true);}
+  if(/^(unmute|talk|speak)\b/.test(t)){VC.mute=false;vSave();return vSay('I will talk again.');}
+  if(/what can i (do|say)|^help\b|what are (my|the) options/.test(t))return vSay(vaHelp());
+  if(/^(show|bring back) (the |all the )?(buttons|tools|menus|everything)/.test(t)){vFirst(false);return vSay('The buttons are back. Open a unit and use the menu on its voice bar to go back to talking.',true);}
+  if(/^sign (me )?out\b|^log (me )?out\b/.test(t)){vSay('Signing you out.',true);try{await BE.signOut();}catch(e){}return;}
+  const wait=VA.wait;VA.wait=null;
+  if(wait==='name'&&!vNo.test(t))return vaNewBuilding(text);
+  if(wait==='open-new'&&(vYes.test(t)||/\bopen\b/.test(t)&&!/\b(pad|unit|number)\b/.test(t)))return vaOpenUnit(VA.last);
+  const nb=t.match(/\b(?:new|create|start|make)\b(?: a)?(?: new)? building\b(?:\s+(?:called|named))?\s*(.*)$/);
+  if(nb)return vaNewBuilding(nb[1]);
+  if(/\b(my buildings|other buildings?|building list|switch buildings?|change buildings?|all buildings|which buildings|what buildings)\b|^back\b|go back/.test(t)){
+    if(view==='app'){await showProjects();vaSync();}
+    await vaList();return vSay(vaListSay());
+  }
+  if(/^(go )?home\b/.test(t)){goHome();vaSync();return vSay('Home. Say my buildings to keep going.');}
+  if(view==='app'){
+    const m=t.match(/\b(?:add|new|create|make|give me|put in|another)\b.*?\b(studio|bachelor|(\d|one|two|three|1|2|3)[ -]?(?:bed|bedroom|br))/);
+    if(m)return vaAdd(/studio|bachelor/.test(m[1])?0:vaNum(m[2]));
+    const u=vaFindUnit(t);if(u||/\b(open|edit|design)\b.*\b(pad|unit|number)\b/.test(t))return vaOpenUnit(u);
+    if(/what('?s| is) (in|here)|how many units|describe|tell me about|summary|overview|where are we/.test(t))return vSay(vaSummary());
+    return vSay(`I did not catch that. ${vaHelp()}`);
+  }
+  // the building list (or the home screen): a building by name
+  if(!VA.list.length)await vaList();
+  const p=vaFindProject(t);
+  if(p){const ok=await openProject(p.id);modal.hidden=true;vaSync();return vSay(ok?`Opened ${p.name}. ${vaSummary()}`:'I could not open that building.');}
+  if(/buildings|what do i have|list/.test(t))return vSay(vaListSay());
+  vSay(`I did not catch a building name. ${vaListSay()}`);
+}
+/* The conversation outside the editor: the same panel, fixed to the window. */
+function vaBar(){
+  const b=$('vApp');if(!b)return;
+  if(!vaOn()){b.hidden=true;return;}
+  b.hidden=false;
+  if(!VA.started){
+    b.className='vapp greet';
+    b.innerHTML=`<div class="vg"><img src="/patry-logo.png" alt="Patry Group" width="96" height="78"><h1>Hello, let's start designing some layouts.</h1><div class="vorb" aria-hidden="true">${vI('mic')}</div><p>Tap anywhere to start talking.</p></div>`;
+    return;
+  }
+  b.className='vapp vbar full'+(!isMob&&innerWidth>760?' side':'');
+  const live=!!VC.rec,busy=VC.busy,speak=VC.speaking;
+  const state=live?(VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:'Listening'):busy?'Working on it':speak?'Speaking. Tap the microphone to interrupt.':VC.conv?'Listening':VSR?'Tap the microphone and talk. I keep listening until you say pause.':'Type what you want to do.';
+  const chips=view==='app'?[['Add a one bedroom','add a one bedroom'],...(units.length?[['Open '+tagOf(units[0]),'open '+tagOf(units[0])]]:[]),["What's in this building?",'what is in this building'],['My buildings','my buildings']]
+    :[...VA.list.slice(0,3).map(p=>[p.name,'open '+p.name]),['New building','start a new building']];
+  const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):'';
+  b.innerHTML=`<div class="vhead"><b>${escapeHtml(view==='app'&&PROJ?PROJ.name:'Patry Analysis & Design')}</b><span class="vsp"></span></div>
+    <div class="vlog" id="vaLog" aria-live="polite">${log}</div>
+    <div class="vchips">${chips.slice(0,4).map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>
+    ${VC.typing?`<form class="vtype" id="vaForm"><input id="vaIn" maxlength="300" autocomplete="off" placeholder="Or type, like open Ninth Line" aria-label="What to do"><button class="tb" type="submit">Send</button></form>`:''}
+    <div class="vctl"><button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vaMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>
+      <div class="vstate${live||VC.conv&&!busy&&!speak?' live':''}">${live&&VC.interim?state:escapeHtml(state)}${live&&!VC.interim||busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</div>
+      <div class="vside"><button class="vic" type="button" data-v="kb" aria-label="Type instead" aria-pressed="${VC.typing}">${vI('kb')}</button><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button></div></div>`;
+  const L=$('vaLog');if(L)L.scrollTop=L.scrollHeight;
+}
+$('vApp').addEventListener('click',e=>{
+  if(!VA.started){vaStart();return;}
+  const b=e.target.closest('button');if(!b)return;VC.armed=true;
+  if(b.id==='vaMic')return vListen();
+  if(b.dataset.say)return vHeard(b.dataset.say,false,true);
+  if(b.dataset.v==='kb'){VC.typing=!VC.typing;vaBar();const i=$('vaIn');if(i)i.focus();return;}
+  if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute){VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(x){}if(VC.conv)setTimeout(vHear,300);}vaBar();return;}
+});
+$('vApp').addEventListener('submit',e=>{e.preventDefault();const i=$('vaIn');if(!i)return;const v=i.value;i.value='';vHeard(v,false);});
+/* A tap anywhere on the greeting starts; so does arriving after the person already touched the page (signing in, say). */
+['pointerdown','keydown'].forEach(k=>addEventListener(k,()=>{VA.touched=true;},true));   // the person has touched the page, so the browser lets it speak
+setInterval(()=>{const on=vaOn();if(on!==document.body.classList.contains('vapp')||on&&$('vApp').hidden)vaSync();
+  if(on&&!VA.started&&VA.touched)vaStart();},400);
+addEventListener('resize',()=>{if(vaOn())vaBar();});
 /* Room areas follow the space: when walls or room separations move, each room whose name is alone in its space takes
    its area from that space, in proportion to how it started (a drawing's printed areas include part of the partitions).
    A room with a typed size keeps it. A space that only now became a room's own is measured as it is. */
@@ -6550,7 +6725,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);

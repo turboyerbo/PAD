@@ -5,6 +5,23 @@ The app bar, the editor header, the panel, the zoom buttons, the walking person,
 The owner talks and points. The page measures the plan after every change and offers one thing at a time, out loud and in the conversation.
 Drafting comes back only as a last resort, when the assistant could not make a change.
 
+## Everywhere: the whole app by voice
+
+With voice first on, the voice runs the whole app, not only the editor (`vaOn`, `vaHeard`, `vaBar`). Every view hides its buttons:
+the landing card, the building list, the app bar, the keyplan, the scroll arrows, the unit search, the footer, the phone menus and the team chat.
+What is left is the logo, the building's units and the conversation (a column on the right on a computer, a sheet under the units on a phone).
+
+- **The first screen** says "Hello, let's start designing some layouts." Browsers only let a page speak or listen after a first touch, so a tap
+  anywhere starts the conversation; there is no button to find. If the person already touched the page (signing in, say), it starts on its own.
+  Signing in still needs the form where there are accounts; once signed in, the voice takes over. Without accounts, the tap signs in as a guest.
+- **Buildings**: it lists them by name and asks which to open. Say a name ("open Ninth Line"), "start a new building called Block B"
+  (or just "new building", and it asks the name), "my buildings", "go home", "sign out".
+- **Units**: "add a one bedroom" (studio, one, two or three bedroom), then yes opens it; "open PAD-03", "open unit three", "the first one",
+  "the last one"; "what is in this building". Opening a unit hands over to the editor's conversation; closing it comes back and asks which unit next.
+  The conversation and its log carry on through all of it.
+- **Show the buttons** brings the classic app back. The editor's voice bar menu turns voice first on again.
+- Without speech recognition (Firefox) the panel has a text box.
+
 ## The conversation panel
 
 On a computer it is a column on the right; on a phone (or a window narrower than 760 px) it is a sheet at the bottom. The plan fits beside or above it.
