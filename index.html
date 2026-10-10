@@ -384,7 +384,33 @@ body.chat-open .info{right:356px}
 .ed-body{flex:1;min-height:0;display:flex}
 .ed-cv{flex:1;min-width:0;position:relative;overflow:hidden}
 /* voice: the bar over the plan, red dimensions, the kitchen being shown, the pointed spot (docs/VOICE.md) */
-.ed.vfirst .ed-side,.ed.vfirst .ed-handle,.ed.vfirst #edModes,.ed.vfirst #edReset,.ed.vfirst #edUndo,.ed.vfirst #edSlim{display:none!important}   /* voice first: talk and point; the bar's menu button brings the tools back */
+.ed.vfirst .ed-side,.ed.vfirst .ed-handle,.ed.vfirst .ed-top,.ed.vfirst .edzoom,.ed.vfirst .tape,.ed.vfirst .ghost,.ed.vfirst #edWk,.ed.vfirst .wkroute,.ed.vfirst .ra,.ed.vfirst .ht{display:none!important}
+/* voice first: the plan and the conversation, nothing else. It covers the app bar too; drafting comes back only as a last resort */
+.ed.vfirst{inset:0!important;background:var(--paper)!important;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.vbar.full{gap:8px}
+.vbar.full.side{left:auto;right:12px;top:12px;bottom:12px;width:380px;max-width:calc(100% - 24px);margin:0;padding:12px 14px}
+.vbar.full:not(.side){max-height:52%;left:6px;right:6px}
+.vhead{display:flex;align-items:center;gap:8px;min-width:0}
+.vhead b{font-family:var(--display);font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vhead .vsp{flex:1}
+.vhead .vsave{padding:5px 14px}
+.vlog{flex:1;min-height:60px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px}
+.vm{margin:0;max-width:88%;font-size:15px;line-height:1.4;padding:8px 11px;border-radius:12px}
+.vm.pad{align-self:flex-start;background:var(--paper);color:var(--ink);border-bottom-left-radius:3px}
+.vm.you{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+.vctl{display:flex;align-items:center;gap:12px;min-width:0}
+.vbar.full .vmic{width:58px;height:58px}
+.vbar.full .vmic svg{width:26px;height:26px}
+.vmic.spk{background:var(--navy)}
+.vstate{flex:1;min-width:0;font-size:13px;color:var(--ink-2);line-height:1.35}
+.vstate.live{color:var(--markup);font-weight:600}
+.vstate .vyou{font-weight:400;color:var(--ink)}
+.vstate .dots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
+.vstate .dots i{width:5px;height:5px;border-radius:50%;background:currentColor;animation:vdot 1s infinite}
+.vstate .dots i:nth-child(2){animation-delay:.15s}.vstate .dots i:nth-child(3){animation-delay:.3s}
+@keyframes vdot{50%{opacity:.25}}
+.vd.vmz path{stroke:var(--ink)}.vd.vmz text{fill:var(--ink)}
+.vd.vmz.red path{stroke:var(--markup)}.vd.vmz.red text{fill:var(--markup)}
 .vbar{position:absolute;left:8px;right:56px;bottom:8px;z-index:4;max-width:760px;margin:0 auto;background:rgba(255,255,255,.96);border:1px solid var(--draw);box-shadow:0 2px 10px rgba(38,38,31,.18);padding:8px 10px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
 .vrow{display:flex;align-items:center;gap:10px;min-width:0}
 .vmic{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -419,7 +445,7 @@ body.mob .vbar{left:6px;right:52px;bottom:6px;padding:6px 8px}
 body.mob .vcap{font-size:13px}
 body.mob .vchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -8px;padding:0 8px}
 body.mob .vchips .chip{flex:none}
-@media (prefers-reduced-motion:reduce){.vmic.on,.vd.on{animation:none}}
+@media (prefers-reduced-motion:reduce){.vmic.on,.vd.on,.vstate .dots i{animation:none}}
 .edzoom{position:absolute;right:8px;bottom:8px;z-index:3;display:flex;flex-direction:column;border:1px solid var(--draw);background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(38,38,31,.15)}
 .edzoom button{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:0;border-bottom:1px solid var(--rule);background:none;color:var(--draw);padding:0;cursor:pointer;touch-action:manipulation}
 .edzoom button:last-child{border-bottom:0}.edzoom button:disabled{opacity:.35;cursor:default}
@@ -3342,7 +3368,7 @@ function restoreIter(u,n){
 function edRender(){
   if(!E.drag&&!E.rd&&!E.busy){const ws=JSON.stringify([E.P.W,E.P.D,E.P.walls,E.P.doors,E.P.seps]);if(ws!==E.wsig){const first=!E.wsig;E.wsig=ws;if(!first){const r=snapRooms(E.P,E.snapKeep);E.rm=null;if(r.dropped.length)E.msg=`${r.dropped.join(', ')} no longer fit ${r.dropped.length>1?'their':'its'} walls and ${r.dropped.length>1?'were':'was'} taken off. Tap the blank space to name it.`;}}}
   {const as=JSON.stringify([E.P.W,E.P.D,E.P.walls,E.P.doors,E.P.seps]);if(as!==E.asig){E.asig=as;try{liveAreas(E.P,E.abase);}catch(x){}}}   // the room areas follow the walls and separations as they move
-  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth),ch=Math.max(200,cv.clientHeight-vRoom()),M=isMob?10:30,adT=E.mode==='layout'?0:AD_TOP,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P)+adT;
+  const P=E.P,cv=$('edCv'),cw=Math.max(200,cv.clientWidth-vRoom().w),ch=Math.max(200,cv.clientHeight-vRoom().h),M=isMob?10:30,adT=E.mode==='layout'?0:AD_TOP,Wt=P.W+0.4,Dt=P.D+CORR+0.2+outTop(P)+adT;
   const Sc0=Math.max(10,Math.min((cw-2*M)/Wt,(ch-2*M)/Dt)),vb=sc=>[(cw-P.W*sc)/2,(ch-(P.D+CORR+outTop(P)+adT)*sc)/2+(outTop(P)+adT)*sc];   // room above the window wall for the width strings
   // zoom (pinch, the + and - buttons, or ctrl and the wheel) scales the fitted plan; pan moves it, never so far that it leaves the canvas
   const z=E.zoom||1,Sc=Sc0*z,b0=vb(Sc);if(z<=1.001)E.pan={x:0,y:0};const pn=E.pan||(E.pan={x:0,y:0}),lx=Math.max(0,(Wt*Sc-cw)/2+cw*0.3),ly=Math.max(0,(Dt*Sc-ch)/2+ch*0.3);
@@ -3989,7 +4015,8 @@ $('edSide').addEventListener('click',e=>{
    with the spot the owner pointed at. */
 const VMIN=0.86,VAIM=0.9;   // clear width people walk through, and what a widening aims for
 const VSR=window.SpeechRecognition||window.webkitSpeechRecognition;
-const VC={first:true,mute:false,rec:null,interim:'',reply:'',sug:null,dis:new Set(),said:new Set(),off:new Set(),wait:null,armed:false,follow:false,lastVoice:false,typing:false,t:0,narrow:[],busy:false};
+const VC={first:true,mute:false,rec:null,interim:'',reply:'',sug:null,dis:new Set(),said:new Set(),off:new Set(),wait:null,armed:false,lastVoice:false,typing:false,t:0,narrow:[],busy:false,
+  log:[],conv:false,speaking:false,sayId:0,idle:0,drop:false,dims:null,offerDraft:false,discArm:false};   // log: the conversation; conv: listening hands-free; dims: a measured room drawn on the plan
 const VKIT={mode:null,opts:[],i:0,best:0,sig:'',kept:null};
 try{VC.first=localStorage.getItem('pad.voice')!=='0';VC.mute=localStorage.getItem('pad.voice.mute')==='1';}catch(e){}
 const vYes=/^(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|go for it|sounds good|let'?s do it|absolutely|correct|right)\b/;
@@ -4146,22 +4173,31 @@ function vCtx(){
   return o;
 }
 async function vAsk(text){
-  if(!AIREADY){return vSay('The assistant is not switched on for this site, so I can only do the simple things here: widen a narrow spot, move a wall to where you point, lay out the kitchen, undo.');}
+  if(!AIREADY){VC.offerDraft=true;return vSay('The assistant is not switched on for this site, so I can only do the simple things here: widen a narrow spot, move a wall to where you point, measure a room, lay out the kitchen, undo. Or you can draw it yourself.');}
   const s=VC.sug,pt=vPoint();
   E.vctx={pt,note:s?vLine(s).replace(/ Do you want.*$/,''):''};
-  const n=E.log.length;VC.busy=true;vBar();vSay('Working on it.',true);
+  const n=E.log.length;VC.busy=true;vHearStop();vSay('Working on it.',true,true);
   try{await aiRun(text);}finally{E&&(E.vctx=null);VC.busy=false;}
   if(!E)return;
   const q=E.log.length>n?E.log[0]:null;VC.sug=null;
-  if(!q)return vSay(E.msg||'Nothing changed.');
-  vSay((q.say||(q.did?'Done.':'Nothing changed.'))+(q.did?' Say undo to take it back.':''));
+  const last=' Say it another way and I will try again, or you can draw it yourself.';
+  if(!q){VC.offerDraft=true;return vSay((E.msg||'Nothing changed.')+last);}
+  VC.offerDraft=!q.did;
+  vSay((q.say||(q.did?'Done.':'Nothing changed.'))+(q.did?' Say undo to take it back.':last));
 }
 /* ---- what was heard ---- */
-function vHeard(raw,voice){
+function vHeard(raw,voice,chip){
   if(!E||!E.ai)return;
   const text=String(raw||'').trim();if(!text)return;
-  const t=text.toLowerCase().replace(/[.!?,]+$/,'').trim();VC.lastVoice=!!voice;VC.armed=true;VC.you=text;
-  try{speechSynthesis.cancel();}catch(e){}
+  const t=text.toLowerCase().replace(/[.!?,]+$/,'').trim();VC.lastVoice=!!voice;VC.armed=true;VC.you=text;VC.idle=Date.now();
+  vLog('you',chip?text.charAt(0).toUpperCase()+text.slice(1):text);
+  VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}
+  const arm=VC.discArm;VC.discArm=false;
+  if(/^(pause|stop listening|that'?s (all|it for now)|that is all|good ?bye|bye|i'?m done talking)\b/.test(t)){vConv(false);return vSay('Okay. Tap the microphone when you need me.');}
+  if(/draw it myself|by hand|open (the )?drafting|drafting mode|let me draw|i'?ll draw/.test(t))return vDraft();
+  if(/^(close|exit|discard|leave|quit|throw (it|them) away)\b/.test(t)){
+    if(!E.dirty||arm){vStop();const c=$('edCancel');c.click();if(E)c.click();return;}
+    VC.discArm=true;return vSay('You have changes that are not saved. Say discard to throw them away, or say save.');}
   if(/^(mute|be quiet|quiet|stop talking|shh)\b/.test(t)){VC.mute=true;vSave();return vSay('Muted. I will show what I would say.',true);}
   if(/^(unmute|talk|speak)\b/.test(t)){VC.mute=false;vSave();return vSay('I will talk again.');}
   if(/^undo\b|take (it|that) back/.test(t)){if(!E.hist.length)return vSay('There is nothing to undo.');edAct('undo');VKIT.kept=null;return vSay('Undone.');}
@@ -4189,10 +4225,15 @@ function vHeard(raw,voice){
     if(n&&(!/kitchen|bed|living|bath|room/.test(t)||t.includes(vRoomName(n.room))))return vWiden(n);
   }
   if(/\b(move|put|shift|slide|bring|push|pull|drag)\b/.test(t)&&/\b(here|there|this spot|this point|to this|where i)/.test(t)&&/\b(wall|it|that|this)\b/.test(t))return vMoveHere();
+  if(/dimension|measure|how (wide|long|big|deep|large)|width|length|size of|how many (mm|millimet)/.test(t)){
+    const q=vFindRoom(t),pt=vPoint();
+    if(q)return vSay(vMeasure(q,null));
+    if(pt&&/\b(here|this|there|that)\b/.test(t))return vSay(vMeasure(null,pt));
+  }
   if(/enough room|is (it|that|this) (ok|okay|wide enough|enough)|how wide|measure|check (it|the plan|again)|anything wrong|what'?s wrong|any problems/.test(t)){
     VC.dis.clear();const s=vIssues()[0];return vSay(s?vRoomCheck()+' '+vLine(s):vRoomCheck());
   }
-  if(/^(review|save|i'?m done|done|finish|wrap up)\b/.test(t)){if(!E.dirty)return vSay('Nothing has changed yet, so there is nothing to save.');vSay('Here are the changes to review.',true);return $('edDone').click();}
+  if(/^(review|save|i'?m done|done|finish|wrap up|keep (it|this|these))\b/.test(t)){if(!E.dirty)return vSay('Nothing has changed yet, so there is nothing to save.');vSay('Here are the changes. Check the note and save.',true);vHearStop();return $('edDone').click();}
   if(/variation|surprise me|another version|try something/.test(t)){if(typeof rmVariation==='function'){rmVariation();return vSay(E.msg||'Here is a variation.');}}
   if(/^(show|open) (the )?(tools|panel|buttons)|^tools\b/.test(t)){vFirst(false);return vSay('The tools are back. Say hide the tools to put them away.',true);}
   if(/^hide (the )?(tools|panel|buttons)/.test(t)){vFirst(true);return vSay('Tools hidden.',true);}
@@ -4207,32 +4248,91 @@ function vAccept(s){
   if(s.t==='stuck')return vAsk(`Add a door so the ${s.rooms.join(' and the ')} can be reached from the entry.`);
 }
 function vHelp(){
-  const o=['say wider at a red dimension','point and say move the wall here','ask for kitchen layouts','say undo','say review when you are done'];
+  const o=['ask how wide a room is','say wider at a red dimension','point and say move the wall here','ask for kitchen layouts','say undo','say save when you are done, or pause to stop me listening'];
   if(AIREADY)o.splice(3,0,'or describe any change, like add a balcony or make the bedroom bigger');
   return'You can '+o.join(', ')+'.';
 }
-/* ---- listening and speaking ---- */
-function vSay(t,quiet){
-  VC.reply=String(t||'');VC.t=Date.now();vBar();
-  const ask=/\?\s*$/.test(VC.reply);VC.follow=ask&&VC.lastVoice&&!!VSR;
-  if(VC.mute||quiet||!VC.armed||!('speechSynthesis' in window))return;
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(VC.reply.replace(/m²/g,'square metres'));u.rate=1.04;
-    u.onend=()=>{if(VC.follow&&E&&E.ai&&!VC.rec){VC.follow=false;vListen();}};speechSynthesis.speak(u);}catch(e){}
+/* ---- listening and speaking: a conversation ----
+   One tap on the microphone starts a conversation: the page listens, answers out loud, and listens again by itself.
+   It stops listening while it speaks or works, so it never hears itself. "Pause" or "that's all" ends it, and so does
+   90 seconds of silence. Whether the conversation was on is remembered on the device, so the next unit opens listening. */
+function vLog(who,t){VC.log.push({w:who,t:String(t)});if(VC.log.length>40)VC.log.shift();}
+function vSay(t,quiet,nolog){
+  VC.reply=String(t||'');VC.t=Date.now();if(VC.reply&&!nolog)vLog('pad',VC.reply);vBar();
+  if(VC.mute||quiet||!VC.armed||!('speechSynthesis' in window)){if(VC.conv)setTimeout(vHear,350);return;}
+  vHearStop();   // never listen to ourselves
+  const id=++VC.sayId;
+  const done=()=>{if(id!==VC.sayId||!VC.speaking)return;VC.speaking=false;vBar();if(VC.conv)setTimeout(vHear,250);};
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(VC.reply.replace(/m²/g,'square metres').replace(/(\d),(\d)/g,'$1$2'));u.rate=1.04;
+    VC.speaking=true;u.onend=done;u.onerror=done;speechSynthesis.speak(u);
+    setTimeout(done,2500+VC.reply.length*85);   // some browsers never say the speech ended
+  }catch(e){VC.speaking=false;if(VC.conv)setTimeout(vHear,350);}
 }
-function vListen(){
-  VC.armed=true;
-  if(!VSR){VC.typing=true;vBar();const i=$('vIn');if(i)i.focus();return;}
-  if(VC.rec){try{VC.rec.stop();}catch(e){}return;}
-  try{speechSynthesis.cancel();}catch(e){}
+/* One listening turn, when the conversation is on and nothing else is happening. */
+function vHear(){
+  if(!VC.conv||!VSR||VC.rec||VC.speaking||VC.busy||!E||!E.ai||E.review||E.busy)return;
+  if(Date.now()-VC.idle>90000){VC.conv=false;vSay('I will stop listening for now. Tap the microphone when you want to keep going.',true);return;}
   const r=new VSR();r.lang=navigator.language||'en-CA';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
   let fin='',err='';
   r.onresult=e=>{let s='',done=false;for(let i=0;i<e.results.length;i++){s+=e.results[i][0].transcript;if(e.results[i].isFinal)done=true;}VC.interim=s;if(done)fin=s;vBar();};
-  r.onerror=e=>{err=e.error==='not-allowed'||e.error==='service-not-allowed'?'The microphone is blocked. Allow it for this site, or tap the keyboard to type.':e.error==='no-speech'||e.error==='aborted'?'':'I could not hear that. Try again, or tap the keyboard to type.';};
-  r.onend=()=>{VC.rec=null;const s=(fin||VC.interim||'').trim();VC.interim='';vBar();if(s)vHeard(s,true);else if(err)vSay(err,true);};
-  VC.rec=r;try{r.start();}catch(e){VC.rec=null;}vBar();
+  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){VC.conv=false;err='The microphone is blocked. Allow it for this site, or tap the keyboard to type.';}
+    else if(e.error==='network'||e.error==='audio-capture'){VC.conv=false;err='I cannot hear you right now. Check the microphone, or tap the keyboard to type.';}};
+  r.onend=()=>{if(VC.rec!==r)return;VC.rec=null;const drop=VC.drop;VC.drop=false;const s=drop?'':(fin||VC.interim||'').trim();VC.interim='';vBar();
+    if(s){VC.idle=Date.now();vHeard(s,true);}else if(err)vSay(err,true);
+    if(VC.conv)setTimeout(vHear,300);};
+  VC.rec=r;try{r.start();}catch(e){VC.rec=null;setTimeout(vHear,800);return;}vBar();
+}
+function vHearStop(){if(VC.rec){VC.drop=true;const r=VC.rec;try{r.abort();}catch(e){}}}
+function vConv(on,keep){
+  VC.conv=!!on&&!!VSR;if(!keep)try{localStorage.setItem('pad.voice.conv',VC.conv?'1':'0');}catch(e){}
+  if(VC.conv){VC.idle=Date.now();VC.armed=true;vHear();}else vHearStop();
+  vBar();
+}
+/* The microphone: start the conversation, interrupt the voice, or pause. Without speech recognition it opens the text box. */
+function vListen(){
+  VC.armed=true;
+  if(!VSR){VC.typing=true;vBar();const i=$('vIn');if(i)i.focus();return;}
+  if(VC.speaking){VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}if(!VC.conv)vConv(true);else{VC.idle=Date.now();vHear();}return;}
+  vConv(!VC.conv);
+  if(!VC.conv)vSay('Paused. Tap the microphone to keep talking.',true,true);
 }
 function vSave(){try{localStorage.setItem('pad.voice',VC.first?'1':'0');localStorage.setItem('pad.voice.mute',VC.mute?'1':'0');}catch(e){}}
 function vFirst(on){VC.first=on;vSave();$('ed').classList.toggle('vfirst',on&&!!E&&E.ai);if(E){$('ed').classList.remove('tools');edRender();}}
+/* Drafting, the last resort: when the assistant cannot make a change, offer to draw it by hand. */
+function vDraft(){
+  VC.offerDraft=false;vHearStop();
+  vSay('Drafting is open. Drag the walls and doors yourself, then tap Layout (AI) to talk again.',true);
+  edSetMode('draft');
+}
+/* Measure a room: clear width and length through its middle, wall face to wall face. Drawn on the plan until a wall moves. */
+const VSYN=[[/\b(corridor|hallway|passage)\b/,'hall'],[/\b(bathroom|washroom|ensuite)\b/,'bath'],[/\bfoyer\b/,'entry'],[/\b(living room|lounge)\b/,'living'],[/\bmaster\b/,'primary']];
+function vFindRoom(t){
+  let s=' '+t+' ';VSYN.forEach(([a,b])=>{s=s.replace(a,b);});
+  const R=E.P.rooms.filter(q=>!q.bk).slice().sort((a,b)=>b.n.length-a.n.length);
+  return R.find(q=>s.includes(' '+q.n.toLowerCase()+' ')||s.includes(' '+q.n.toLowerCase()+"'s ")||s.includes(' '+q.n.toLowerCase()+'s '))||null;
+}
+function vMeasureAt(x,y){
+  // room separations end a room as surely as walls do, so they stop the measure too
+  const W=[...E.P.walls.filter(w=>!w.bw&&!w.rail),...(E.P.seps||[]).map(q=>({x:Math.min(q.x1,q.x2),y:Math.min(q.y1,q.y2),w:Math.abs(q.x2-q.x1),h:Math.abs(q.y2-q.y1)}))];let L=0,R=E.P.W,T=0,B=E.P.D;
+  W.forEach(w=>{
+    if(y>=w.y-0.01&&y<=w.y+w.h+0.01){if(w.x+w.w<=x+0.02)L=Math.max(L,w.x+w.w);if(w.x>=x-0.02)R=Math.min(R,w.x);}
+    if(x>=w.x-0.01&&x<=w.x+w.w+0.01){if(w.y+w.h<=y+0.02)T=Math.max(T,w.y+w.h);if(w.y>=y-0.02)B=Math.min(B,w.y);}
+  });
+  return{x,y,L,R,T,B};
+}
+/* Where to measure a room from: the middle of the largest open rectangle of the space it fills (walls and separations close it),
+   not its name, which can sit right beside a wall. */
+function vRoomMid(q){
+  try{const G=roomRegions(E.P,false,true),m=lblReg(G,q);
+    if(m>=0&&G.regs[m].rects.length){const r=G.regs[m].rects.reduce((p,c)=>(c[2]-c[0])*(c[3]-c[1])>(p[2]-p[0])*(p[3]-p[1])?c:p);return{x:(r[0]+r[2])/2,y:(r[1]+r[3])/2};}}catch(e){}
+  return{x:q.lx!==undefined?q.lx:q.x+q.w/2,y:q.ly!==undefined?q.ly:q.y+q.h/2};
+}
+function vMeasure(q,pt){
+  const c=pt||vRoomMid(q),x=c.x,y=c.y,m=vMeasureAt(x,y),a=m.R-m.L,b=m.B-m.T;
+  VC.dims={sig:E.wsig,d:[{hor:true,a:m.L,b:m.R,at:y,lo:m.T,hi:m.B,v:a},{hor:false,a:m.T,b:m.B,at:x,lo:m.L,hi:m.R,v:b}]};edRender();
+  const n=q?vRoomName(q.n):'space here',wide=Math.min(a,b),long=Math.max(a,b),k=v=>mm(v).toLocaleString('en-CA');
+  return`The ${n} is ${k(wide)} mm wide and ${k(long)} mm long${q&&!pt?`, ${q.a.toFixed(1)} m²`:''}. I drew both on the plan.${wide<VMIN?' The width is under 860 mm, so it might be too narrow.':''}`;
+}
 /* ---- drawing ---- */
 function vSVG(P,x0,y0,Sc){
   const X=v=>f(x0+v*Sc),Y=v=>f(y0+v*Sc),fs=Math.max(10,Math.min(13,Sc*0.24));let s='';
@@ -4244,6 +4344,11 @@ function vSVG(P,x0,y0,Sc){
     const tx=n.hor?X(m)+5:X((n.a1+n.b0)/2),ty=n.hor?Y((n.a1+n.b0)/2):Y(m)-5;
     s+=`<g class="vd${on?' on':''}" data-k="${escapeHtml(n.key)}"><path d="M${X(x1)} ${Y(y1)}L${X(x2)} ${Y(y2)}"/>${tick(x1,y1)}${tick(x2,y2)}<text x="${tx}" y="${ty}" font-size="${f(fs)}" text-anchor="${n.hor?'start':'middle'}" dominant-baseline="${n.hor?'middle':'auto'}">${mm(n.g)}</text></g>`;
   });
+  if(VC.dims&&VC.dims.sig===E.wsig)VC.dims.d.forEach(d=>{   // a room measured on request: drawn a little off the room name, red when under 860 mm
+    const tk=0.09,c=Math.max(d.lo+Math.min(0.12,(d.hi-d.lo)/2),Math.min(d.hi-Math.min(0.12,(d.hi-d.lo)/2),d.at+0.45)),[x1,y1,x2,y2]=d.hor?[d.a,c,d.b,c]:[c,d.a,c,d.b],mx=(x1+x2)/2,my=(y1+y2)/2;   // a little off the room name, inside the space measured
+    const tick=(x,y)=>`<path d="M${X(x-tk)} ${Y(y+tk)}L${X(x+tk)} ${Y(y-tk)}"/>`;
+    s+=`<g class="vd vmz${d.v<VMIN?' red':''}"><path d="M${X(x1)} ${Y(y1)}L${X(x2)} ${Y(y2)}"/>${tick(x1,y1)}${tick(x2,y2)}<text x="${d.hor?X(mx):X(mx)+5}" y="${d.hor?Y(my)-5:Y(my)}" font-size="${f(fs)}" text-anchor="${d.hor?'middle':'start'}" dominant-baseline="${d.hor?'auto':'middle'}">${mm(d.v).toLocaleString('en-CA')}</text></g>`;
+  });
   const its=VKIT.mode==='flip'&&VKIT.opts[VKIT.i]?VKIT.opts[VKIT.i].items:VKIT.kept&&VKIT.kept.sig===E.wsig?VKIT.kept.items:null;
   if(its){let k='';its.forEach(p=>{const[w,d]=dimsOf(p);
       k+=`<g transform="translate(${f(p.x)} ${f(p.y)}) rotate(${p.rot||0})"><rect x="${f(-w/2)}" y="${f(-d/2)}" width="${f(w)}" height="${f(d)}"/>`+
@@ -4252,37 +4357,52 @@ function vSVG(P,x0,y0,Sc){
   return s;
 }
 const VIC={mic:'<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',kb:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
-  snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',off:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',tools:'<path d="M4 6h16M4 12h16M4 18h16"/>'};
+  snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',off:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',tools:'<path d="M4 6h16M4 12h16M4 18h16"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
 const vI=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${VIC[k]}</svg>`;
 function vChips(){
   if(VKIT.mode==='flip')return[['Back','back'],['Next','next'],['Use this one','use this one'],['Cancel','cancel']];
   if(VC.sug)return[['Yes','yes'],['Not now','not now']];
   const c=[];
+  if(VC.offerDraft)c.push(['Draw it myself','draw it myself']);
   if(VC.narrow.length)c.push(['Make it wider','make it wider']);
   if(kRoom(E.P))c.push(['Kitchen layouts','show kitchen layouts']);
   c.push(['Is there enough room?','is there enough room']);
   if(E.hist.length)c.push(['Undo','undo']);
-  if(E.dirty)c.push(['Review changes','review']);
   if(AIREADY)c.push(['Suggest a variation','suggest a variation']);
-  return c.slice(0,5);
+  return c.slice(0,VC.first?4:5);
 }
+const vSide=()=>VC.first&&!!E&&E.ai&&!isMob&&innerWidth>760;
 function vBar(){
   const b=$('vBar');if(!b)return;
   if(!E||!E.ai||E.review){b.hidden=true;return;}
-  b.hidden=false;
-  const live=!!VC.rec,busy=VC.busy||E.busy;
-  const cap=live?(VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:'<span class="vyou">Listening...</span>'):busy?'<span class="vsay">Working on it...</span>':
-    VC.reply?`<span class="vsay">${escapeHtml(VC.reply)}</span>`:`<span class="vsay">${VSR?'Tap the microphone and tell me what to change. Point at the plan for here and there.':'Type what to change. Tap the plan for here and there.'}</span>`;
-  b.innerHTML=`<div class="vrow"><button class="vmic${live?' on':''}" id="vMic" type="button" aria-label="${live?'Stop listening':'Talk'}" title="${live?'Stop listening':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>
-    <div class="vcap" aria-live="polite">${cap}</div>
-    <div class="vside"><button class="vic" type="button" data-v="kb" aria-label="Type instead" title="Type instead" aria-pressed="${VC.typing}">${vI('kb')}</button><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" title="${VC.mute?'Unmute the voice':'Mute the voice'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button><button class="vic" type="button" data-v="tools" aria-label="${VC.first?'Show the tools':'Hide the tools'}" title="${VC.first?'Show the tools':'Hide the tools'}" aria-pressed="${!VC.first}">${vI('tools')}</button></div></div>
-    ${VC.typing?`<form class="vtype" id="vForm"><input id="vIn" maxlength="600" autocomplete="off" placeholder="Say it in words, like make the hall wider" aria-label="What to change"><button class="tb" type="submit"${busy?' disabled':''}>Go</button></form>`:''}
-    <div class="vchips">${vChips().map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>`;
+  b.hidden=false;const full=VC.first;b.classList.toggle('full',full);b.classList.toggle('side',vSide());
+  const live=!!VC.rec,busy=VC.busy||E.busy,speak=VC.speaking;
+  const state=live?(VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:'Listening'):busy?'Working on it':speak?'Speaking. Tap the microphone to interrupt.':
+    VC.conv?'Listening':VSR?'Tap the microphone and talk. I keep listening until you say pause.':'Type what to change. Tap the plan for here and there.';
+  const cap=full?`<div class="vstate${live||VC.conv&&!busy&&!speak?' live':''}">${live&&VC.interim?state:escapeHtml(state)}${live&&!VC.interim||busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</div>`:
+    `<div class="vcap" aria-live="polite">${live?state.startsWith('<')?state:`<span class="vyou">${state}...</span>`:busy?'<span class="vsay">Working on it...</span>':`<span class="vsay">${escapeHtml(VC.reply||state)}</span>`}</div>`;
+  const ctl=`<button class="vic" type="button" data-v="kb" aria-label="Type instead" title="Type instead" aria-pressed="${VC.typing}">${vI('kb')}</button><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" title="${VC.mute?'Unmute the voice':'Mute the voice'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button>`+(full?'':`<button class="vic" type="button" data-v="tools" aria-label="Hide the tools" title="Hide the tools and talk">${vI('tools')}</button>`);
+  const mic=`<button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}" title="${VC.conv?'Pause':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>`;
+  const form=VC.typing?`<form class="vtype" id="vForm"><input id="vIn" maxlength="600" autocomplete="off" placeholder="Or type, like make the hall wider" aria-label="What to change"><button class="tb" type="submit"${busy?' disabled':''}>Send</button></form>`:'';
+  const chips=`<div class="vchips">${vChips().map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>`;
+  if(full){
+    const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):`<p class="vm pad">${escapeHtml(VSR?'Tell me what to change. Point at the plan for here and there.':'Type what to change. Tap the plan for here and there.')}</p>`;
+    b.innerHTML=`<div class="vhead"><b>${escapeHtml($('edTitle').textContent.split(' · ').slice(0,2).join(' · '))}</b><span class="vsp"></span>${E.dirty?`<button class="tb primary vsave" type="button" data-v="save">Save</button>`:''}<button class="vic" type="button" data-v="close" aria-label="Close" title="Close">${vI('x')}</button></div>
+      <div class="vlog" id="vLog" aria-live="polite">${log}</div>
+      ${chips}${form}<div class="vctl">${mic}${cap}<div class="vside">${ctl}</div></div>`;
+    const L=$('vLog');if(L)L.scrollTop=L.scrollHeight;
+  }else{
+    b.innerHTML=`<div class="vrow">${mic}${cap}<div class="vside">${ctl}</div></div>${form}${chips}`;
+  }
 }
 let vTimer=0;
-/* Height the voice bar takes at the bottom of the plan, so the plan fits above it. */
-function vRoom(){if(!E||!E.ai||E.review)return 0;const b=$('vBar');return(b&&!b.hidden&&b.offsetHeight?b.offsetHeight:isMob?84:92)+(isMob?10:16);}
-if(window.ResizeObserver){let vh=0;new ResizeObserver(()=>{const h=$('vBar').offsetHeight;if(E&&E.ai&&Math.abs(h-vh)>6){vh=h;requestAnimationFrame(()=>{if(E)edRender();});}else vh=h;}).observe($('vBar'));}
+/* Room the voice panel takes: a column on the right on a computer, a band at the bottom on a phone or with the tools showing. */
+function vRoom(){
+  const z={w:0,h:0};if(!E||!E.ai||E.review)return z;const b=$('vBar');
+  if(vSide())return{w:(b&&b.offsetWidth?b.offsetWidth:380)+24,h:0};
+  return{w:0,h:(b&&!b.hidden&&b.offsetHeight?b.offsetHeight:isMob?84:92)+(isMob?10:16)};
+}
+if(window.ResizeObserver){let vh=0;new ResizeObserver(()=>{const h=$('vBar').offsetHeight;if(E&&E.ai&&!vSide()&&Math.abs(h-vh)>6){vh=h;requestAnimationFrame(()=>{if(E)edRender();});}else vh=h;}).observe($('vBar'));}
 /* The spot the owner pointed at: a small cross over the plan, gone after 30 seconds. */
 function vPinSync(){
   const p=$('vPin'),pt=E&&E.ai?vPoint():null;if(!p)return;
@@ -4294,38 +4414,43 @@ function vAfterRender(){
   const el=$('ed'),was=el.classList.contains('vfirst'),now=VC.first&&E.ai;
   el.classList.toggle('vfirst',now);if(was!==now)requestAnimationFrame(()=>{if(E)edRender();});   // the panel came or went, so fit the plan to the new space
   vBar();vPinSync();
+  if(VC.conv&&!VC.rec)setTimeout(vHear,300);
   clearTimeout(vTimer);
   if(!E.ai||E.busy||E.drag||E.rd||E.review||VKIT.mode)return;
   vTimer=setTimeout(vCheck,650);
 }
 /* After a change settles: offer the first thing that needs attention, once. */
 function vCheck(){
-  if(!E||!E.ai||E.busy||E.review||VKIT.mode||VC.busy||VC.rec)return;
+  if(!E||!E.ai||E.busy||E.review||VKIT.mode||VC.busy||VC.rec&&VC.interim||VC.speaking)return;
   const L=vIssues(),s=L[0]||null;
   if(VC.sug&&L.some(x=>x.key===VC.sug.key))return;
   VC.sug=s;
-  if(s){const was=VC.said.has(s.key);VC.said.add(s.key);if(s.t==='narrow')edRender();vSay(vLine(s),was);}
+  if(s){const was=VC.said.has(s.key);VC.said.add(s.key);if(s.t==='narrow')edRender();if(!was)vSay(vLine(s));else vBar();}
   else vBar();
 }
 function vOpen(){
-  VC.sug=null;VC.reply='';VC.interim='';VC.dis.clear();VC.said.clear();VC.wait=null;VC.typing=!VSR;VC.busy=false;
+  VC.sug=null;VC.reply='';VC.interim='';VC.dis.clear();VC.said.clear();VC.wait=null;VC.typing=!VSR;VC.busy=false;VC.log=[];VC.dims=null;VC.offerDraft=false;VC.discArm=false;
   Object.assign(VKIT,{mode:null,opts:[],i:0,best:0,sig:'',kept:null,seen:false});
   if(E)E.vpt=null;VC.armed=true;   // the unit was opened with a tap, so the browser lets the voice speak
   vBar();vPinSync();
+  let on=false;try{on=localStorage.getItem('pad.voice.conv')==='1';}catch(e){}
+  if(on&&VSR)setTimeout(()=>{if(E&&E.ai)vConv(true,true);},700);   // the last conversation was left on: keep listening
 }
-function vStop(){clearTimeout(vTimer);if(VC.rec){try{VC.rec.abort();}catch(e){}VC.rec=null;}try{speechSynthesis.cancel();}catch(e){}VC.follow=false;$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;}
+function vStop(){clearTimeout(vTimer);VC.conv=false;vHearStop();VC.rec=null;VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;}
 $('vBar').addEventListener('click',e=>{
   if(!E)return;const b=e.target.closest('button');if(!b)return;VC.armed=true;
   if(b.id==='vMic')return vListen();
-  if(b.dataset.say)return vHeard(b.dataset.say,false);
+  if(b.dataset.say)return vHeard(b.dataset.say,false,true);
   if(b.dataset.v==='kb'){VC.typing=!VC.typing;vBar();const i=$('vIn');if(i)i.focus();return;}
-  if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute)try{speechSynthesis.cancel();}catch(x){}vBar();return;}
+  if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute){VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(x){}if(VC.conv)setTimeout(vHear,300);}vBar();return;}
   if(b.dataset.v==='tools')return vFirst(!VC.first);
+  if(b.dataset.v==='save')return vHeard('save',false,true);
+  if(b.dataset.v==='close')return vHeard('close',false,true);
 });
 $('vBar').addEventListener('submit',e=>{e.preventDefault();const i=$('vIn');if(!i)return;const v=i.value;i.value='';vHeard(v,false);});
 /* Tapping the plan marks "here". A move that was waiting for a spot happens at once. */
 $('edSvg').addEventListener('pointerdown',e=>{
-  if(!E||!E.ai||E.review)return;VC.armed=true;
+  if(!E||!E.ai||E.review)return;VC.armed=true;VC.idle=Date.now();
   const pt=edPt(e);E.vpt={x:pt.x,y:pt.y,t:Date.now()};
   if(VC.wait==='move'){VC.wait=null;e.preventDefault();e.stopImmediatePropagation();vMoveHere();return;}
   vPinSync();
