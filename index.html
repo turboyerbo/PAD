@@ -475,6 +475,9 @@ body.manual .modes{display:none}
 .ec-card textarea{margin-top:4px}
 .ec-card .actions{flex-wrap:wrap}
 .eclist{margin:4px 0 8px;padding-left:18px;font-size:14px;line-height:1.5}
+.sugl{list-style:none;margin:4px 0 10px;padding:0;display:grid;gap:6px}
+.sugl li{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--rule);padding:6px 8px;font-size:14px;line-height:1.35}
+.sugl em{display:block;font-style:normal;font-size:12px;color:var(--ink-2)}.sugl .tb{flex:none}
 .edl em{font-style:normal;font-size:12px;margin-left:4px;color:var(--ink-2)}
 .edl em.up{color:#2E8B57}
 .edl em.dn{color:#B26B00}
@@ -2699,7 +2702,7 @@ const PAL=[
 const DEAD_END=1.5;                 // a hall may run this far past its last door before it counts as a dead end, m
 let E=null;
 const edClone=P=>{const o={W:P.W,D:P.D,sideWins:P.sideWins,side:P.side,netAdj:P.netAdj};EDKEYS.forEach(k=>o[k]=JSON.parse(JSON.stringify(P[k]||[])));o.dim=[{W:P.W,D:P.D}];return o;};
-const edChanges=()=>E.rmEdited?rmSummary(edSnapRooms(E.orig),E.P):edSummary(E.orig,E.P);
+const edChanges=()=>{const L=E.rmEdited?rmSummary(edSnapRooms(E.orig),E.P):edSummary(E.orig,E.P,E.mode==='layout'),n={};L.forEach(x=>n[x]=(n[x]||0)+1);return Object.keys(n).map(x=>n[x]>1?`${x} (${n[x]})`:x);};   // repeats are counted, not listed
 const edSnap=P=>JSON.stringify(EDKEYS.reduce((o,k)=>(o[k]=P[k],o),{}));
 const edRestore=(P,s)=>{Object.assign(P,JSON.parse(s));if(P.dim&&P.dim[0]){P.W=P.dim[0].W;P.D=P.dim[0].D;}};
 const clampX=(P,v)=>f(Math.max(0.15,Math.min(P.W-0.15,v))),clampY=(P,v)=>f(Math.max(0.35,Math.min(P.D-0.25,v)));
@@ -3174,14 +3177,15 @@ function edMeter(){
   $('edMeter').setAttribute('aria-label',`${TRACE_BUDGET-E.used} ${E.ai?'requests':'changes'} left on this sheet`);
 }
 /* What differs between the sheet underneath and the sheet on top, in plain words. */
-function edSummary(o,n){
+function edSummary(o,n,nf){   // nf: the furniture is placed afresh (Layout mode), so one line says so instead of a line a piece
   const L=[],mm=v=>Math.round(v*1000),nm=k=>KN[k]||k;
   if(Math.abs(n.W-o.W)>0.01||Math.abs(n.D-o.D)>0.01)L.push(`Changed the footprint to ${Math.round(n.W*1000)} by ${Math.round(n.D*1000)} mm`);
   {const a=(o.dms||[]).length,b=(n.dms||[]).length;if(b>a)L.push(`Added ${b-a} dimension${b-a>1?'s':''}`);else if(b<a)L.push(`Removed ${a-b} dimension${a-b>1?'s':''}`);}
   const om=new Map(o.furn.map(p=>[p.id,p])),nmap=new Map(n.furn.map(p=>[p.id,p]));
-  n.furn.forEach(p=>{const q=om.get(p.id);if(!q){L.push('Added '+nm(p.k));return;}
+  if(nf){if(JSON.stringify(o.furn)!==JSON.stringify(n.furn))L.push('Placed the furniture afresh');}
+  else n.furn.forEach(p=>{const q=om.get(p.id);if(!q){L.push('Added '+nm(p.k));return;}
     const d=Math.hypot(p.x-q.x,p.y-q.y);if(d>0.02)L.push(`Moved ${nm(p.k)} ${mm(d)} mm`);if(((p.rot-q.rot)%360+360)%360)L.push('Rotated '+nm(p.k));});
-  o.furn.forEach(q=>{if(!nmap.has(q.id))L.push('Removed '+nm(q.k));});
+  if(!nf)o.furn.forEach(q=>{if(!nmap.has(q.id))L.push('Removed '+nm(q.k));});
   const od=new Map(o.doors.map(d=>[d.id,d]));
   n.doors.forEach(d=>{const q=od.get(d.id);if(!q){L.push('Added a door');return;}
     const mv=Math.hypot(d.hx-q.hx,d.hy-q.hy);if(mv>0.02)L.push(`Moved a door ${mm(mv)} mm`);else if(d.ox!==q.ox||d.oy!==q.oy||d.cx!==q.cx||d.cy!==q.cy)L.push('Flipped a door');});
@@ -3214,14 +3218,21 @@ function edReview(){
   $('ecBody').innerHTML=`<h3 class="sub">What changed</h3><ul class="eclist">${(L.length?L:['Small adjustments']).map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul><h3 class="sub">Effect</h3><dl class="edl"><dt>Net area</dt><dd>${no.toFixed(1)} → ${nn.toFixed(1)} m²</dd><dt>Efficiency</dt><dd>${(no/grossOf(o)*100).toFixed(1)}% → ${(nn/grossOf(P)*100).toFixed(1)}%</dd></dl>${E.ai?'<p class="note">Furniture and appliances are placed fresh to fit the new layout when you save.</p>':''}<h3 class="sub">Code check</h3>`+(iss.length?iss.map(([c,m])=>`<p class="chk-${c}">${escapeHtml(m)}</p>`).join(''):'<p class="chk-ok">Meets the code limits checked here.</p>');
   const gl=E.gleft||[],gd=E.gdid||[];
   if(gd.length)$('ecBody').insertAdjacentHTML('beforeend',`<h3 class="sub">Fixed automatically</h3><ul class="eclist">${gd.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>`);
-  const blankOnly=gl.length&&gl.every(x=>x.t==='blank');
-  if(blankOnly)$('ecBody').insertAdjacentHTML('afterbegin',`<p class="chk-bad">${gl.length>1?gl.length+' spaces have':'A space has'} no room. Go back and tap ${gl.length>1?'each blank space':'the blank space'} on the tracing paper to name it, then save.</p>`);
-  else if(gl.length)$('ecBody').insertAdjacentHTML('afterbegin',`<p class="chk-bad">This layout cannot be saved yet: ${gl.filter(x=>x.t!=='blank').slice(0,4).map(x=>escapeHtml(x.m)).join(' ')}</p><div class="edbtns"><button class="tb primary" id="ecFix" type="button">Find a layout that works</button></div><p class="note" id="ecFixN">The rooms are rearranged until walls, doors, furniture and 800 mm clear all work. Or undo the last change.</p>`);
-  $('ecOk').disabled=$('ecNew').disabled=!!gl.length;
-  $('ecNote').value=E.ai?E.prompts.join('. ').slice(0,140):'';E.review=true;$('edConfirm').hidden=false;(gl.length?$('ecBack'):$('ecOk')).focus();
+  // only a space with no name, a wall in a doorway or furniture in a wall stops a save; the rest are warnings with small fixes to try
+  const hard=guHard(gl),blanks=hard.filter(x=>x.t==='blank'),soft=gl.filter(x=>!GU_HARD.test(x.t));let top='';
+  if(blanks.length)top+=`<p class="chk-bad">${blanks.length>1?blanks.length+' spaces have':'A space has'} no room. Go back and tap ${blanks.length>1?'each blank space':'the blank space'} on the tracing paper to name it, then save.</p>`;
+  if(hard.length>blanks.length)top+=`<p class="chk-bad">Fix before saving: ${hard.filter(x=>x.t!=='blank').slice(0,3).map(x=>escapeHtml(x.m)).join(' ')}</p>`;
+  if(soft.length)top+=`<p class="chk-warn">${soft.length>1?soft.length+' warnings':'One warning'}.${hard.length?'':' You can still save.'} ${soft.slice(0,4).map(x=>escapeHtml(x.m)).join(' ')}${soft.length>4?` And ${soft.length-4} more.`:''}</p><div id="ecSug"><p class="note">Looking for small fixes.</p></div>`;
+  // the full rearrangement stays as a last resort, capped at 20 seconds
+  if(hard.length>blanks.length||soft.some(x=>x.t==='reach'))top+=`<div class="edbtns"><button class="tb" id="ecFix" type="button">Rearrange all the rooms</button></div><p class="note" id="ecFixN">Tries other arrangements for up to 20 seconds.</p>`;
+  if(top)$('ecBody').insertAdjacentHTML('afterbegin',top);
+  $('ecOk').disabled=$('ecNew').disabled=!!hard.length;
+  $('ecNote').value=E.ai?E.prompts.join('. ').slice(0,140):'';E.review=true;$('edConfirm').hidden=false;(hard.length?$('ecBack'):$('ecOk')).focus();
+  if(soft.length){const tok=E.sugTok=(E.sugTok||0)+1;setTimeout(()=>{if(!E||!E.review||E.sugTok!==tok)return;let S=[];try{S=guSuggest(E.P,E.u,E.gbase);}catch(x){S=[];}E.sugs=S;const box=$('ecSug');if(!box)return;
+    box.innerHTML=S.length?`<h3 class="sub">Small fixes</h3><ul class="sugl">${S.map((o,i)=>`<li><span>${escapeHtml(o.m)} <em>${escapeHtml(o.fx)}</em></span><button class="tb" type="button" data-sug="${i}">Apply</button></li>`).join('')}</ul>`:'<p class="note">No single wall or door move helps. Save as it is, or undo the last change.</p>';},40);}
 }
 $('ecOk').onclick=()=>{
-  if(!E)return;edFinalize();if(E.gleft&&E.gleft.length){edReview();return;}const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
+  if(!E)return;edFinalize();if(guHard(E.gleft).length){edReview();return;}const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
   const changes=edChanges(),note=$('ecNote').value.trim().slice(0,140);
   ensureIters(u);const n=nextIter(u);
   u.iters.push({n,note,at:Date.now(),d,changes});u.cur=n;
@@ -3230,7 +3241,7 @@ $('ecOk').onclick=()=>{
 };
 /* The sheet becomes a new unit beside the others, a variation of this one. The original stays as it was. */
 $('ecNew').onclick=()=>{
-  if(!E)return;edFinalize();if(E.gleft&&E.gleft.length){edReview();return;}const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
+  if(!E)return;edFinalize();if(guHard(E.gleft).length){edReview();return;}const u=E.u,d={};EDKEYS.forEach(k=>d[k]=JSON.parse(JSON.stringify(E.P[k])));
   const changes=edChanges(),note=($('ecNote').value.trim()||('Variation of '+tagOf(u))).slice(0,140);
   const nu=makeUnit({n:u.n,pri:u.pri,other:u.other||'',seed:u.seed,layout:u.layout||null,W:u.W||null,D:u.D||null,maxA:u.maxA||null,Wt:u.Wt||null,Lt:u.Lt||null,side:'R',corner:u.corner||null,minimal:u.minimal});
   nu.iters=[{n:1,note,at:Date.now(),d,changes}];nu.cur=1;units.push(nu);
@@ -3238,13 +3249,18 @@ $('ecNew').onclick=()=>{
 };
 document.addEventListener('click',async e=>{
   if(!e.target.closest('#ecFix')||!E)return;const b=$('ecFix');b.disabled=true;
-  const res=await guSearch(E.P,E.u,E.gbase,{ms:60000,keep:E.snapKeep,orig:E.orig,nid:()=>++E.nid,progress:(n,ok)=>{const t=$('ecFixN');if(t)t.textContent=`Rearranging the rooms: ${n} tried${ok?', one works so far':''}.`;}});
+  const res=await guSearch(E.P,E.u,E.gbase,{ms:20000,keep:E.snapKeep,orig:E.orig,nid:()=>++E.nid,progress:(n,ok)=>{const t=$('ecFixN');if(t)t.textContent=`Rearranging the rooms: ${n} tried${ok?', one works so far':''}.`;}});
   if(!E)return;
   if(!res){const t=$('ecFixN');if(t)t.textContent='No arrangement of these rooms worked. Undo the last change or start over.';return;}
   const P=E.P;EDKEYS.forEach(k=>{P[k]=res.P[k];});P.W=res.P.W;P.D=res.P.D;P.nodes=res.P.nodes;delete P.grid;
   E.rmEdited=true;E.gleft=[];E.gdid=['Rearranged the rooms so the layout works.',...res.did];E.fsig=guSig(P);E.rsig=roomSig(P);E.base=edOverlaps(P);E.rm=null;
   $('edConfirm').hidden=true;E.review=false;edRender();edPanel();edReview();
 });
+/* A small fix from the review: one wall or door moved, then the checks run again. It can be undone like any edit. */
+$('ecBody').addEventListener('click',e=>{const b=e.target.closest('[data-sug]');if(!b||!E||!E.sugs)return;const o=E.sugs[+b.dataset.sug];if(!o)return;
+  const P=E.P;E.hist.push({s:edSnap(P),spent:false,last:E.last});E.dirty=true;
+  if(o.t==='w'){const g=wallGroups(P)[o.gi];if(g)moveWall(P,g,o.d);}else{const d=P.doors.find(x=>x.id===o.id);if(d)moveDoor(P,d,o.d);}
+  delete P.grid;E.rm=null;E.rsel=null;E.sugs=null;$('edConfirm').hidden=true;E.review=false;edRender();edPanel();edReview();toast(o.m.replace(/\.$/,'')+'. Undo puts it back.');});
 $('ecBack').onclick=()=>{$('edConfirm').hidden=true;if(E)E.review=false;};
 $('ecDiscard').onclick=()=>{edClose(true);};
 let discArm=0;
@@ -3864,9 +3880,9 @@ async function aiRun(text){
     let g=planGuard(P,u,E.gbase,{keep:E.snapKeep,nid:()=>++E.nid});entry.fix=g.did;
     // the room-level repairs were not enough: look for an arrangement of the same rooms that works
     const full=edClone(P);full.nodes=P.nodes;const gf=planGuard(full,u,E.gbase,{furnish:true,keep:E.snapKeep});
-    if(g.left.length||gf.left.length){
-      busyNote('Rearranging the rooms to find a layout that works. This can take a minute.');
-      const b=await guSearch(P,u,E.gbase,{ms:60000,keep:E.snapKeep,orig:E.orig,nid:()=>++E.nid,progress:(n,ok)=>busyNote(`Rearranging the rooms to find a layout that works: ${n} tried${ok?', one works so far':''}.`)});
+    if(guHard(g.left).length||guHard(gf.left).length){   // warnings (800 mm clear, room sizes) are shown at review with small fixes; only real breaks need a rearrangement
+      busyNote('Rearranging the rooms to find a layout that works.');
+      const b=await guSearch(P,u,E.gbase,{ms:20000,keep:E.snapKeep,orig:E.orig,nid:()=>++E.nid,progress:(n,ok)=>busyNote(`Rearranging the rooms to find a layout that works: ${n} tried${ok?', one works so far':''}.`)});
       if(b){EDKEYS.forEach(k=>{P[k]=b.P[k];});P.W=b.P.W;P.D=b.P.D;P.nodes=b.P.nodes;delete P.grid;entry.fix=['Rearranged the rooms so the change works.',...b.did];g={left:[]};E.rmEdited=true;}
       else{edRestore(P,before);delete P.grid;entry.say=(entry.say?entry.say+' ':'')+'That could not be made to work without walls in doorways, overlapping furniture or rooms that cannot be reached, so the plan is back as it was. Try a smaller change.';entry.err=true;entry.fix=[];}
     }
@@ -5290,7 +5306,7 @@ function guReach(P,withFurn){
   // start just inside the entry door
   const ed=P.doors.filter(d=>doorHor(d)&&d.hy>=D-0.45).sort((a,b)=>b.w-a.w)[0];if(!ed)return{stuck:[],ok:true};
   const rg=doorRng(ed),ex=(rg[0]+rg[1])/2;
-  const flood=arr=>{const seen=new Uint8Array(N);let s=-1,bd=1e9;for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const c=j*nx+i;if(arr[c])continue;const x=(i+0.5)*cs,y=(j+0.5)*cs;if(y>D-0.2)continue;const dd=(x-ex)**2+(y-(D-0.55))**2;if(dd<bd&&dd<0.36){bd=dd;s=c;}}
+  const flood=arr=>{const seen=new Uint8Array(N);let s=-1,bd=1e9;for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const c=j*nx+i;if(arr[c])continue;const x=(i+0.5)*cs,y=(j+0.5)*cs;if(y>D-0.2)continue;const dd=(x-ex)**2+(y-(D-0.55))**2;if(dd<bd&&dd<0.81){bd=dd;s=c;}}
     if(s<0)return seen;const q=[s];seen[s]=1;while(q.length){const c=q.pop(),i=c%nx,j=(c-i)/nx;if(i>0&&!arr[c-1]&&!seen[c-1]){seen[c-1]=1;q.push(c-1);}if(i<nx-1&&!arr[c+1]&&!seen[c+1]){seen[c+1]=1;q.push(c+1);}if(j>0&&!arr[c-nx]&&!seen[c-nx]){seen[c-nx]=1;q.push(c-nx);}if(j<ny-1&&!arr[c+nx]&&!seen[c+nx]){seen[c+nx]=1;q.push(c+nx);}}return seen;};
   const r8=flood(b8),r6=flood(b6);
   const any=(seen,r)=>{for(let j=Math.max(0,Math.floor(r[1]/cs));j<=Math.min(ny-1,Math.floor(r[3]/cs));j++)for(let i=Math.max(0,Math.floor(r[0]/cs));i<=Math.min(nx-1,Math.floor(r[2]/cs));i++)if(seen[j*nx+i])return true;return false;};
@@ -5320,6 +5336,35 @@ function guRoomFaults(P,u){
       if(Math.min(q.w,q.h)<req[1]-0.05)out.push({key:k+':width',m:`The ${q.n.toLowerCase()} is ${Math.round(Math.min(q.w,q.h)*1000)} mm wide. The minimum is ${Math.round(req[1]*1000)} mm.`,q});}
     if(RM_HAB.test(q.n)&&q.y>0.5)out.push({key:k+':window',m:`The ${q.n.toLowerCase()} has no window.`,q});});
   return out;
+}
+/* What stops a save: a space with no name, a wall in a doorway, furniture in a wall. Everything else (800 mm clear, room sizes,
+   a window, a door swing) is a warning, and the review offers small fixes for it (guSuggest). */
+const GU_HARD=/^(blank|dopen|fw)$/,guHard=L=>(L||[]).filter(x=>GU_HARD.test(x.t));
+/* Small fixes for the warnings: one wall moved 100 to 300 mm, or one door slid 200 or 400 mm, each tried on a copy of the plan.
+   Furniture that a moved wall runs into is left out, as the save does. The three that help most are offered. */
+function guSuggest(P,u,base){
+  const score=C=>{delete C.grid;const st=guReach(C,true).stuck.filter(q=>!base.has('reach:'+q.n)).map(q=>q.n),rf=guRoomFaults(C,u).filter(x=>!base.has('room:'+x.key));return{s:st.length*3+rf.length,st,rf:rf.length,rk:rf.map(x=>x.key)};};
+  const settle=C=>{const W=C.walls.filter(w=>!w.rail).map(w=>[w.x,w.y,w.x+w.w,w.y+w.h]);C.furn=C.furn.filter(p=>/^(rug|plant|dog)$/.test(p.k)||!W.some(w=>fzX(fzBox(p),w,0.02)));delete C.grid;};
+  const cl=()=>{const C=edClone(P);C.nodes=P.nodes;return C;},s0=score(cl());if(!s0.s)return[];
+  const out=[],better=(o,b)=>!b||o.sc.s<b.sc.s||(o.sc.s===b.sc.s&&Math.abs(o.d)<Math.abs(b.d));
+  wallGroups(P).forEach((g,gi)=>{if(isUser(P,g))return;let best=null;
+    [0.1,-0.1,0.2,-0.2,0.3,-0.3].forEach(d=>{const C=cl(),gc=wallGroups(C)[gi];if(!gc||!moveWall(C,gc,d))return;settle(C);const o={t:'w',gi,d,sc:score(C)};if(o.sc.s<s0.s&&better(o,best))best=o;});
+    if(best)out.push(best);});
+  P.doors.forEach(dr=>{if(dr.id===undefined)return;let best=null;
+    [0.2,-0.2,0.4,-0.4].forEach(d=>{const C=cl(),dc=C.doors.find(x=>x.id===dr.id);if(!dc||!moveDoor(C,dc,d))return;settle(C);const o={t:'d',id:dr.id,d,sc:score(C)};if(o.sc.s<s0.s&&better(o,best))best=o;});
+    if(best)out.push(best);});
+  out.sort((a,b)=>a.sc.s-b.sc.s||Math.abs(a.d)-Math.abs(b.d));
+  const nm=q=>q?q.n.toLowerCase():null,list=a=>a.length>1?a.slice(0,-1).join(', ')+' and '+a[a.length-1]:a[0];
+  const seen=new Set();
+  return out.map(o=>{const mm=Math.round(Math.abs(o.d)*1000);
+    if(o.t==='w'){const g=wallGroups(P)[o.gi],lo=g.pos-0.35,hi=g.pos+g.t+0.35,
+        side=c=>{const n=new Map();for(let k=1;k<=7;k++){const m=g.a+(g.b-g.a)*k/8,q=g.hor?guRoomAt(P,m,c):guRoomAt(P,c,m);if(q)n.set(q,(n.get(q)||0)+1);}let b=null,bn=0;n.forEach((v,q)=>{if(v>bn||(v===bn&&q.w*q.h>b.w*b.h)){b=q;bn=v;}});return b;},   // the room along most of the wall on each side
+        A=side(lo),B=side(hi),into=o.d>0?B:A,from=o.d>0?A:B;
+      o.m=A&&B&&A!==B?`Move the wall between the ${nm(from)} and the ${nm(into)} ${mm} mm into the ${nm(into)}.`:`Move the ${nm(A||B)||'inside'} wall ${mm} mm ${g.hor?(o.d>0?'down':'up'):(o.d>0?'right':'left')}.`;}
+    else{const d=P.doors.find(x=>x.id===o.id),q=guRoomAt(P,d.hx+d.ox*0.3,d.hy+d.oy*0.3);o.m=`Slide the ${nm(q)||'room'} door ${mm} mm ${doorHor(d)?(o.d>0?'right':'left'):(o.d>0?'down':'up')}.`;}
+    const op=s0.st.filter(n=>!o.sc.st.includes(n)).map(n=>'the '+n.toLowerCase());
+    const sz=[...new Set(s0.rk.filter(k=>!o.sc.rk.includes(k)).map(k=>`the ${k.replace(/\d*:.*$/,'').toLowerCase()} ${/:width$/.test(k)?'wide':/:window$/.test(k)?'lit':'big'} enough`))];
+    o.fx=op.length?`Clears the way to ${list(op)}.`:sz.length?`Makes ${list(sz)}.`:'Helps.';return o;}).filter(o=>!seen.has(o.m)&&seen.add(o.m)).slice(0,3);
 }
 /* Everything wrong, each with a key so problems the original already had can be told apart. */
 function guAudit(P,u){
@@ -5935,7 +5980,7 @@ async function fixUnit(u){
   let g=planGuard(P,u,base,{furnish:true});
   if(g.left.length){
     $('iFixT').textContent='Rearranging the rooms to find a layout that works. This can take a minute.';
-    const r=await guSearch(P,u,base,{ms:45000,orig:u.plan,progress:(n,ok)=>{$('iFixT').textContent=`Rearranging the rooms: ${n} tried${ok?', one works so far':''}.`;}});
+    const r=await guSearch(P,u,base,{ms:20000,orig:u.plan,progress:(n,ok)=>{$('iFixT').textContent=`Rearranging the rooms: ${n} tried${ok?', one works so far':''}.`;}});
     if(!r){b.disabled=false;b.textContent='Fix layout problems';$('iFixT').textContent='No working arrangement was found. Restore an earlier iteration, or open the unit and start over.';return;}
     P=r.P;g={did:['Rearranged the rooms so the layout works.',...r.did]};
   }
@@ -5990,7 +6035,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);

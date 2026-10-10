@@ -20,7 +20,8 @@ fills the space. A plan with a blank space cannot be saved. The assistant sees t
 A room keeps its printed area until its space changes size, then changes in proportion. Rooms that already sat loosely on a traced drawing are held
 only to how they sat at the start.
 
-Every plan is checked before it can be saved, and every assistant answer is held to the same checks:
+Every plan is checked before it is saved, and every assistant answer is held to the same checks. Only a break stops a save:
+a blank space, a wall in a door opening, or furniture in a wall (`GU_HARD`). The rest are warnings: the plan can be saved with them.
 
 1. No furniture or fixture runs into a wall, another piece or a door swing.
 2. Every room can be reached from the entry with 800 mm clear (600 mm inside a bath, laundry, closet or mechanical room).
@@ -35,11 +36,17 @@ When a request is made, the assistant's steps are applied and checked. What fail
 doors around the rooms, slide or flip doors clear of walls, place the furniture afresh, take out loose pieces (plants, chairs, tables, dressers,
 nightstands, closet shelving, washer and dryer...), then closets, laundry and mechanical rooms, then a hall, dining room or den. Toilets, tubs,
 showers, vanities, sinks, cooktops, fridges and beds are never taken out. If that is not enough, `guSearch` rearranges the rooms with the room
-engine, repairs and checks each arrangement, and keeps the best one that passes with no room smaller than three quarters of what it was. If none
-passes, the plan stays as it was and the assistant says so.
+engine, repairs and checks each arrangement, and keeps the best one that passes with no room smaller than three quarters of what it was. The
+search runs only for a break, for 20 seconds at most. If none passes, the plan stays as it was and the assistant says so. Warnings do not start it.
 
-The review dialog will not save a plan that still fails; it offers **Find a layout that works** (the same search). A unit saved before these
-checks existed shows **Fix layout problems** in its panel; the fix is saved as a new iteration.
+The review dialog lists the warnings and offers up to three **small fixes** (`guSuggest`): each wall moved 100 to 300 mm, and each door slid
+200 or 400 mm, is tried on a copy of the plan (furniture a moved wall runs into is left out, as the save does), and the moves that clear the most
+warnings are offered, worded by the rooms on each side ("Move the wall between the hall and the bath 200 mm into the bath. Clears the way to the
+bedroom."). Apply makes the move, runs the checks again and shows the review with the next fixes; Undo takes it back. **Rearrange all the rooms**
+(the same search, 20 seconds) stays as a last resort when a room cannot be reached. Save stays available unless there is a break.
+
+The way in starts at the free spot nearest the corridor door, within 900 mm of it, so a door near a corner does not count every room as unreachable.
+A unit saved before these checks existed shows **Fix layout problems** in its panel; the fix is saved as a new iteration.
 
 ## Turning it on
 
