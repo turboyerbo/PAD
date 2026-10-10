@@ -40,6 +40,20 @@ The assistant gets three things (`vSketchSend`, `vCtx`, and `sketch` in `revise.
 - a picture of the plan (`vSketchImage`): walls, room separations dashed, room names and a labelled 1 m grid, with the sketch in red, as a JPEG.
   It goes with the first request only; the repair rounds keep the strokes.
 
+**Read on the page first** (`vSketchRead`), with no assistant, so sketching works even where the assistant is off:
+- **A door**: a straight stroke along a wall or across an opening, with an arrow or a hook to one side (`vSketchDoor`, `vDoorAt`). The door goes
+  on that wall at the stroke, 820 mm or what fits, opening to the arrow's side. In an opening, a wall is drawn across it first, in line with the
+  wall beside it. A door already there is redrawn the way it was sketched. The line drawn is tried first, then the room edges within 500 mm,
+  keeping the one that leaves no space without its room. A second traced wall on the same line is opened too, and a room separation beside the
+  new wall goes. If the door opens into a space cut off from its room by a separation, that separation goes.
+- **A room moved**: a loop round a room (or a stroke starting in it) and an arrow to another room (`vSketchMove`, `roomMove`). The room's name goes
+  where the arrow ends (the main room there, not a closet inside it). The room there gives way: the old space joins the room it is open to (the
+  separations round it go), or, behind walls, takes the other name. "Swap" swaps them. The furniture is placed again.
+- **A table**: small loops in the room, or words about a table and chairs, put a dining table with chairs there (`vTableAt`): the largest that fits
+  (1600 by 900 with six chairs, 1200 by 800 with four, or a round table with four), nearest the spot drawn. It stays when the furniture is placed again
+  (`P.pref` {yes}).
+- Each is one change on the sheet; undo takes it back. Anything else goes to the assistant as below.
+
 The function tells Claude how to read a sketch: a straight stroke is usually a wall, a short stroke across a wall a door, a loop an area, a stroke
 from one place to another a move. The sketch is a note to the assistant and never becomes plan geometry.
 
@@ -57,6 +71,9 @@ What is left is the logo, the building's units and the conversation (a column on
 - **Units**: "add a one bedroom" (studio, one, two or three bedroom), then yes opens it; "open PAD-03", "open unit three", "the first one",
   "the last one"; "what is in this building". Opening a unit hands over to the editor's conversation; closing it comes back and asks which unit next.
   The conversation and its log carry on through all of it.
+- **The strip still scrolls**: the red arrows and the small keyplan stay on screen beside the conversation, so you can walk the building and
+  see where you are. (The voice panel's class once also fixed the page body in place, which stretched it to the strip's width so nothing
+  scrolled; the rule now applies to the panel only.)
 - **Show the buttons** brings the classic app back. The editor's voice bar menu turns voice first on again.
 - Without speech recognition (Firefox) the panel has a text box.
 
@@ -71,6 +88,12 @@ On a computer it is a column on the right; on a phone (or a window narrower than
   or "stop listening" ends it, and so does 90 seconds of silence. If the conversation was on, the next unit opens listening
   (`pad.voice.conv`). Uses the browser's speech recognition (Chrome, Edge, Safari). Where there is none (Firefox), a text box opens instead.
 - **State line** beside the microphone: Listening (and what is being heard), Working on it, or Speaking.
+- **State box** (`vStat`): a small pill over the plan, at the top and centred on the plan, shows Speaking (bars moving), Thinking (dots) or
+  Listening (a ring). While it listens it turns see-through with a halftone of dots, and fainter still while words are coming in. Hidden when idle.
+  With reduced motion it does not animate.
+- **Patience** (`vPatience`, `vHold`): one turn can run across pauses. The browser's recogniser stops at a pause; a new one carries on the same
+  turn, and the turn ends only after a silence long enough to mean the thought is finished: about a second after a one-word answer (yes, undo,
+  send), 2.6 seconds after a sentence (3.2 when it is long), and 4.2 seconds when the words trail off (and, so, the, um, to...).
 - **Keyboard**: type instead of talking.
 - **Speaker**: mute the voice. The captions still show. Remembered on that device (`pad.voice.mute`).
 - **The tools**: saying "show the tools" brings back the header, panel and modes; the menu button on the small bar then hides them again.
@@ -79,7 +102,8 @@ On a computer it is a column on the right; on a phone (or a window narrower than
   while flipping kitchens; otherwise Make it wider, Kitchen layouts, Is there enough room?, Undo, Review changes, Suggest a variation.
   A chip does exactly what saying its words does.
 
-Spoken commands for the sheet: "save" or "I'm done" (review), "close" or "discard" (asks again when there are unsaved changes), "undo".
+Spoken commands for the sheet: "save" or "I'm done" (review), "close" or "discard" (asks again when there are unsaved changes), "undo",
+"delete this unit" (asks once; yes deletes it and the conversation goes back to the building).
 
 ## Pointing
 
@@ -113,6 +137,13 @@ In this order, one at a time. "Not now" skips that one for the session; "stop su
   sink is to a bath (shared plumbing), best first, at most six. The best one is drawn in at once; the voice describes it and asks whether
   to show the others. Next and Back flip, "option three" jumps, "yours" goes back to the pick. "Use this one" keeps it (`P.pref = [{kit, w}]`,
   `w` being the walls the runs sit on), and it is drawn that way when the layout is furnished on saving. Choosing another than the pick is said back.
+- **Furniture** (`vEditHeard`): "get rid of the sofa", "remove this" while pointing, "move the sofa here", "turn the bed". The piece is the one
+  of that kind nearest the spot pointed at, or the only one. A piece taken out stays out when the furniture is placed again: the plan keeps
+  `{no: kind, n: room}` in `P.pref`, and `rmFurnish` leaves it out of that room. Toilets and sinks can go too; the owner decides.
+- **Taking out a room**: "get rid of one of the bathrooms", "lose the den" (`roomMerge`). The room is opened into its neighbour: the walls between
+  them come down with the doors in them, its fixtures go, and the neighbour takes the space. Nothing else moves. The neighbour is the room it is
+  entered from, else the one it shares the longest wall with (a main room before a closet). With several rooms of that name, the one pointed at,
+  else the smallest. The only bath stays unless the owner says "anyway". The assistant has the same step (`remove_room`), and `remove_item` for furniture.
 - **Undo, review, a variation, mute, show or hide the tools.**
 
 Each wall move or kitchen choice is one of the five changes on the sheet, the same as any other edit.

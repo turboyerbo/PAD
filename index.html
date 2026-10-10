@@ -449,11 +449,35 @@ body.mob .vchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 
 body.mob .vchips .chip{flex:none}
 @media (prefers-reduced-motion:reduce){.vmic.on,.vd.on,.vstate .dots i{animation:none}}
 /* voice everywhere: with voice first on, every view hides its buttons and the conversation runs the app */
-body.vapp :is(.bar,#keyplan,#sZoom,#navbox,.nav,.add,footer,#mob .mtop,#mob .mbot,#mMenu,.info,.modal,.chat,.msheet,.land-card,.land-lead,#proj>*,#dimBar,#toast){display:none!important}
+body.vapp :is(.bar,#sZoom,#navbox,.add,footer,#mob .mtop,#mob .mbot,#mMenu,.info,.modal,.chat,.msheet,.land-card,.land-lead,#proj>*,#dimBar,#toast){display:none!important}
 body.vapp.view-proj #proj{background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%)}
 @media (min-width:761px){body.vapp.view-app:not(.mob) .stage{margin-right:404px}}
 body.vapp.mob .stage{flex:none;height:50vh;height:50dvh;width:100vw;align-self:stretch}   /* phone: the units sit above the conversation sheet */
-.vapp{position:fixed;z-index:30}
+div.vapp{position:fixed;z-index:30}   /* the panel, not the body (body.vapp): a fixed body grows to the strip's width and nothing scrolls */
+/* the voice's state, in a small box over the plan: speaking (bars), thinking (dots), listening (a ring); while you talk it goes see-through, a halftone */
+.vstat{position:fixed;top:14px;left:var(--vo-x,50%);z-index:61;display:flex;align-items:center;gap:10px;padding:9px 16px 9px 12px;border-radius:999px;background:var(--navy);color:#fff;
+  font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 8px 22px rgba(14,36,49,.28);pointer-events:none;
+  opacity:0;transform:translate(-50%,-8px) scale(.96);transition:opacity .35s ease,transform .35s ease,background-color .35s ease,color .35s ease,box-shadow .35s ease}
+.vstat.on{opacity:1;transform:translate(-50%,0) scale(1)}
+.vo-ic{display:flex;align-items:center;justify-content:center;gap:3px;width:22px;height:22px;position:relative}
+.vo-ic i{display:block;width:3px;height:6px;border-radius:2px;background:currentColor;transition:height .2s}
+.vstat.speak .vo-ic i{animation:vsBar .9s ease-in-out infinite alternate}
+.vstat.speak .vo-ic i:nth-child(2){animation-delay:.15s}.vstat.speak .vo-ic i:nth-child(3){animation-delay:.3s}.vstat.speak .vo-ic i:nth-child(4){animation-delay:.45s}
+@keyframes vsBar{0%{height:4px}100%{height:18px}}
+.vstat.think .vo-ic i{width:5px;height:5px;border-radius:50%;animation:vsDot 1.2s ease-in-out infinite}.vstat.think .vo-ic i:nth-child(4){display:none}
+.vstat.think .vo-ic i:nth-child(2){animation-delay:.2s}.vstat.think .vo-ic i:nth-child(3){animation-delay:.4s}
+@keyframes vsDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
+.vstat.listen{background-color:rgba(255,255,255,.42);color:var(--navy);box-shadow:0 2px 10px rgba(14,36,49,.12);
+  background-image:radial-gradient(circle,rgba(21,50,67,.30) 1px,transparent 1.5px);background-size:5px 5px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.vstat.listen.you{opacity:.62}
+.vstat.listen .vo-ic i{display:none}
+.vstat.listen .vo-ic::before,.vstat.listen .vo-ic::after{content:"";position:absolute;inset:4px;border-radius:50%;border:2px solid currentColor;animation:vsRing 1.8s ease-out infinite}
+.vstat.listen .vo-ic::after{animation-delay:.9s}
+@keyframes vsRing{0%{transform:scale(.5);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+@media (prefers-reduced-motion:reduce){.vstat,.vstat *{animation:none!important;transition:none!important}}
+/* the scroll arrows and the keyplan stay with the voice (they sit in the stage, beside the conversation): walk the building and see where you are */
+body.vapp.view-proj :is(.nav,#keyplan){display:none!important}
+body.vapp .stage{min-width:0}   /* the strip scrolls inside the stage instead of widening it */
 .vapp.vbar.full.side{top:12px;right:12px;bottom:12px;left:auto;width:380px}
 .vapp.vbar.full:not(.side){top:auto;left:6px;right:6px;bottom:6px;max-height:calc(50vh - 12px);max-height:calc(50dvh - 12px)}
 .vapp.greet{inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%);color:#fff;text-align:center;cursor:pointer;padding:24px}
@@ -1118,6 +1142,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 
 <div class="vapp" id="vApp" hidden role="region" aria-label="Talk to PAD"></div>
+<div class="vstat" id="vStat" aria-hidden="true"><span class="vo-ic"><i></i><i></i><i></i><i></i></span><span class="vo-t"></span></div>
 <div class="ed" id="ed" hidden role="dialog" aria-modal="true" aria-labelledby="edTitle">
   <i class="tape tl" aria-hidden="true"></i><i class="tape tr" aria-hidden="true"></i>
   <div class="ed-top">
@@ -3904,7 +3929,13 @@ function aiOps(ops){
       case'move_door':if(need(d,'A door to move was not found.')&&!moveDoor(P,d,aiNum(o.d,4)))miss.push('A door could not slide that far.');break;
       case'flip_door':if(need(d,'A door to flip was not found.')){E.sel={t:'d',id:d.id};edAct('dflip');}break;
       case'remove_door':if(need(d,'A door to remove was not found.')){if(doorHor(d)&&d.hy>=P.D-0.45)miss.push('The entry door stays.');else{E.sel={t:'d',id:d.id};edAct('ddel');}}break;
-      case'add_door':{const g=need(aiWall(o.wall),'A wall for the new door was not found.');if(g){const n=P.doors.length;E.sel={t:'w',wi:g.idxs[0]};edAct('dadd',{});if(P.doors.length===n)miss.push('That wall is too short for a door.');}break;}
+      case'add_door':{
+        if(Number.isFinite(+o.x)&&Number.isFinite(+o.y)){   // at a spot (a sketch): on the wall or across the opening there, opening into the room named
+          const g0=o.wall?aiWall(o.wall):null,into=o.room?vRoomPick(String(o.room),null):null;let hor=g0?g0.hor:null;
+          if(hor===null){const H=wallGroups(P,true).map(g=>({g,d:Math.abs(g.pos+g.t/2-(g.hor?+o.y:+o.x))+((g.hor?+o.x:+o.y)<g.a||(g.hor?+o.x:+o.y)>g.b?1:0)})).sort((a,b)=>a.d-b.d)[0];hor=H?H.g.hor:true;}
+          const c=g0?g0.pos+g0.t/2:(hor?+o.y:+o.x),m=hor?+o.x:+o.y,sd=into?((hor?into.y+into.h/2:into.x+into.w/2)>c?1:-1):0;
+          if(!vDoorAt(P,hor,c,m,sd))miss.push('A door does not fit at that spot.');break;}
+        const g=need(aiWall(o.wall),'A wall for the new door was not found.');if(g){const n=P.doors.length;E.sel={t:'w',wi:g.idxs[0]};edAct('dadd',{});if(P.doors.length===n)miss.push('That wall is too short for a door.');}break;}
       case'set_footprint':{
         E.rm=null;const rm=rmEnsure();if(!rm){miss.push('The footprint cannot change for this unit.');break;}
         const hw=Number.isFinite(+o.width),hd=Number.isFinite(+o.depth);let W=hw?+o.width:P.W,D=hd?+o.depth:P.D;
@@ -3918,7 +3949,13 @@ function aiOps(ops){
       case'add_bump':{if(!BUMPS[o.kind]){miss.push('That kind of balcony or bump-out is not available.');break;}const n=bumpsOf(P).length;E.msg='';addBump(o.kind);if(bumpsOf(P).length===n)miss.push(E.msg||'That could not be added.');break;}
       case'resize_bump':if(need(b,'A balcony or bump-out to resize was not found.')){if(o.d)resizeBump(P,b,'w',aiNum(o.d,3));if(o.dd)resizeBump(P,b,'d',aiNum(o.dd,3));}break;
       case'remove_bump':if(need(b,'A balcony or bump-out to remove was not found.')){removeBump(P,b);E.sel=null;}break;
-      case'kitchen_layout':{if(!KINDS[o.kind]){miss.push('That kitchen layout is not available.');break;}const r=kTemplate(Object.assign({},P,{furn:[]}),o.kind);if(!r.ok){miss.push(r.reason);break;}P.pref=[{kit:o.kind}];break;}   // drawn when the layout is furnished on saving
+      case'remove_room':{const q=vRoomPick(String(o.room||''),Number.isFinite(+o.x)&&Number.isFinite(+o.y)?{x:+o.x,y:+o.y}:null);if(!q){miss.push('That room was not found.');break;}if(!roomMerge(P,q,E.snapKeep)){miss.push(`The ${q.n.toLowerCase()} could not be opened into the room beside it.`);break;}E.rm=null;break;}
+      case'move_room':{const A=vRoomPick(String(o.room||''),null),B=vRoomPick(String(o.to||''),Number.isFinite(+o.x)&&Number.isFinite(+o.y)?{x:+o.x,y:+o.y}:null);
+        if(!A||!B||A===B){miss.push('The rooms to move were not found.');break;}roomMove(P,A,B,o.swap?'swap':'');E.rm=null;break;}
+      case'add_item':{if(!/^(ltable|rtable)$/.test(String(o.kind))){miss.push('Only a dining table can be placed by hand; the rest is placed to fit.');break;}const x=+o.x,y=+o.y;if(!Number.isFinite(x)||!Number.isFinite(y)){miss.push('Say where the table goes.');break;}
+        if(!vTableAt(P,[x,y],guRoomAt(P,x,y)))miss.push('A table and chairs do not fit there.');break;}   // kept in P.pref, so it stays when the furniture is placed again
+      case'remove_item':{const it=vFurnPick(String(o.kind||''),Number.isFinite(+o.x)&&Number.isFinite(+o.y)?{x:+o.x,y:+o.y}:null);if(!it){miss.push('That piece of furniture was not found.');break;}vFurnOut(it);break;}
+      case'kitchen_layout':{if(!KINDS[o.kind]){miss.push('That kitchen layout is not available.');break;}const r=kTemplate(Object.assign({},P,{furn:[]}),o.kind);if(!r.ok){miss.push(r.reason);break;}P.pref=[{kit:o.kind},...(P.pref||[]).filter(x=>x&&x.no)];break;}   // drawn when the layout is furnished on saving
       default:miss.push('One step was not understood.');
     }
     }catch(e){miss.push('One step could not be applied.');}
@@ -4130,7 +4167,7 @@ function vKitShow(i){
 function vKitUse(){
   const o=VKIT.opts[VKIT.i];if(!o)return;
   if(!edPush('vkit')){return vSay(FULL_MSG());}
-  E.P.pref=[{kit:o.kind,w:o.w}];E.rm=null;
+  E.P.pref=[{kit:o.kind,w:o.w},...(E.P.pref||[]).filter(x=>x&&x.no)];E.rm=null;
   if(!E.ai){const K=kRoom(E.P);if(K){E.P.furn=E.P.furn.filter(p=>!(KFIX.test(p.k)&&kIn(K,p)));o.items.forEach(it=>E.P.furn.push(Object.assign({id:++E.nid},it)));}}   // the one view shows furniture: put the kitchen in now
   VKIT.kept={items:o.items,sig:E.wsig};VKIT.mode=null;edRender();if(E.ai)aiPanel();
   const mine=VKIT.i===VKIT.best;
@@ -4218,7 +4255,7 @@ async function vAsk(text){
    and a picture of the plan with a metre grid and the sketch to the assistant. The sketch is a note to the assistant, never plan geometry. */
 const VSK={on:false,keep:false,strokes:[],cur:null,text:[]};
 function vSketchOpen(){
-  if(!E)return;if(!AIREADY)return vSay('Sketching needs the assistant, and it is not switched on for this site.');
+  if(!E)return;
   VSK.on=true;VSK.keep=false;VSK.strokes=[];VSK.text=[];VSK.cur=null;VC.offerDraft=false;VC.sug=null;vSketchSync();
   vSay('Sketch on the plan with your finger or the mouse, and tell me what it means while you draw. Say send when you are done.');
 }
@@ -4273,8 +4310,161 @@ async function vSketchSend(){
   const words=VSK.text.join('. ')||VC.lastAsk||'Make the change shown in the sketch.';
   const sk={strokes:VSK.strokes.map(s=>({kind:s.kind,pts:s.pts})),image:vSketchImage()};
   VSK.on=false;VSK.keep=true;vSketchSync();
+  // the page reads the common sketches itself: a door with its swing, a room moved with an arrow, a table drawn in
+  let rd=null;try{rd=vSketchRead(VSK.strokes,words);}catch(x){rd=null;}
+  if(rd===''){vSketchClose();return;}   // already answered (all the changes are used)
+  if(rd){vSketchClose();edRender();edPanel();VC.offerDraft=false;return vSay(rd+' Say undo to take it back.');}
+  if(!AIREADY){vSketchClose();VC.offerDraft=true;return vSay('I could not read that sketch, and the assistant is not switched on here. Draw a door as a line across the wall with an arrow the way it opens, or circle a room and draw an arrow to where it goes.');}
   VC.sketch=sk;
   try{await vAsk(words);}finally{VC.sketch=null;vSketchClose();}
+}
+/* ---- reading a sketch on the page ----
+   Two kinds of sketch are read here, with no assistant:
+   1. A door: a straight stroke along or across a wall, or across an opening, with an arrow (or the stroke's tail) on the side it opens to.
+      The door goes on that wall at the stroke; in an opening, a wall is drawn across the opening first, in line with the wall beside it.
+   2. A room moved: a loop round a room (or a stroke starting in it) and an arrow to another room. The room's name goes where the arrow ends.
+      If the words say to remove the room there ("remove the den", "instead"), the old space joins the room it is open to; otherwise the two swap.
+      Small loops in the target room, or words about a table, put a dining table with chairs there.
+   Anything else goes to the assistant with the picture. */
+const vPts=S=>S.flatMap(s=>s.raw||s.pts);
+const vLen=pts=>{let l=0;for(let i=1;i<pts.length;i++)l+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);return l;};
+function vSketchRead(S,words){
+  const w=String(words||'').toLowerCase();
+  if(/\b(door|doorway|opening|entrance|swing)\b/.test(w)||(!/\b(move|put|kitchen|table|room|swap)\b/.test(w)&&S.length<=2&&vLen(vPts(S))<4)){const r=vSketchDoor(S,w);if(r)return r;}
+  if(S.some(s=>vLen(s.raw||s.pts)>1)){const r=vSketchMove(S,w);if(r)return r;}
+  return null;
+}
+/* the straight part of a stroke that is most nearly level or plumb, at least 350 mm long */
+function vStraight(pts){
+  const sp=vSimplify(pts,0.08);let best=null;
+  for(let i=1;i<sp.length;i++){const a=sp[i-1],b=sp[i],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(L<0.35||L>2.4)continue;
+    const hor=Math.abs(dy)<Math.abs(dx)*0.45,ver=Math.abs(dx)<Math.abs(dy)*0.45;if(!hor&&!ver)continue;if(!best||L>best.L)best={L,hor,a,b,i};}
+  return best;
+}
+function vSketchDoor(S,w){
+  const all=S.map(s=>s.raw||s.pts);let best=null,si=-1;
+  all.forEach((pts,k)=>{const b=vStraight(pts);if(b&&(!best||b.L>best.L)){best=b;si=k;}});
+  if(!best)return null;
+  const hor=best.hor,c=hor?(best.a[1]+best.b[1])/2:(best.a[0]+best.b[0])/2,m=hor?(best.a[0]+best.b[0])/2:(best.a[1]+best.b[1])/2;
+  // the side it opens to: the point furthest off the line, the arrow's tip
+  let tip=0;vPts(S).forEach(p=>{const o=(hor?p[1]:p[0])-c,al=hor?p[0]:p[1];if(Math.abs(al-m)<1.6&&Math.abs(o)>Math.abs(tip))tip=o;});
+  if(Math.abs(tip)<0.12)tip=0;
+  // the line drawn is near where the door goes: try it, then the room edges close to it, and keep the first that leaves no room without its space
+  const nBl=P=>{let n=snapBlanks(P).length;try{n+=sepBlanks(P).length;}catch(x){}return n;};
+  const P0=E.P,sd=tip>0?1:tip<0?-1:0,b0=nBl(P0),cs=[c];
+  P0.rooms.filter(q=>!q.bk).forEach(q=>(hor?[q.y,q.y+q.h]:[q.x,q.x+q.w]).forEach(v=>{if(Math.abs(v-c)<0.5&&!cs.some(u=>Math.abs(u-v)<0.03))cs.push(v);}));
+  cs.sort((a,b)=>Math.abs(a-c)-Math.abs(b-c));
+  let cc=null,bs=1e9;for(const v of cs){const C=edClone(P0);C.nodes=P0.nodes;const nid0=E.nid;let ok=false;try{ok=!!vDoorAt(C,hor,v,m,sd);}catch(x){ok=false;}E.nid=nid0;if(!ok)continue;
+    const sn=snapRooms(C,E.snapKeep);if(sn.dropped.length)continue;const sc=Math.max(0,nBl(C)-b0)*10+Math.abs(v-c);if(sc<bs){bs=sc;cc=v;}}   // fewest new blank spaces, then nearest the line drawn
+  if(cc===null)return null;
+  if(!edPush('v'+(++E.nid))){vSay(E.msg||FULL_MSG());return'';}
+  const r=vDoorAt(E.P,hor,cc,m,sd);if(r){snapRooms(E.P,E.snapKeep);delete E.P.grid;
+    // a space the door now opens into that a room separation cuts off from its room: the separations round that space go
+    try{const P=E.P,d=P.doors[P.doors.length-1],in1=doorHor(d)?[d.hx+d.cx*d.w/2,d.hy+d.oy*0.35]:[d.hx+d.ox*0.35,d.hy+d.cy*d.w/2];
+      sepBlanks(P).filter(b=>in1[0]>=b.bb[0]-0.05&&in1[0]<=b.bb[2]+0.05&&in1[1]>=b.bb[1]-0.05&&in1[1]<=b.bb[3]+0.05).forEach(b=>{
+        const ov=(a0,a1,b0,b1)=>Math.min(Math.max(a0,a1),b1)-Math.max(Math.min(a0,a1),b0)>0.2;
+        P.seps=P.seps.filter(q=>{const v=Math.abs(q.x1-q.x2)<0.01,h=Math.abs(q.y1-q.y2)<0.01;return!((v&&(Math.abs(q.x1-b.bb[0])<0.12||Math.abs(q.x1-b.bb[2])<0.12)&&ov(q.y1,q.y2,b.bb[1],b.bb[3]))||(h&&(Math.abs(q.y1-b.bb[1])<0.12||Math.abs(q.y1-b.bb[3])<0.12)&&ov(q.x1,q.x2,b.bb[0],b.bb[2])));});});
+      snapRooms(P,E.snapKeep);delete P.grid;}catch(x){}}
+  if(!r){const h=E.hist[E.hist.length-1];if(h)edRestore(E.P,h.s);delete E.P.grid;edUnpush();return null;}   // nothing half done
+  return r;
+}
+/* A door on the line hor (true: a wall running left to right) at coordinate c, centred near m along it, opening to side s (+1 down or right).
+   On an existing wall it is cut in; in an opening, a wall is drawn across the opening first. Returns what was done, or null. */
+function vDoorAt(P,hor,c,m,s){
+  const par=wallGroups(P,true).filter(g=>g.hor===hor&&Math.abs(g.pos+g.t/2-c)<0.45);
+  const runs=g=>g.idxs.map(i=>P.walls[i]).map(x=>hor?[x.x,x.x+x.w]:[x.y,x.y+x.h]);
+  let g=par.find(g=>runs(g).some(r=>m>=r[0]+0.2&&m<=r[1]-0.2)),made=false;
+  const ln=g||par.sort((a,b)=>Math.abs(a.pos+a.t/2-c)-Math.abs(b.pos+b.t/2-c))[0],pos=ln?ln.pos:f(c-0.05),t=ln?ln.t:0.1,mid=pos+t/2;
+  if(!g){   // an opening: from the nearest face on each side of m, along the line
+    let L=-1e9,R=1e9;
+    P.walls.forEach(x=>{if(x.rail||x.bw)return;const xh=x.w>x.h;
+      if(xh!==hor){const lo=hor?x.y:x.x,hi=lo+(hor?x.h:x.w);if(mid<lo-0.06||mid>hi+0.06)return;const f0=hor?x.x:x.y,f1=f0+(hor?x.w:x.h);if(f1<=m+0.01)L=Math.max(L,f1);if(f0>=m-0.01)R=Math.min(R,f0);}
+      else{const p0=hor?x.y:x.x,p1=p0+(hor?x.h:x.w);if(Math.abs((p0+p1)/2-mid)>0.12)return;const f0=hor?x.x:x.y,f1=f0+(hor?x.w:x.h);if(f1<=m+0.01)L=Math.max(L,f1);if(f0>=m-0.01)R=Math.min(R,f0);}});
+    if(!(R-L>=0.75&&R-L<=3.2))return null;
+    P.walls.push(hor?{x:f(L),y:f(pos),w:f(R-L),h:f(t)}:{x:f(pos),y:f(L),w:f(t),h:f(R-L)});made=true;
+    g=wallGroups(P,true).find(q=>q.hor===hor&&Math.abs(q.pos-pos)<0.011&&q.a<=m&&q.b>=m);if(!g)return null;
+  }
+  const run=runs(g).find(r=>m>=r[0]-0.01&&m<=r[1]+0.01)||runs(g)[0],dw=Math.min(0.82,run[1]-run[0]-0.1);if(dw<0.6)return null;
+  const lo=f(Math.max(run[0]+0.05,Math.min(run[1]-0.05-dw,m-dw/2)));
+  // a door already there is replaced by the one drawn (its place and the way it opens)
+  const old=onGroup(P,g).filter(d=>{const q=doorRng(d);return Math.min(q[1],lo+dw)-Math.max(q[0],lo)>0.02;});
+  if(old.length)P.doors=P.doors.filter(d=>!old.includes(d));
+  const into=s||((hor?g.pos+g.t/2<P.D/2:g.pos+g.t/2<P.W/2)?1:-1),id=++E.nid,kept=keptGaps(P,g);
+  const nd=hor?{id,hx:lo,hy:f(into>0?g.pos+g.t:g.pos),cx:1,cy:0,ox:0,oy:into,w:f(dw)}:{id,hx:f(into>0?g.pos+g.t:g.pos),hy:lo,cx:0,cy:1,ox:into,oy:0,w:f(dw)};
+  P.doors.push(nd);relayWalls(P,g,kept);delete P.grid;
+  // traced plans can carry a second, slightly different wall on the same line: open the doorway through it too
+  {const d0=lo-0.01,d1=lo+dw+0.01,b0=g.pos-0.06,b1=g.pos+g.t+0.06,out=[];
+    P.walls.forEach(x=>{const xh=x.w>x.h;if(x.rail||x.bw||xh!==hor){out.push(x);return;}const p0=hor?x.y:x.x,p1=p0+(hor?x.h:x.w),a0=hor?x.x:x.y,a1=a0+(hor?x.w:x.h);
+      if(p1<b0||p0>b1||a1<=d0||a0>=d1){out.push(x);return;}
+      [[a0,d0],[d1,a1]].forEach(([u,v])=>{if(v-u>0.04)out.push(hor?Object.assign({},x,{x:f(u),w:f(v-u)}):Object.assign({},x,{y:f(u),h:f(v-u)}));});});
+    P.walls=out;}
+  // a room separation running beside the new wall is replaced by it
+  if(P.seps&&P.seps.length){const ra=runs(g).find(r=>lo>=r[0]-0.01&&lo<=r[1]+0.01)||[lo,lo+dw];P.seps=P.seps.filter(q=>{const qh=Math.abs(q.y1-q.y2)<0.01,qv=Math.abs(q.x1-q.x2)<0.01;if(hor?!qh:!qv)return true;
+    const qc=hor?q.y1:q.x1,a0=Math.min(hor?q.x1:q.y1,hor?q.x2:q.y2),a1=Math.max(hor?q.x1:q.y1,hor?q.x2:q.y2);return!(Math.abs(qc-(g.pos+g.t/2))<0.5&&Math.min(a1,ra[1])-Math.max(a0,ra[0])>0.3);});}
+  const q=guRoomAt(P,hor?lo+dw/2:nd.hx+into*0.4,hor?nd.hy+into*0.4:lo+dw/2),o=guRoomAt(P,hor?lo+dw/2:nd.hx-into*0.4,hor?nd.hy-into*0.4:lo+dw/2);
+  const mm=Math.round(dw*1000),an=/^(8|11|18)/.test(String(mm))?'an':'a',btw=o&&q&&o!==q?` between the ${vRoomName(o.n)} and the ${vRoomName(q.n)}`:'',inn=q?`, opening into the ${vRoomName(q.n)}`:'';
+  return old.length?`I redrew the door${btw}: ${mm} mm wide${inn}.`:`I put ${an} ${mm} mm door ${made?'across the opening':'in the wall'}${btw}${inn}.`;
+}
+function vSketchMove(S,w){
+  const P=E.P,inR=(q,p)=>p[0]>=q.x-0.05&&p[0]<=q.x+q.w+0.05&&p[1]>=q.y-0.05&&p[1]<=q.y+q.h+0.05,cl=p=>[Math.max(0.3,Math.min(P.W-0.3,p[0])),Math.max(0.5,Math.min(P.D-0.4,p[1]))];
+  const at=p=>guRoomAt(P,...cl(p)),ctr=pts=>[pts.reduce((a,p)=>a+p[0],0)/pts.length,pts.reduce((a,p)=>a+p[1],0)/pts.length];
+  const L=S.map(s=>({s,pts:s.raw||s.pts,len:vLen(s.raw||s.pts)}));
+  const arrow=L.filter(o=>o.s.kind!=='loop'&&o.len>1).sort((a,b)=>b.len-a.len)[0];if(!arrow)return null;
+  const loops=L.filter(o=>o.s.kind==='loop'),big=loops.filter(o=>o.len>2.2).sort((a,b)=>b.len-a.len)[0],small=loops.filter(o=>o!==big&&o.len<=2.2);
+  const named=vFindRoom(w),startR=at(big?ctr(big.pts):arrow.pts[0]);
+  let A=named&&startR&&named.n!==startR.n&&P.rooms.some(q=>q.n===named.n&&(big?inR(q,ctr(big.pts)):inR(q,arrow.pts[0])))?P.rooms.find(q=>q.n===named.n&&(big?inR(q,ctr(big.pts)):inR(q,arrow.pts[0]))):startR;
+  if(named&&!A)A=named;
+  // where it goes: the room the small loops (a table drawn in) sit in, else the main room at the arrow's tip, not a closet inside it
+  const main=p=>{const c=cl(p),R=P.rooms.filter(q=>!q.bk&&inR(q,c));return R.filter(q=>!/^(Closet|Mech|Laundry|Pantry|Walk-in)$/.test(q.n)).sort((a,b)=>a.w*a.h-b.w*b.h)[0]||at(p);};
+  const B=small.length?main(ctr(small.flatMap(o=>o.pts))):main(arrow.pts[arrow.pts.length-1]);
+  if(!A||!B||A===B||A.bk||B.bk)return null;
+  if(!edPush('v'+(++E.nid))){vSay(E.msg||FULL_MSG());return'';}
+  const what=roomMove(P,A,B,w);const aN=B.n,bN=what.bN;
+  E.rm=null;E.rsig=roomSig(P);delete P.grid;
+  rmFurnish(P,E.u);delete P.grid;
+  let tb='';
+  if(small.length||/\b(table|dining|chairs?|eat)\b/.test(w)){const pt=small.length?ctr(small.flatMap(o=>o.pts)):[B.x+B.w/2,B.y+B.h/2],p=vTableAt(P,cl(pt),B);
+    tb=p?` I put a dining table with ${p.k==='rtable'?p.c:p.c*2} chairs where you drew it.`:' A table and chairs do not fit there.';}
+  return `I moved the ${vRoomName(aN)} to where the ${vRoomName(bN)} was, and ${what.t}. The furniture is placed again.${tb}`;
+}
+/* Move room A to where room B is: B takes A's name. The old space joins the room it is open to (the separations round it go), or, behind walls,
+   takes B's name; "swap" swaps them; "remove", "instead" open a walled old space into its neighbour. Returns {t: what happened to the old space, bN}. */
+function roomMove(P,A,B,w){
+  w=String(w||'').toLowerCase();const cl=p=>[Math.max(0.3,Math.min(P.W-0.3,p[0])),Math.max(0.5,Math.min(P.D-0.4,p[1]))];
+  // "move the kitchen there": the room there gives way and the old space joins the room it is open to. "Swap" swaps them.
+  const aN=A.n,bN=B.n,swap=/\b(swap|switch|exchange|trade)\b/.test(w),rem=!swap;
+  let what;
+  B.n=aN;
+  if(rem){   // the old space joins the room it is open to: the separations round it go, else its walls
+    const r=[A.x,A.y,A.x+A.w,A.y+A.h],on=q=>{const v=Math.abs(q.x1-q.x2)<0.01,h=Math.abs(q.y1-q.y2)<0.01;
+      if(v)return(Math.abs(q.x1-r[0])<0.2||Math.abs(q.x1-r[2])<0.2)&&Math.min(q.y1,q.y2)<r[3]-0.1&&Math.max(q.y1,q.y2)>r[1]+0.1;
+      if(h)return(Math.abs(q.y1-r[1])<0.2||Math.abs(q.y1-r[3])<0.2)&&Math.min(q.x1,q.x2)<r[2]-0.1&&Math.max(q.x1,q.x2)>r[0]+0.1;return false;};
+    let ss=(P.seps||[]).filter(on);
+    const toB=q=>{const mx=(q.x1+q.x2)/2,my=(q.y1+q.y2)/2;return mx>=B.x-0.2&&mx<=B.x+B.w+0.2&&my>=B.y-0.2&&my<=B.y+B.h+0.2;};
+    if(ss.some(q=>!toB(q)))ss=ss.filter(q=>!toB(q));   // join the room it is open to, not the room it moved into
+    if(ss.length){P.seps=P.seps.filter(q=>!ss.includes(q));const nb=guRoomAt(P,...cl([ss[0].x1===ss[0].x2?ss[0].x1+(Math.abs(ss[0].x1-r[0])<0.2?-0.4:0.4):(ss[0].x1+ss[0].x2)/2,ss[0].y1===ss[0].y2?ss[0].y1+(Math.abs(ss[0].y1-r[1])<0.2?-0.4:0.4):(ss[0].y1+ss[0].y2)/2]));
+      P.rooms=P.rooms.filter(q=>q!==A);if(nb&&nb!==A)nb.a=+(nb.a+A.a).toFixed(3);delete P.grid;snapRooms(P,E.snapKeep);what=nb===B?`the ${vRoomName(aN)} now fills both spaces`:`the old ${vRoomName(aN)} space joined the ${nb&&nb!==A?vRoomName(nb.n):'room beside it'}`;}
+    else if(/\b(remove|get rid of|instead|replace|lose|delete|no more|without)\b/.test(w)){const n=roomMerge(P,A,E.snapKeep);what=n?`the old ${vRoomName(aN)} space joined the ${vRoomName(n)}`:(A.n=bN,`the ${vRoomName(bN)} went where the ${vRoomName(aN)} was`);}
+    else{A.n=bN;what=`the ${vRoomName(bN)} went where the ${vRoomName(aN)} was`;}   // a walled room left behind keeps the other name
+  }else{A.n=bN;what=`the ${vRoomName(bN)} went where the ${vRoomName(aN)} was`;}
+  return{t:what,bN};
+}
+/* A dining table with chairs at a spot, the largest that fits clear of walls and the other pieces; it stays when the furniture is placed again. */
+function vTableAt(P,pt,room){
+  const wr=P.walls.filter(x=>!x.rail).map(x=>[x.x,x.y,x.x+x.w,x.y+x.h]),others=P.furn.filter(p=>!/^(rug|plant|dog|ltable|rtable)$/.test(p.k)&&!(room&&guRoomAt(P,p.x,p.y)===room&&/^(ltable|rtable)$/.test(p.k)));
+  const ob=others.map(fzBox);
+  const C=[{k:'ltable',w:1.6,d:0.9,c:3},{k:'ltable',w:1.2,d:0.8,c:2},{k:'rtable',r:0.45,c:4}];
+  const off=[];for(let i=-7;i<=7;i++)for(let j=-7;j<=7;j++)off.push([i*0.2,j*0.2]);off.sort((a,b)=>Math.hypot(...a)-Math.hypot(...b));   // nearest the spot drawn first, up to 1.4 m away
+  for(const o of C)for(const[dx,dy]of off)for(const rot of[0,90]){
+    const p=Object.assign({id:E.nid+1,x:f(pt[0]+dx),y:f(pt[1]+dy),rot},o),b=fzBox(p);
+    if(b[0]<0.15||b[1]<0.35||b[2]>P.W-0.15||b[3]>P.D-0.25)continue;
+    if(room&&!(p.x>=room.x&&p.x<=room.x+room.w&&p.y>=room.y&&p.y<=room.y+room.h))continue;   // in the room it was drawn in
+    E.nid++;
+    if(wr.some(x=>fzX(b,x,0.01))||ob.some(x=>fzX(b,x,0)))continue;
+    P.furn=P.furn.filter(q=>!(/^(ltable|rtable)$/.test(q.k)&&room&&guRoomAt(P,q.x,q.y)===room));P.furn.push(p);delete P.grid;
+    P.pref=(P.pref||[]).filter(x=>!(x&&x.yes));P.pref.push({yes:p.k,x:p.x,y:p.y,rot:p.rot,w:p.w,d:p.d,r:p.r,c:p.c});
+    return p;}
+  return null;
 }
 /* While the sheet is out: send, undo a stroke, clear, cancel; anything else is what the sketch means. */
 function vSketchHeard(text,t){
@@ -4329,6 +4519,10 @@ function vHeard(raw,voice,chip){
     if(vNo.test(t)){VC.dis.add(s.key);VC.sug=null;vBar();return vSay('Okay.',true);}
     if(vYes.test(t)||/^(revise|fix|widen|add|lay)/.test(t)&&t.split(' ').length<=3)return vAccept(s);
   }
+  // delete the whole unit: asked once, then yes deletes it and the conversation goes back to the building
+  if(VC.delArm){VC.delArm=false;if(vYes.test(t)||/^delete( it)?\b/.test(t)){const u=E.u,tg=tagOf(u);VC.afterClose=`I deleted ${tg}.`;edClose(true);deleteUnit(u);return;}if(vNo.test(t))return vSay(`Okay, ${tagOf(E.u)} stays.`);}
+  if(/\b(delete|remove|get rid of|throw away|scrap|bin)\b.*\b(this|the|that|whole) (unit|apartment|suite)\b/.test(t)){VC.delArm=true;return vSay(`Delete ${tagOf(E.u)} for good? Say yes to delete it, or no to keep it.`);}
+  {const r=vEditHeard(t);if(r!==undefined)return r;}   // take out, move or turn a piece of furniture; take out a room
   if(/kitchen/.test(t)&&/(option|layout|configur|show|different|other|add|lay|put|design|arrange)/.test(t))return vKitStart();
   if(/(wider|widen|more room|more space|enlarge|bigger|less tight|too tight|too narrow)/.test(t)){
     const N=vNarrow(E.P),pt=vPoint();
@@ -4350,6 +4544,96 @@ function vHeard(raw,voice,chip){
   if(/^hide (the )?(tools|panel|buttons)/.test(t)){vFirst(true);return vSay('Tools hidden.',true);}
   return vAsk(text);
 }
+/* ---- furniture and rooms by voice, on the page (no assistant needed) ----
+   "Get rid of the sofa", "remove this" (pointing), "move the sofa here", "turn the bed", "take out one of the baths".
+   A piece taken out stays out when the furniture is placed again (P.pref {no}). A room taken out gives its space to its neighbour
+   (guDropRoom) and the furniture is placed afresh. Each is one of the changes on the sheet; undo takes it back. */
+const VFURN=[['sofa',/\b(sofa|couch|settee|loveseat)s?\b/],['arm',/\b(arm ?chair|lounge chair|easy chair|chair)s?\b/],['ns',/\b(night ?stand|night table|bedside( table)?)s?\b/],['bed',/\bbeds?\b/],
+  ['ctable',/\bcoffee table\b/],['ltable',/\b(dining table|kitchen table|table)s?\b/],['desk',/\bdesks?\b/],['dresser',/\b(dresser|chest of drawers|drawers)\b/],['tv',/\b(tv|television|telly)\b/],
+  ['rug',/\b(rug|carpet)s?\b/],['plant',/\bplants?\b/],['wd',/\b(washer|dryer|washing machine|laundry machines?)\b/],['shelf',/\b(shelf|shelves|shelving|bookcase|bookshelf)\b/],['closet',/\b(wardrobe|armoire)s?\b/],
+  ['island',/\bisland\b/],['fridge',/\b(fridge|refrigerator)\b/],['cook',/\b(stove|range|cooktop|oven)\b/],['sink',/\bsinks?\b/],['counter',/\b(counter|countertop)s?\b/],
+  ['wc',/\b(toilet|wc|loo)s?\b/],['van',/\b(vanity|vanities)\b/],['tub',/\b(tub|bathtub|bath tub)s?\b/],['shower',/\bshowers?\b/]];
+const VOUT=/\b(remove|delete|get rid of|take (it |this |that |them )?(out|away)|take out|lose|ditch|drop|eliminate|scrap|kill|(don'?t|do not) (need|want)|out of here|no more|without)\b/;
+const vFurnKind=t=>{for(const[k,re]of VFURN)if(re.test(t))return k;return null;};
+/* The piece meant: of that kind (or any, when pointing at "this"), nearest the spot pointed at; or the only one of its kind. */
+function vFurnPick(kind,pt){
+  const L=E.P.furn.filter(p=>p.k!=='dog'&&(!kind||p.k===kind));if(!L.length)return null;
+  if(pt){const d=p=>{const b=fzBox(p);return Math.hypot(Math.max(b[0]-pt.x,0,pt.x-b[2]),Math.max(b[1]-pt.y,0,pt.y-b[3]));};const s=L.slice().sort((a,b)=>d(a)-d(b))[0];return kind||d(s)<0.6?s:null;}
+  return L.length===1||kind?L[0]:null;
+}
+function vFurnOut(p){
+  const P=E.P,q=guRoomAt(P,p.x,p.y);P.furn=P.furn.filter(x=>x!==p);delete P.grid;
+  P.pref=(P.pref||[]).filter(x=>!(x&&x.no===p.k&&x.n===(q?q.n:'')));P.pref.push({no:p.k,n:q?q.n:''});
+}
+/* Take a room out by opening it into its neighbour: the walls between them go (and the doors in them), the fixtures in it go,
+   and the neighbour takes the space. Nothing else moves, so the rest of the plan stays as drawn. The neighbour is the room it shares
+   the longest wall with, a main room before a closet or mechanical room. Returns the neighbour's name, or null (and the plan unchanged). */
+function roomMerge(P,q,keep){
+  const snap=edSnap(P),W=P.W,D=P.D,r=[q.x,q.y,q.x+q.w,q.y+q.h],cut=[];
+  P.walls.forEach(w=>{if(w.bw||w.rail)return;const vert=w.h>w.w;
+    if(vert){if(w.x<0.05||w.x+w.w>W-0.05)return;const lo=Math.max(w.y,r[1]),hi=Math.min(w.y+w.h,r[3]);if(hi-lo<0.3)return;
+      const left=Math.abs(w.x+w.w-r[0])<0.16,right=Math.abs(w.x-r[2])<0.16;if(!left&&!right)return;
+      const nb=guRoomAt(P,left?w.x-0.25:w.x+w.w+0.25,(lo+hi)/2);if(nb&&nb!==q)cut.push({w,vert,lo:Math.max(lo,nb.y),hi:Math.min(hi,nb.y+nb.h),nb});}
+    else{if(w.y<0.35||w.y+w.h>D-0.25)return;const lo=Math.max(w.x,r[0]),hi=Math.min(w.x+w.w,r[2]);if(hi-lo<0.3)return;
+      const top=Math.abs(w.y+w.h-r[1])<0.16,bot=Math.abs(w.y-r[3])<0.16;if(!top&&!bot)return;
+      const nb=guRoomAt(P,(lo+hi)/2,top?w.y-0.25:w.y+w.h+0.25);if(nb&&nb!==q)cut.push({w,vert,lo:Math.max(lo,nb.x),hi:Math.min(hi,nb.x+nb.w),nb});}});
+  const by=new Map();cut.filter(c=>c.hi-c.lo>0.3).forEach(c=>by.set(c.nb,(by.get(c.nb)||0)+(c.hi-c.lo)-(/^(Closet|Mech|Laundry|Pantry|Walk-in)$/.test(c.nb.n)?10:0)));
+  if(!by.size)return null;
+  // the room it is entered from comes first: a bath taken out joins the bedroom or hall its door opens from
+  P.doors.forEach(d=>{const hor=doorHor(d),rg=doorRng(d),m=(rg[0]+rg[1])/2,pa=hor?[m,d.hy-0.3]:[d.hx-0.3,m],pb=hor?[m,d.hy+0.3]:[d.hx+0.3,m],A=guRoomAt(P,pa[0],pa[1]),B=guRoomAt(P,pb[0],pb[1]),o=A===q?B:B===q?A:null;if(o&&by.has(o))by.set(o,by.get(o)+5);});
+  const nb=[...by.entries()].sort((a,b)=>b[1]-a[1])[0][0];
+  cut.filter(c=>c.nb===nb).forEach(c=>{const w=c.w,a=c.vert?w.y:w.x,b=a+(c.vert?w.h:w.w),i=P.walls.indexOf(w);if(i<0)return;P.walls.splice(i,1);
+    [[a,c.lo],[c.hi,b]].forEach(([u,v])=>{if(v-u>0.05)P.walls.push(c.vert?Object.assign({},w,{y:f(u),h:f(v-u)}):Object.assign({},w,{x:f(u),w:f(v-u)}));});
+    P.doors=P.doors.filter(d=>{const rg=doorRng(d);if(c.vert===doorHor(d))return true;const on=c.vert?Math.abs(d.hx-(w.x+w.w/2))<0.2:Math.abs(d.hy-(w.y+w.h/2))<0.2;return!(on&&Math.min(rg[1],c.hi)-Math.max(rg[0],c.lo)>0.05);});});
+  P.furn=P.furn.filter(p=>!(p.x>r[0]&&p.x<r[2]&&p.y>r[1]&&p.y<r[3]));
+  P.rooms=P.rooms.filter(x=>x!==q&&!(x!==nb&&!x.bk&&x.w*x.h<2.2&&x.x>=r[0]-0.05&&x.x+x.w<=r[2]+0.05&&x.y>=r[1]-0.05&&x.y+x.h<=r[3]+0.05));   // small rooms that sat in it go with it
+  nb.a=+(nb.a+q.a).toFixed(3);
+  const u=[Math.min(nb.x,r[0]),Math.min(nb.y,r[1]),Math.max(nb.x+nb.w,r[2]),Math.max(nb.y+nb.h,r[3])];
+  if(Math.abs((u[2]-u[0])*(u[3]-u[1])-(nb.w*nb.h+q.w*q.h))<0.3){nb.x=f(u[0]);nb.y=f(u[1]);nb.w=f(u[2]-u[0]);nb.h=f(u[3]-u[1]);}   // two rectangles that make one
+  delete P.grid;
+  const sn=snapRooms(P,keep);if(sn.dropped.length){edRestore(P,snap);delete P.grid;return null;}
+  return nb.n;
+}
+/* The room meant: the one pointed at, else the only one of that name, else the smallest of them (one of the baths). */
+function vRoomPick(name,pt){
+  let s=' '+String(name||'').toLowerCase()+' ';VSYN.forEach(([a,b])=>{s=s.replace(a,b);});s=s.trim().replace(/s$/,'');
+  const R=E.P.rooms.filter(q=>!q.bk&&q.n.toLowerCase()===s);if(!R.length)return null;
+  if(pt){const inn=R.find(q=>pt.x>=q.x&&pt.x<=q.x+q.w&&pt.y>=q.y&&pt.y<=q.y+q.h);if(inn)return inn;}
+  return R.slice().sort((a,b)=>a.a-b.a)[0];
+}
+function vEditHeard(t){
+  const pt=vPoint(),kind=vFurnKind(t),room=vFindRoom(t),here=/\b(this|that|here|there|it|the one (i'?m|i am) pointing)\b/.test(t),out=VOUT.test(t);
+  // a room: "take out one of the bathrooms", "get rid of the den". A room name wins over a piece of the same name (closet).
+  if(out&&room&&!kind){   // "the tub in the bath" is about the tub
+    const R=E.P.rooms.filter(q=>!q.bk&&q.n===room.n),q=vRoomPick(room.n,pt)||room;
+    if(E.P.rooms.filter(x=>!x.bk).length<3){vSay('There are too few rooms to take one out.');return true;}
+    if(q.n==='Bath'&&R.length===1&&!/\b(anyway|still|all the same)\b/.test(t)){vSay('That is the only bath. Say take it out anyway if you really want it gone.');return true;}
+    if(!edPush('v'+(++E.nid))){vSay(E.msg||FULL_MSG());return true;}
+    const n=roomMerge(E.P,q,E.snapKeep);
+    if(!n){edUnpush();vSay(`I could not open the ${vRoomName(q.n)} into the room beside it. Point at the wall to take out, or sketch it.`);return true;}
+    E.rm=null;E.rsig=roomSig(E.P);edRender();edPanel();
+    const ptd=pt&&pt.x>=q.x&&pt.x<=q.x+q.w&&pt.y>=q.y&&pt.y<=q.y+q.h;
+    vSay(`I took out the ${vRoomName(q.n)}${R.length>1?(ptd?' you pointed at':', the smaller one'):''}. Its walls came down and the ${vRoomName(n)} took the space. Say undo to bring it back.`);return true;
+  }
+  if(!kind&&!(here&&pt&&/\b(furniture|piece|item|thing|it|this|that)\b/.test(t)))return undefined;
+  const p=vFurnPick(kind,pt);
+  const nm=x=>(KN[x.k]||x.k).toLowerCase();
+  if(!p){if(!kind)return undefined;
+    const n=E.P.furn.filter(x=>x.k===kind).length;
+    {vSay(n?`There are ${n} of those. Point at the one you mean and say it again.`:`There is no ${(KN[kind]||kind).toLowerCase()} on the plan.`);return true;}}
+  if(out){if(!edPush('v'+(++E.nid))){vSay(E.msg||FULL_MSG());return true;}vFurnOut(p);edRender();edPanel();
+    {vSay(`The ${nm(p)} is gone, and it stays out when the furniture is placed again. Say undo to bring it back.`);return true;}}
+  if(/\b(turn|rotate|spin|flip)\b/.test(t)){if(!edPush('v'+(++E.nid))){vSay(E.msg||FULL_MSG());return true;}p.rot=(p.rot+(/\b(left|anti|counter)/.test(t)?270:90))%360;delete E.P.grid;edRender();edPanel();{vSay(`I turned the ${nm(p)}. Say undo to turn it back.`);return true;}}
+  if(/\b(move|put|shift|slide|bring|push|pull|drag|place)\b/.test(t)&&kind){
+    if(!pt||!here){vSay(`Point where the ${nm(p)} should go and say move the ${nm(p)} here.`);return true;}
+    if(!edPush('v'+(++E.nid))){vSay(E.msg||FULL_MSG());return true;}
+    const x0=p.x,y0=p.y;p.x=clampX(E.P,pt.x);p.y=clampY(E.P,pt.y);delete E.P.grid;
+    const b=fzBox(p),hit=E.P.walls.some(w=>fzX(b,[w.x,w.y,w.x+w.w,w.y+w.h],0.01));
+    if(hit){p.x=x0;p.y=y0;edUnpush();edRender();{vSay(`The ${nm(p)} would run into a wall there. Point a little further from the wall.`);return true;}}
+    edRender();edPanel();{vSay(`I moved the ${nm(p)}. Say undo to put it back.`);return true;}
+  }
+  return undefined;
+}
 function vAccept(s){
   VC.sug=null;VC.dis.add(s.key);
   if(s.t==='narrow')return vWiden(s);
@@ -4359,7 +4643,7 @@ function vAccept(s){
   if(s.t==='stuck')return vAsk(`Add a door so the ${s.rooms.join(' and the ')} can be reached from the entry.`);
 }
 function vHelp(){
-  const o=['ask how wide a room is','say wider at a red dimension','point and say move the wall here','ask for kitchen layouts','say undo','say save when you are done, or pause to stop me listening'];
+  const o=['ask how wide a room is','say wider at a red dimension','point and say move the wall here','point at a piece and say get rid of it, or move the sofa here','say take out one of the baths','ask for kitchen layouts','say undo','say save when you are done, or pause to stop me listening'];
   if(AIREADY)o.splice(3,0,'or describe any change, like add a balcony or make the bedroom bigger');
   return'You can '+o.join(', ')+'.';
 }
@@ -4375,7 +4659,7 @@ function vSay(t,quiet,nolog){
   const id=++VC.sayId;
   const done=()=>{if(id!==VC.sayId||!VC.speaking)return;VC.speaking=false;vBar();if(VC.conv)setTimeout(vHear,250);};
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(VC.reply.replace(/m²/g,'square metres').replace(/(\d),(\d)/g,'$1$2'));u.rate=1.04;
-    VC.speaking=true;u.onend=done;u.onerror=done;speechSynthesis.speak(u);
+    VC.speaking=true;vStat();u.onend=done;u.onerror=done;speechSynthesis.speak(u);
     setTimeout(done,2500+VC.reply.length*85);   // some browsers never say the speech ended
   }catch(e){VC.speaking=false;if(VC.conv)setTimeout(vHear,350);}
 }
@@ -4383,17 +4667,34 @@ function vSay(t,quiet,nolog){
 function vHear(){
   if(!VC.conv||!VSR||VC.rec||VC.speaking||VC.busy||!(E?vIn()&&!E.review&&!E.busy:vaOn()&&VA.started))return;
   if(Date.now()-VC.idle>90000){VC.conv=false;vSay('I will stop listening for now. Tap the microphone when you want to keep going.',true);return;}
-  const r=new VSR();r.lang=navigator.language||'en-CA';r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
-  let fin='',err='';
-  r.onresult=e=>{let s='',done=false;for(let i=0;i<e.results.length;i++){s+=e.results[i][0].transcript;if(e.results[i].isFinal)done=true;}VC.interim=s;if(done)fin=s;vBar();};
-  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){VC.conv=false;err='The microphone is blocked. Allow it for this site, or tap the keyboard to type.';}
-    else if(e.error==='network'||e.error==='audio-capture'){VC.conv=false;err='I cannot hear you right now. Check the microphone, or tap the keyboard to type.';}};
-  r.onend=()=>{if(VC.rec!==r)return;VC.rec=null;const drop=VC.drop;VC.drop=false;const s=drop?'':(fin||VC.interim||'').trim();VC.interim='';vBar();
-    if(s){VC.idle=Date.now();vHeard(s,true);}else if(err)vSay(err,true);
-    if(VC.conv)setTimeout(vHear,300);};
+  // One turn can span several pauses: the browser's recogniser stops at a pause, and a new one carries on with the same turn.
+  // The turn ends after a silence long enough to mean the thought is finished (vPatience), not at the first pause.
+  const r=new VSR();r.lang=navigator.language||'en-CA';r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
+  const T=VC.turn||(VC.turn={said:'',fin:false,err:''});let sess='';
+  r.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;sess=s;VC.interim=(T.said+' '+s).replace(/\s+/g,' ').trim();VC.idle=Date.now();vHold();vBar();};
+  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){VC.conv=false;T.err='The microphone is blocked. Allow it for this site, or tap the keyboard to type.';}
+    else if(e.error==='network'||e.error==='audio-capture'){VC.conv=false;T.err='I cannot hear you right now. Check the microphone, or tap the keyboard to type.';}};
+  r.onend=()=>{if(VC.rec!==r)return;VC.rec=null;const drop=VC.drop;VC.drop=false;
+    if(drop||VC.turn!==T){vBar();if(VC.conv&&!drop)setTimeout(vHear,300);return;}
+    T.said=(T.said+' '+sess).replace(/\s+/g,' ').trim();
+    if(T.said&&!T.fin&&!T.err&&VC.conv){vBar();setTimeout(vHear,40);return;}   // a pause in the middle of a thought: keep listening, same turn
+    vTurnEnd();};
   VC.rec=r;try{r.start();}catch(e){VC.rec=null;setTimeout(vHear,800);return;}vBar();
 }
-function vHearStop(){if(VC.rec){VC.drop=true;const r=VC.rec;try{r.abort();}catch(e){}}}
+/* How long a silence ends the turn: short for a one-word answer, long when the words so far trail off (and, so, the, um...). */
+function vPatience(s){
+  const t=String(s||'').toLowerCase().replace(/[.!?,]+$/,'').trim();if(!t)return 2600;
+  if(/^(yes|yeah|yep|no|nope|ok(ay)?|sure|undo|stop|pause|send|next|back|previous|save|close|cancel|not now|done|thanks|thank you|go|this one|that one)$/.test(t))return 1000;
+  if(/\b(and|or|but|so|then|the|a|an|to|of|with|um+|uh+|er+|erm|like|because|if|where|which|that|i|we|is|are|in|on|at|for|my|your|this|from|into|maybe|also|plus)$/.test(t))return 4200;
+  return t.split(/\s+/).length>10?3200:2600;
+}
+function vHold(){clearTimeout(VC.holdT);const T=VC.turn;if(!T)return;VC.holdT=setTimeout(()=>{T.fin=true;if(VC.rec){try{VC.rec.stop();}catch(e){vTurnEnd();}}else vTurnEnd();},vPatience(VC.interim));}
+function vTurnEnd(){
+  clearTimeout(VC.holdT);const T=VC.turn;VC.turn=null;const s=T?(T.said||'').trim():'';VC.interim='';vBar();
+  if(s){VC.idle=Date.now();vHeard(s,true);}else if(T&&T.err)vSay(T.err,true);
+  if(VC.conv)setTimeout(vHear,300);
+}
+function vHearStop(){clearTimeout(VC.holdT);VC.turn=null;VC.interim='';if(VC.rec){VC.drop=true;const r=VC.rec;try{r.abort();}catch(e){}}}
 function vConv(on,keep){
   VC.conv=!!on&&!!VSR;if(!keep)try{localStorage.setItem('pad.voice.conv',VC.conv?'1':'0');}catch(e){}
   if(VC.conv){VC.idle=Date.now();VC.armed=true;vHear();}else vHearStop();
@@ -4429,7 +4730,7 @@ async function vLayoutDo(fn,hold){
   try{await fn();}finally{if(back&&E&&E.mode==='layout')setTimeout(()=>{if(E&&E.mode==='layout'&&!E.busy&&!E.rd)edSetMode(back);},hold||1800);}
 }
 /* Measure a room: clear width and length through its middle, wall face to wall face. Drawn on the plan until a wall moves. */
-const VSYN=[[/\b(corridor|hallway|passage)\b/,'hall'],[/\b(bathroom|washroom|ensuite)\b/,'bath'],[/\bfoyer\b/,'entry'],[/\b(living room|lounge)\b/,'living'],[/\bmaster\b/,'primary']];
+const VSYN=[[/\b(corridor|hallway|passage)(s?)\b/,'hall$2'],[/\b(bathroom|washroom|ensuite|restroom)(s?)\b/,'bath$2'],[/\bfoyer\b/,'entry'],[/\b(living room|lounge)\b/,'living'],[/\bmaster\b/,'primary']];
 function vFindRoom(t){
   let s=' '+t+' ';VSYN.forEach(([a,b])=>{s=s.replace(a,b);});
   const R=E.P.rooms.filter(q=>!q.bk).slice().sort((a,b)=>b.n.length-a.n.length);
@@ -4497,8 +4798,18 @@ function vChips(){
   return c.slice(0,VC.first?4:5);
 }
 const vSide=()=>VC.first&&!!E&&!isMob&&innerWidth>760;
+/* The state box: speaking, thinking or listening (see-through while words are coming in). Hidden when the voice is idle. */
+function vStat(){
+  const b=$('vStat');if(!b)return;
+  const on=(E?vIn()&&!E.review:vaOn()&&VA.started)&&(VC.armed||VC.conv);
+  const st=!on?'':VC.speaking?'speak':(VC.busy||(E&&E.busy))?'think':(VC.rec||VC.turn)?'listen':'';
+  b.classList.toggle('on',!!st);if(!st)return;
+  b.classList.toggle('speak',st==='speak');b.classList.toggle('think',st==='think');b.classList.toggle('listen',st==='listen');b.classList.toggle('you',st==='listen'&&!!VC.interim);
+  b.querySelector('.vo-t').textContent=st==='speak'?'Speaking':st==='think'?'Thinking':'Listening';
+  const side=!isMob&&innerWidth>760;b.style.setProperty('--vo-x',side?`${Math.round((innerWidth-404)/2)}px`:'50%');
+}
 function vBar(){
-  vaBar();const b=$('vBar');if(!b)return;
+  vStat();vaBar();const b=$('vBar');if(!b)return;
   if(!vIn()||E.review){b.hidden=true;return;}
   b.hidden=false;const full=VC.first;b.classList.toggle('full',full);b.classList.toggle('side',vSide());
   const live=!!VC.rec,busy=VC.busy||E.busy,speak=VC.speaking;
@@ -4563,7 +4874,8 @@ function vOpen(){
 }
 function vStop(){clearTimeout(vTimer);vSketchClose();vHearStop();VC.rec=null;VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(e){}$('ed').classList.remove('vfirst');const b=$('vBar');if(b)b.hidden=true;const p=$('vPin');if(p)p.hidden=true;
   setTimeout(()=>{if(E)return;vaSync();   // back on the strip: the conversation carries on there, or stops in the classic app
-    if(vaOn()&&VA.started){if(VC.conv||VC.log.length)vSay(`Back to ${PROJ?PROJ.name:'the building'}. ${units.length?'Which unit next?':''}`);}else vConv(false,true);},450);}
+    const pre=VC.afterClose?VC.afterClose+' ':'';VC.afterClose='';
+    if(vaOn()&&VA.started){if(VC.conv||VC.log.length)vSay(`${pre}Back to ${PROJ?PROJ.name:'the building'}. ${units.length?'Which unit next?':''}`);}else vConv(false,true);},450);}
 $('vBar').addEventListener('click',e=>{
   if(!E)return;const b=e.target.closest('button');if(!b)return;VC.armed=true;
   if(b.id==='vMic')return vListen();
@@ -5821,6 +6133,11 @@ function rmFurnish(P,u){
   if(liv&&liv.a>=8){const F=liv.F;for(const[cx,cy]of [[F[0]+0.3,F[1]+0.3],[F[2]-0.3,F[1]+0.3],[F[0]+0.3,F[3]-0.3],[F[2]-0.3,F[3]-0.3]]){const p={k:'plant',x:f(cx),y:f(cy),rot:0,s:0.42};const bb=[cx-0.2,cy-0.2,cx+0.2,cy+0.2];
     if(!wr.some(w=>fzX(bb,w,0.004))&&!db.some(d2=>fzX(bb,d2,0))&&!solid().some(i=>fzX(bb,i.bb,0))){items.push({p,bb,solid:true});break;}}}
   P.furn=items.map(i=>i.p);
+  // pieces the owner took out stay out when the furniture is placed again (P.pref entries {no: kind, n: room name})
+  {const NO=(P.pref||[]).filter(x=>x&&x.no);if(NO.length)P.furn=P.furn.filter(p=>{const q=guRoomAt(P,p.x,p.y);return!NO.some(x=>x.no===p.k&&(!x.n||(q&&q.n===x.n)));});}
+  // a table the owner drew in stays where it was drawn, if it still fits clear of the walls; it replaces the table placed in that room
+  (P.pref||[]).filter(x=>x&&x.yes).forEach(x=>{const p={id:1e6+P.furn.length,k:x.yes,x:x.x,y:x.y,rot:x.rot||0};['w','d','r','c'].forEach(k=>{if(x[k]!==undefined&&x[k]!==null)p[k]=x[k];});const b=fzBox(p);
+    if(wr.some(w=>fzX(b,w,0.01)))return;const q=guRoomAt(P,p.x,p.y);P.furn=P.furn.filter(o=>!(/^(ltable|rtable)$/.test(o.k)&&guRoomAt(P,o.x,o.y)===q)&&!fzX(fzBox(o),b,0));P.furn.push(p);});
   // the people's places follow the new sofa
   const sofa=P.furn.find(p=>p.k==='sofa');
   if(sofa&&P.nodes&&P.nodes.sofa){P.nodes.sofa={x:f(sofa.x+(sofa.rot===90||sofa.rot===270?(sofa.rot===90?-0.8:0.8):0)),y:f(sofa.y+(sofa.rot===0?0.8:sofa.rot===180?-0.8:0)),spot:true};if(P.nd&&P.nd[0])P.nd[0].nodes=JSON.parse(JSON.stringify(P.nodes));}
@@ -6826,7 +7143,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),VSK:()=>VSK,vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guDropRoom,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),VSK:()=>VSK,vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),vSK:()=>VSK,vDoorAt,roomMerge,vPatience,vStat,sepBlanksDbg:P=>sepBlanks(P),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);

@@ -900,7 +900,8 @@ try {
     // a stand-in microphone and voice: each listening turn hears the next phrase in __heard, and speech ends at once
     await v.addInitScript(() => {
       window.__heard = [];
-      class R { start() { const t = window.__heard.shift(); setTimeout(() => { if (t) { const r = [{ transcript: t }]; r.isFinal = true; this.onresult && this.onresult({ results: [r] }); } else this.onerror && this.onerror({ error: 'no-speech' }); this.onend && this.onend(); }, t ? 60 : 200); } stop() {} abort() { setTimeout(() => this.onend && this.onend(), 0); } }
+      // a phrase comes 3 s after the one before (a new thought), or after its own gap ({ t, gap }: a pause in the middle of one)
+      class R { start() { const n = window.__heard[0], gap = n && typeof n === 'object' ? n.gap : 3000, ready = n !== undefined && Date.now() - (window.__heardAt || 0) >= gap, h = ready ? window.__heard.shift() : null, t = h && typeof h === 'object' ? h.t : h; if (t) window.__heardAt = Date.now(); setTimeout(() => { if (t) { const r = [{ transcript: t }]; r.isFinal = true; this.onresult && this.onresult({ results: [r] }); } else this.onerror && this.onerror({ error: 'no-speech' }); this.onend && this.onend(); }, t ? 60 : 200); } stop() {} abort() { setTimeout(() => this.onend && this.onend(), 0); } }
       window.SpeechRecognition = R; window.webkitSpeechRecognition = R;
       Object.defineProperty(window, 'speechSynthesis', { value: { speak(u) { setTimeout(() => u.onend && u.onend(), 30); }, cancel() {} }, configurable: true });
     });
@@ -982,6 +983,54 @@ try {
       const furn = await v.evaluate(w => { const T = window.__pad, E = T.edState(), C = T.edClone(E.P); C.nodes = E.P.nodes; const r = T.kTemplate(Object.assign({}, C, { furn: [] }), w.kind, false, w.w); return r.ok; }, want);
       if (!furn) errs.push('the chosen kitchen arrangement could not be drawn again by its walls');
     }
+    // furniture and rooms by voice, on the page: point at a piece and say get rid of it; take out a room; undo brings each back
+    {
+      const fz = await v.evaluate(() => { const T = window.__pad, E = T.edState(), p = ['sofa', 'arm', 'dresser', 'bed', 'desk'].map(k => E.P.furn.find(x => x.k === k)).find(Boolean); if (!p) return null;
+        E.vpt = { x: p.x, y: p.y, t: Date.now() }; return { k: p.k, n: E.P.furn.filter(x => x.k === p.k).length, used: E.used, word: { sofa: 'sofa', arm: 'armchair', dresser: 'dresser', bed: 'bed', desk: 'desk' }[p.k] }; });
+      if (!fz) errs.push('the voice test unit has no sofa, chair, dresser, bed or desk');
+      else {
+        sent = null;
+        await v.evaluate(w => window.__pad.vHeard(`Get the ${w} out of here, the one that I'm pointing at`), fz.word); await v.waitForTimeout(200);
+        const f1 = await v.evaluate(k => { const T = window.__pad, E = T.edState(), C = T.edClone(E.P); C.nodes = E.P.nodes; T.rm.rmFurnish(C, E.u); return { n: E.P.furn.filter(x => x.k === k).length, used: E.used, again: C.furn.filter(x => x.k === k).length, reply: T.vState().VC.reply }; }, fz.k);
+        if (f1.n !== fz.n - 1 || f1.used !== fz.used + 1 || !/is gone/.test(f1.reply) || sent) errs.push('pointing at a piece and saying get it out should take it out on the page, without the assistant: ' + JSON.stringify(f1));
+        if (f1.again >= fz.n) errs.push('a piece taken out by voice should stay out when the furniture is placed again: ' + JSON.stringify(f1));
+        await v.evaluate(() => window.__pad.vHeard('undo')); await v.waitForTimeout(200);
+        if ((await v.evaluate(k => window.__pad.edState().P.furn.filter(x => x.k === k).length, fz.k)) !== fz.n) errs.push('undo should bring the piece back');
+      }
+      const rm0 = await v.evaluate(() => { const E = window.__pad.edState(), R = E.P.rooms.filter(q => !q.bk), q = R.filter(q => /^(Closet|Den|Laundry|Mech)$/.test(q.n)).sort((a, b) => a.a - b.a)[0]; window.__pad.edState().vpt = null; return q ? { n: q.n, rooms: R.length, used: E.used } : null; });
+      if (rm0) {
+        await v.evaluate(n => window.__pad.vHeard(`get rid of the ${n.toLowerCase()}`), rm0.n); await v.waitForTimeout(300);
+        const r1 = await v.evaluate(() => { const T = window.__pad, E = T.edState(); return { rooms: E.P.rooms.filter(q => !q.bk).length, blanks: T.snapBlanks(E.P).length, reply: T.vState().VC.reply }; });
+        if (r1.rooms !== rm0.rooms - 1 || r1.blanks || !/^I took out the/.test(r1.reply)) errs.push('saying get rid of a room should open it into the room beside it: ' + JSON.stringify({ rm0, r1 }));
+        await v.evaluate(() => window.__pad.vHeard('undo')); await v.waitForTimeout(200);
+        if ((await v.evaluate(() => window.__pad.edState().P.rooms.filter(q => !q.bk).length)) !== rm0.rooms) errs.push('undo should bring the room back');
+      }
+    }
+    // deleting the unit by voice asks first; no keeps it
+    {
+      const n0 = await v.evaluate(() => window.__pad.units().length);
+      await v.evaluate(() => window.__pad.vHeard('delete this unit')); await v.waitForTimeout(100);
+      const q = await v.evaluate(() => window.__pad.vState().VC.reply);
+      await v.evaluate(() => window.__pad.vHeard('no')); await v.waitForTimeout(100);
+      if (!/^Delete PAD-\d+ for good\?/.test(q) || (await v.evaluate(() => window.__pad.units().length)) !== n0 || !(await v.evaluate(() => !!window.__pad.edState()))) errs.push('delete this unit should ask first, and no should keep it: ' + q);
+    }
+    // sketches the page reads itself: a door with its swing, and a room moved with an arrow plus a table drawn in; neither goes to the assistant
+    {
+      sent = null;
+      const dr = await v.evaluate(async () => { const T = window.__pad, E = T.edState(), P = E.P, g = T.wallGroups(P).filter(g => g.b - g.a > 2).sort((a, b) => (b.b - b.a) - (a.b - a.a))[0]; if (!g) return null;
+        const d0 = P.doors.length, m = (g.a + g.b) / 2, c = g.pos + g.t / 2, raw = g.hor ? [[m - 0.4, c + 0.04], [m + 0.4, c - 0.03], [m + 0.1, c + 0.5]] : [[c + 0.04, m - 0.4], [c - 0.02, m + 0.4], [c + 0.5, m + 0.1]];
+        T.vHeard('let me sketch it'); T.vSK().strokes = [{ kind: 'path', raw }]; T.vHeard('a door here'); T.vHeard('send'); await new Promise(r => setTimeout(r, 200));
+        const r = { d0, d1: E.P.doors.length, reply: T.vState().VC.reply, blanks: T.snapBlanks(E.P).length, open: T.guAudit(E.P, E.u).filter(x => x.t === 'dopen').length };
+        T.vHeard('undo'); r.back = E.P.doors.length; return r; });
+      if (dr && (dr.d1 !== dr.d0 + 1 || !/door in the wall/.test(dr.reply) || dr.blanks || dr.open || dr.back !== dr.d0 || sent)) errs.push('a door sketched on a wall should be put in on the page, with its doorway open, and undo should take it out: ' + JSON.stringify(dr));
+      const mv = await v.evaluate(async () => { const T = window.__pad, E = T.edState(), P = E.P, K = P.rooms.find(q => q.n === 'Kitchen'), D = P.rooms.find(q => q.n === 'Den'); if (!K || !D) return null;
+        const circ = (x, y, r, n) => { const a = []; for (let i = 0; i <= n; i++) a.push([x + r * Math.cos(i / n * 6.283), y + r * Math.sin(i / n * 6.283)]); return a; }, kc = [K.x + K.w / 2, K.y + K.h / 2], dc = [D.x + D.w / 2, D.y + D.h / 2];
+        T.vHeard('let me sketch it'); T.vSK().strokes = [{ kind: 'loop', raw: circ(kc[0], kc[1], Math.min(K.w, K.h) / 2 + 0.3, 30) }, { kind: 'path', raw: [kc, [(kc[0] + dc[0]) / 2 + 1.2, (kc[1] + dc[1]) / 2], [dc[0] + 0.3, dc[1]]] }, { kind: 'loop', raw: circ(dc[0], dc[1], 0.35, 14) }, { kind: 'loop', raw: circ(dc[0] - 0.6, dc[1], 0.12, 8) }];
+        T.vHeard("move the kitchen to where I've shown it with the arrow and put a table and chairs if they fit"); T.vHeard('send'); await new Promise(r => setTimeout(r, 300));
+        const K2 = E.P.rooms.find(q => q.n === 'Kitchen'), r = { reply: T.vState().VC.reply, at: !!K2 && dc[0] >= K2.x && dc[0] <= K2.x + K2.w && dc[1] >= K2.y && dc[1] <= K2.y + K2.h, den: E.P.rooms.some(q => q.n === 'Den'), counters: E.P.furn.filter(p => /^(sink|cook|fridge)$/.test(p.k)).length, blanks: T.snapBlanks(E.P).length };
+        T.vHeard('undo'); r.back = E.P.rooms.some(q => q.n === 'Den'); return r; });
+      if (mv && (!mv.at || !/^I moved the kitchen to where the den was/.test(mv.reply) || !mv.counters || mv.blanks || !mv.back || sent)) errs.push('a kitchen circled with an arrow to the den should move there on the page, with its counters placed again: ' + JSON.stringify(mv));
+    }
     // anything else goes to the assistant, with the spot that was pointed at
     await v.mouse.click(tgt ? tgt.cx : 700, tgt ? tgt.cy : 400); await v.waitForTimeout(100);
     await v.evaluate(() => window.__pad.vHeard('add a balcony there')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});
@@ -1012,11 +1061,16 @@ try {
     await v.evaluate(() => { document.getElementById('vIn') || 0; window.__heard.push('how wide is the bath', 'is there enough room'); });
     const you0 = await v.evaluate(() => window.__pad.vState().VC.log.filter(m => m.w === 'you').length);
     await v.click('#vMic');
-    const conv = await v.waitForFunction(() => { const L = window.__pad.vState().VC.log.slice(-6).map(m => m.t); return L.includes('how wide is the bath') && L.includes('is there enough room') && L[L.length - 1] !== 'is there enough room'; }, null, { timeout: 8000 }).then(() => true).catch(() => false);   // the log keeps the last 40 lines, so look for the two requests rather than count
+    const conv = await v.waitForFunction(() => { const L = window.__pad.vState().VC.log.slice(-6).map(m => m.t); return L.includes('how wide is the bath') && L.includes('is there enough room') && L[L.length - 1] !== 'is there enough room'; }, null, { timeout: 14000 }).then(() => true).catch(() => false);   // the log keeps the last 40 lines, so look for the two requests rather than count
     if (!conv) errs.push('after one tap on the microphone it should keep listening and answer two requests in a row: ' + JSON.stringify(await v.evaluate(() => window.__pad.vState().VC.log.slice(-4))));
     if ((await v.locator('#vLog .vm.you').count()) < 2) errs.push('the conversation should show in the panel');
-    await v.evaluate(() => window.__heard.push('pause'));
-    await v.waitForFunction(() => !window.__pad.vState().VC.conv, null, { timeout: 5000 }).catch(() => errs.push('saying pause should stop the listening'));
+    // a pause in the middle of a thought does not end the turn: "show me the" ... "kitchen layouts" is one request
+    await v.evaluate(() => window.__heard.push('show me the', { t: 'kitchen layouts', gap: 900 }));
+    await v.waitForFunction(() => window.__pad.vState().VC.log.some(m => m.t === 'show me the kitchen layouts'), null, { timeout: 12000 }).catch(() => {});
+    const pz = await v.evaluate(() => ({ log: window.__pad.vState().VC.log.slice(-4).map(m => m.t), short: window.__pad.vPatience('yes'), trail: window.__pad.vPatience('make the bedroom bigger and') }));
+    if (!pz.log.includes('show me the kitchen layouts') || pz.log.includes('show me the') || !(pz.trail > pz.short)) errs.push('a pause mid-sentence should not cut the request short: ' + JSON.stringify(pz));
+    await v.evaluate(() => window.__heard.push('cancel', 'pause'));
+    await v.waitForFunction(() => !window.__pad.vState().VC.conv, null, { timeout: 12000 }).catch(() => errs.push('saying pause should stop the listening'));
     // drafting is offered only when the assistant could not do it
     await v.route('**/api/revise', route => route.request().method() === 'GET' ? route.fulfill({ json: { ready: true } }) : route.fulfill({ json: { say: 'I could not do that.', ops: [] } }));
     await v.evaluate(() => window.__pad.vHeard('make the whole thing sparkle')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});
