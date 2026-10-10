@@ -114,7 +114,16 @@ How to work:
 Spoken requests:
 - Requests are often spoken, so they can be short and casual ("make it a bit wider", "move the wall here"). Read them generously.
 - The message may say where the user pointed on the plan (x, y in metres, and the nearest wall id). Words like here, there and this mean that spot. To move a wall to the spot, move_wall the nearest suitable wall by the difference between the spot and the wall's at (across the wall).
-- The message may say what the page flagged, such as a clear width under 860 mm. A request like "fix it" or "a bit wider" is about that.`;
+- The message may say what the page flagged, such as a clear width under 860 mm. A request like "fix it" or "a bit wider" is about that.
+
+Sketches:
+- When words were not enough, the user may sketch over the plan. You then get a picture of the plan (walls in dark blue, room names, a 1 m grid
+  labelled from the top left corner, x across and y down) with the sketch in red, and the same strokes as points in plan metres.
+- Read the sketch the way an architect would. A straight stroke usually means a wall (or a wall moved to there). A short stroke across a wall
+  usually means a door there. A loop marks an area: a room to add or name, or a thing to change in it. A stroke from one place to another
+  means move it there. The user's words say which.
+- Turn the sketch into the steps you have: move_wall by the distance between a wall's at and the stroke, add_wall along a stroke that runs
+  wall to wall, add_door on the wall a stroke crosses, add_room or name_space for a loop.`;
 
 function clean(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
 
@@ -146,7 +155,14 @@ const handle = async (req, context) => {
   const pointed = pt && typeof pt === 'object' && fin(pt.x) !== null && fin(pt.y) !== null
     ? `\n\nThe user pointed at x=${fin(pt.x)}, y=${fin(pt.y)}${typeof pt.wall === 'string' && /^w\d{1,3}$/.test(pt.wall) ? `, nearest wall ${pt.wall}` : ''}.` : '';
   const flagged = clean(body.context, 300).trim() ? `\n\nThe page flagged: ${clean(body.context, 300).trim()}` : '';
-  const messages = [{ role: 'user', content: `Plan:\n${JSON.stringify(plan)}\n\nChange amount: ${amount} percent${pointed}${flagged}\n\nRequest: ${prompt}` }];
+  // a sketch: strokes in plan metres, and (on the first round) a picture of the plan with the sketch in red
+  const sk = body.sketch && typeof body.sketch === 'object' ? body.sketch : null;
+  const strokes = sk && Array.isArray(sk.strokes) ? sk.strokes.slice(0, 12).map(st => ({ kind: ['line', 'loop', 'path'].includes(st && st.kind) ? st.kind : 'path',
+    pts: (Array.isArray(st && st.pts) ? st.pts : []).slice(0, 40).map(p => Array.isArray(p) ? [fin(p[0]), fin(p[1])] : null).filter(p => p && p[0] !== null && p[1] !== null) })).filter(st => st.pts.length > 1) : [];
+  const img = sk && typeof sk.image === 'string' && sk.image.length < 700000 ? sk.image.match(/^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/) : null;
+  const sketched = strokes.length ? `\n\nThe user sketched this on the plan (strokes in plan metres): ${JSON.stringify(strokes)}` : '';
+  const text = `Plan:\n${JSON.stringify(plan)}\n\nChange amount: ${amount} percent${pointed}${flagged}${sketched}\n\nRequest: ${prompt}`;
+  const messages = [{ role: 'user', content: img ? [{ type: 'image', source: { type: 'base64', media_type: 'image/' + img[1], data: img[2] } }, { type: 'text', text }] : text }];
   const rep = body.repair;
   if (rep && Array.isArray(rep.ops) && Array.isArray(rep.issues)) {
     messages.push({ role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_prev', name: TOOL.name, input: { say: clean(rep.say, 300), ops: rep.ops.slice(0, MAX_OPS) } }] });
