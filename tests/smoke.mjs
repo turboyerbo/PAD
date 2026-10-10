@@ -900,7 +900,8 @@ try {
     // a stand-in microphone and voice: each listening turn hears the next phrase in __heard, and speech ends at once
     await v.addInitScript(() => {
       window.__heard = [];
-      class R { start() { const t = window.__heard.shift(); setTimeout(() => { if (t) { const r = [{ transcript: t }]; r.isFinal = true; this.onresult && this.onresult({ results: [r] }); } else this.onerror && this.onerror({ error: 'no-speech' }); this.onend && this.onend(); }, t ? 60 : 200); } stop() {} abort() { setTimeout(() => this.onend && this.onend(), 0); } }
+      // a phrase comes 3 s after the one before (a new thought), or after its own gap ({ t, gap }: a pause in the middle of one)
+      class R { start() { const n = window.__heard[0], gap = n && typeof n === 'object' ? n.gap : 3000, ready = n !== undefined && Date.now() - (window.__heardAt || 0) >= gap, h = ready ? window.__heard.shift() : null, t = h && typeof h === 'object' ? h.t : h; if (t) window.__heardAt = Date.now(); setTimeout(() => { if (t) { const r = [{ transcript: t }]; r.isFinal = true; this.onresult && this.onresult({ results: [r] }); } else this.onerror && this.onerror({ error: 'no-speech' }); this.onend && this.onend(); }, t ? 60 : 200); } stop() {} abort() { setTimeout(() => this.onend && this.onend(), 0); } }
       window.SpeechRecognition = R; window.webkitSpeechRecognition = R;
       Object.defineProperty(window, 'speechSynthesis', { value: { speak(u) { setTimeout(() => u.onend && u.onend(), 30); }, cancel() {} }, configurable: true });
     });
@@ -1005,6 +1006,14 @@ try {
         if ((await v.evaluate(() => window.__pad.edState().P.rooms.filter(q => !q.bk).length)) !== rm0.rooms) errs.push('undo should bring the room back');
       }
     }
+    // deleting the unit by voice asks first; no keeps it
+    {
+      const n0 = await v.evaluate(() => window.__pad.units().length);
+      await v.evaluate(() => window.__pad.vHeard('delete this unit')); await v.waitForTimeout(100);
+      const q = await v.evaluate(() => window.__pad.vState().VC.reply);
+      await v.evaluate(() => window.__pad.vHeard('no')); await v.waitForTimeout(100);
+      if (!/^Delete PAD-\d+ for good\?/.test(q) || (await v.evaluate(() => window.__pad.units().length)) !== n0 || !(await v.evaluate(() => !!window.__pad.edState()))) errs.push('delete this unit should ask first, and no should keep it: ' + q);
+    }
     // sketches the page reads itself: a door with its swing, and a room moved with an arrow plus a table drawn in; neither goes to the assistant
     {
       sent = null;
@@ -1052,11 +1061,16 @@ try {
     await v.evaluate(() => { document.getElementById('vIn') || 0; window.__heard.push('how wide is the bath', 'is there enough room'); });
     const you0 = await v.evaluate(() => window.__pad.vState().VC.log.filter(m => m.w === 'you').length);
     await v.click('#vMic');
-    const conv = await v.waitForFunction(() => { const L = window.__pad.vState().VC.log.slice(-6).map(m => m.t); return L.includes('how wide is the bath') && L.includes('is there enough room') && L[L.length - 1] !== 'is there enough room'; }, null, { timeout: 8000 }).then(() => true).catch(() => false);   // the log keeps the last 40 lines, so look for the two requests rather than count
+    const conv = await v.waitForFunction(() => { const L = window.__pad.vState().VC.log.slice(-6).map(m => m.t); return L.includes('how wide is the bath') && L.includes('is there enough room') && L[L.length - 1] !== 'is there enough room'; }, null, { timeout: 14000 }).then(() => true).catch(() => false);   // the log keeps the last 40 lines, so look for the two requests rather than count
     if (!conv) errs.push('after one tap on the microphone it should keep listening and answer two requests in a row: ' + JSON.stringify(await v.evaluate(() => window.__pad.vState().VC.log.slice(-4))));
     if ((await v.locator('#vLog .vm.you').count()) < 2) errs.push('the conversation should show in the panel');
-    await v.evaluate(() => window.__heard.push('pause'));
-    await v.waitForFunction(() => !window.__pad.vState().VC.conv, null, { timeout: 5000 }).catch(() => errs.push('saying pause should stop the listening'));
+    // a pause in the middle of a thought does not end the turn: "show me the" ... "kitchen layouts" is one request
+    await v.evaluate(() => window.__heard.push('show me the', { t: 'kitchen layouts', gap: 900 }));
+    await v.waitForFunction(() => window.__pad.vState().VC.log.some(m => m.t === 'show me the kitchen layouts'), null, { timeout: 12000 }).catch(() => {});
+    const pz = await v.evaluate(() => ({ log: window.__pad.vState().VC.log.slice(-4).map(m => m.t), short: window.__pad.vPatience('yes'), trail: window.__pad.vPatience('make the bedroom bigger and') }));
+    if (!pz.log.includes('show me the kitchen layouts') || pz.log.includes('show me the') || !(pz.trail > pz.short)) errs.push('a pause mid-sentence should not cut the request short: ' + JSON.stringify(pz));
+    await v.evaluate(() => window.__heard.push('cancel', 'pause'));
+    await v.waitForFunction(() => !window.__pad.vState().VC.conv, null, { timeout: 12000 }).catch(() => errs.push('saying pause should stop the listening'));
     // drafting is offered only when the assistant could not do it
     await v.route('**/api/revise', route => route.request().method() === 'GET' ? route.fulfill({ json: { ready: true } }) : route.fulfill({ json: { say: 'I could not do that.', ops: [] } }));
     await v.evaluate(() => window.__pad.vHeard('make the whole thing sparkle')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});

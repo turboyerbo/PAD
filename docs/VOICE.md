@@ -71,6 +71,9 @@ What is left is the logo, the building's units and the conversation (a column on
 - **Units**: "add a one bedroom" (studio, one, two or three bedroom), then yes opens it; "open PAD-03", "open unit three", "the first one",
   "the last one"; "what is in this building". Opening a unit hands over to the editor's conversation; closing it comes back and asks which unit next.
   The conversation and its log carry on through all of it.
+- **The strip still scrolls**: the red arrows and the small keyplan stay on screen beside the conversation, so you can walk the building and
+  see where you are. (The voice panel's class once also fixed the page body in place, which stretched it to the strip's width so nothing
+  scrolled; the rule now applies to the panel only.)
 - **Show the buttons** brings the classic app back. The editor's voice bar menu turns voice first on again.
 - Without speech recognition (Firefox) the panel has a text box.
 
@@ -85,6 +88,12 @@ On a computer it is a column on the right; on a phone (or a window narrower than
   or "stop listening" ends it, and so does 90 seconds of silence. If the conversation was on, the next unit opens listening
   (`pad.voice.conv`). Uses the browser's speech recognition (Chrome, Edge, Safari). Where there is none (Firefox), a text box opens instead.
 - **State line** beside the microphone: Listening (and what is being heard), Working on it, or Speaking.
+- **State box** (`vStat`): a small pill over the plan, at the top and centred on the plan, shows Speaking (bars moving), Thinking (dots) or
+  Listening (a ring). While it listens it turns see-through with a halftone of dots, and fainter still while words are coming in. Hidden when idle.
+  With reduced motion it does not animate.
+- **Patience** (`vPatience`, `vHold`): one turn can run across pauses. The browser's recogniser stops at a pause; a new one carries on the same
+  turn, and the turn ends only after a silence long enough to mean the thought is finished: about a second after a one-word answer (yes, undo,
+  send), 2.6 seconds after a sentence (3.2 when it is long), and 4.2 seconds when the words trail off (and, so, the, um, to...).
 - **Keyboard**: type instead of talking.
 - **Speaker**: mute the voice. The captions still show. Remembered on that device (`pad.voice.mute`).
 - **The tools**: saying "show the tools" brings back the header, panel and modes; the menu button on the small bar then hides them again.
@@ -93,7 +102,8 @@ On a computer it is a column on the right; on a phone (or a window narrower than
   while flipping kitchens; otherwise Make it wider, Kitchen layouts, Is there enough room?, Undo, Review changes, Suggest a variation.
   A chip does exactly what saying its words does.
 
-Spoken commands for the sheet: "save" or "I'm done" (review), "close" or "discard" (asks again when there are unsaved changes), "undo".
+Spoken commands for the sheet: "save" or "I'm done" (review), "close" or "discard" (asks again when there are unsaved changes), "undo",
+"delete this unit" (asks once; yes deletes it and the conversation goes back to the building).
 
 ## Pointing
 
