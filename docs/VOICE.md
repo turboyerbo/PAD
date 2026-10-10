@@ -113,6 +113,13 @@ In this order, one at a time. "Not now" skips that one for the session; "stop su
   sink is to a bath (shared plumbing), best first, at most six. The best one is drawn in at once; the voice describes it and asks whether
   to show the others. Next and Back flip, "option three" jumps, "yours" goes back to the pick. "Use this one" keeps it (`P.pref = [{kit, w}]`,
   `w` being the walls the runs sit on), and it is drawn that way when the layout is furnished on saving. Choosing another than the pick is said back.
+- **Furniture** (`vEditHeard`): "get rid of the sofa", "remove this" while pointing, "move the sofa here", "turn the bed". The piece is the one
+  of that kind nearest the spot pointed at, or the only one. A piece taken out stays out when the furniture is placed again: the plan keeps
+  `{no: kind, n: room}` in `P.pref`, and `rmFurnish` leaves it out of that room. Toilets and sinks can go too; the owner decides.
+- **Taking out a room**: "get rid of one of the bathrooms", "lose the den" (`roomMerge`). The room is opened into its neighbour: the walls between
+  them come down with the doors in them, its fixtures go, and the neighbour takes the space. Nothing else moves. The neighbour is the room it is
+  entered from, else the one it shares the longest wall with (a main room before a closet). With several rooms of that name, the one pointed at,
+  else the smallest. The only bath stays unless the owner says "anyway". The assistant has the same step (`remove_room`), and `remove_item` for furniture.
 - **Undo, review, a variation, mute, show or hide the tools.**
 
 Each wall move or kitchen choice is one of the five changes on the sheet, the same as any other edit.

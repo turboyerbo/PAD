@@ -982,6 +982,29 @@ try {
       const furn = await v.evaluate(w => { const T = window.__pad, E = T.edState(), C = T.edClone(E.P); C.nodes = E.P.nodes; const r = T.kTemplate(Object.assign({}, C, { furn: [] }), w.kind, false, w.w); return r.ok; }, want);
       if (!furn) errs.push('the chosen kitchen arrangement could not be drawn again by its walls');
     }
+    // furniture and rooms by voice, on the page: point at a piece and say get rid of it; take out a room; undo brings each back
+    {
+      const fz = await v.evaluate(() => { const T = window.__pad, E = T.edState(), p = ['sofa', 'arm', 'dresser', 'bed', 'desk'].map(k => E.P.furn.find(x => x.k === k)).find(Boolean); if (!p) return null;
+        E.vpt = { x: p.x, y: p.y, t: Date.now() }; return { k: p.k, n: E.P.furn.filter(x => x.k === p.k).length, used: E.used, word: { sofa: 'sofa', arm: 'armchair', dresser: 'dresser', bed: 'bed', desk: 'desk' }[p.k] }; });
+      if (!fz) errs.push('the voice test unit has no sofa, chair, dresser, bed or desk');
+      else {
+        sent = null;
+        await v.evaluate(w => window.__pad.vHeard(`Get the ${w} out of here, the one that I'm pointing at`), fz.word); await v.waitForTimeout(200);
+        const f1 = await v.evaluate(k => { const T = window.__pad, E = T.edState(), C = T.edClone(E.P); C.nodes = E.P.nodes; T.rm.rmFurnish(C, E.u); return { n: E.P.furn.filter(x => x.k === k).length, used: E.used, again: C.furn.filter(x => x.k === k).length, reply: T.vState().VC.reply }; }, fz.k);
+        if (f1.n !== fz.n - 1 || f1.used !== fz.used + 1 || !/is gone/.test(f1.reply) || sent) errs.push('pointing at a piece and saying get it out should take it out on the page, without the assistant: ' + JSON.stringify(f1));
+        if (f1.again >= fz.n) errs.push('a piece taken out by voice should stay out when the furniture is placed again: ' + JSON.stringify(f1));
+        await v.evaluate(() => window.__pad.vHeard('undo')); await v.waitForTimeout(200);
+        if ((await v.evaluate(k => window.__pad.edState().P.furn.filter(x => x.k === k).length, fz.k)) !== fz.n) errs.push('undo should bring the piece back');
+      }
+      const rm0 = await v.evaluate(() => { const E = window.__pad.edState(), R = E.P.rooms.filter(q => !q.bk), q = R.filter(q => /^(Closet|Den|Laundry|Mech)$/.test(q.n)).sort((a, b) => a.a - b.a)[0]; window.__pad.edState().vpt = null; return q ? { n: q.n, rooms: R.length, used: E.used } : null; });
+      if (rm0) {
+        await v.evaluate(n => window.__pad.vHeard(`get rid of the ${n.toLowerCase()}`), rm0.n); await v.waitForTimeout(300);
+        const r1 = await v.evaluate(() => { const T = window.__pad, E = T.edState(); return { rooms: E.P.rooms.filter(q => !q.bk).length, blanks: T.snapBlanks(E.P).length, reply: T.vState().VC.reply }; });
+        if (r1.rooms !== rm0.rooms - 1 || r1.blanks || !/^I took out the/.test(r1.reply)) errs.push('saying get rid of a room should open it into the room beside it: ' + JSON.stringify({ rm0, r1 }));
+        await v.evaluate(() => window.__pad.vHeard('undo')); await v.waitForTimeout(200);
+        if ((await v.evaluate(() => window.__pad.edState().P.rooms.filter(q => !q.bk).length)) !== rm0.rooms) errs.push('undo should bring the room back');
+      }
+    }
     // anything else goes to the assistant, with the spot that was pointed at
     await v.mouse.click(tgt ? tgt.cx : 700, tgt ? tgt.cy : 400); await v.waitForTimeout(100);
     await v.evaluate(() => window.__pad.vHeard('add a balcony there')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});

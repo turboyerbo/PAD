@@ -17,6 +17,7 @@ snaps to its space and its colour fills that space, whatever its shape (`snapRoo
 kitchen open to the living room, as long as they do not sit on top of each other. A room that no longer sits in one enclosed space (a wall now runs
 across it, say) is taken off, and the space is left blank with a dashed outline and "Tap to name". Tapping it offers the room names; the named room
 fills the space. A plan with a blank space cannot be saved. The assistant sees the blank spaces and can name one with `name_space`.
+It can also take a room out with `remove_room` (opened into its neighbour, see docs/VOICE.md) and a piece of furniture with `remove_item`; furniture requests are never refused.
 A room keeps its printed area until its space changes size, then changes in proportion. Rooms that already sat loosely on a traced drawing are held
 only to how they sat at the start.
 
