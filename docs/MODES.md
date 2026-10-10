@@ -1,6 +1,8 @@
 Edit modes
 
-The tracing sheet has three modes, chosen with the buttons beside the unit name. The same sheet, undo history and change budget carry across all three.
+The tracing sheet has three modes, chosen with the buttons beside the unit name. The same sheet, undo history and change count carry across all three. There is no limit on changes; the meter only counts them.
+
+Tab turns the piece being dragged, or the one selected, 90 degrees (Shift+Tab the other way). On a selected door, Tab swings it the other way. R still turns a selected piece.
 
 Opening a unit
 - Tapping a unit in the strip opens its tracing sheet straight in Layout (AI) mode. The unit's details (iterations, share, export, delete) are behind Details in the editor header, which closes the sheet when nothing has changed. Where the assistant is not set up, a tap opens the details as before.
@@ -27,7 +29,7 @@ Drafting
 
 Room separations (Drafting)
 - A room separation is a dashed line where one room ends and the next begins with no wall (Revit's room separation line). It runs straight, horizontally or vertically, from wall to wall. People and furniture pass through it.
-- Add a room separation, then tap the open space: the line goes across the narrower way through that point. Tap a line to drag it, turn it the other way, or delete it. A separation does not use up one of the five changes.
+- Add a room separation, then tap the open space: the line goes across the narrower way through that point. Tap a line to drag it, turn it the other way, or delete it. A separation is not counted as a change.
 - Separations close spaces for the room colours and the room outline in Layout mode. The checks (no wall in a doorway, 800 mm clear, rooms out of step) still go by the walls.
 - Catalog plans get theirs when they load (docs/LAYOUTS.md, Tidying the traced plans).
 
@@ -69,7 +71,7 @@ Dimensions
 - On the plan, tap a dimension to delete it (Undo is offered), or drag it to move it. The unit panel has Restore dimensions to bring back the defaults. These changes are kept per unit (`dimx` in the building data). If a wall moves, its dimension comes back in its default place.
 - Drafting shows the same dimensions, but they are edited on the plan, not on the tracing paper. The phone shows them too.
 - To add one, open Drafting, press Add a dimension, and click two points on walls (a corner, or a point along a wall edge, which snaps within 300 mm). A dimension runs along the longer of the two directions, sits 400 mm outside, and shows its length in millimetres.
-- Click a dimension in Drafting to flip it to the other side or delete it (or press Delete). It does not use up one of the five changes.
+- Click a dimension in Drafting to flip it to the other side or delete it (or press Delete). It is not counted as a change.
 - A dimension is kept as two points on walls (`dms`). If a wall moves away from either point, the dimension is hidden and Drafting offers to remove it; confirming drops it.
 
 Tool icons

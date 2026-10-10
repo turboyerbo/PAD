@@ -167,9 +167,13 @@ const handle = async (req, context) => {
   const strokes = sk && Array.isArray(sk.strokes) ? sk.strokes.slice(0, 12).map(st => ({ kind: ['line', 'loop', 'path'].includes(st && st.kind) ? st.kind : 'path',
     pts: (Array.isArray(st && st.pts) ? st.pts : []).slice(0, 40).map(p => Array.isArray(p) ? [fin(p[0]), fin(p[1])] : null).filter(p => p && p[0] !== null && p[1] !== null) })).filter(st => st.pts.length > 1) : [];
   const img = sk && typeof sk.image === 'string' && sk.image.length < 700000 ? sk.image.match(/^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/) : null;
+  // a picture the owner attached (a photo, a scan, a sketch on paper, a screenshot of another plan)
+  const att = typeof body.attach === 'string' && body.attach.length < 900000 ? body.attach.match(/^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/) : null;
   const sketched = strokes.length ? `\n\nThe user sketched this on the plan (strokes in plan metres): ${JSON.stringify(strokes)}` : '';
-  const text = `Plan:\n${JSON.stringify(plan)}\n\nChange amount: ${amount} percent${pointed}${flagged}${sketched}\n\nRequest: ${prompt}`;
-  const messages = [{ role: 'user', content: img ? [{ type: 'image', source: { type: 'base64', media_type: 'image/' + img[1], data: img[2] } }, { type: 'text', text }] : text }];
+  const attached = att ? '\n\nThe user attached a picture (the first image) to explain the change: it may be a photo or scan of a sketch, a markup of this plan, or another plan to follow. Read it as an architect would and turn what it shows into the steps you have.' : '';
+  const text = `Plan:\n${JSON.stringify(plan)}\n\nChange amount: ${amount} percent${pointed}${flagged}${sketched}${attached}\n\nRequest: ${prompt}`;
+  const pics = [att, img].filter(Boolean).map(m => ({ type: 'image', source: { type: 'base64', media_type: 'image/' + m[1], data: m[2] } }));
+  const messages = [{ role: 'user', content: pics.length ? [...pics, { type: 'text', text }] : text }];
   const rep = body.repair;
   if (rep && Array.isArray(rep.ops) && Array.isArray(rep.issues)) {
     messages.push({ role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_prev', name: TOOL.name, input: { say: clean(rep.say, 300), ops: rep.ops.slice(0, MAX_OPS) } }] });
