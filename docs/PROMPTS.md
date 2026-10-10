@@ -39,7 +39,7 @@ showers, vanities, sinks, cooktops, fridges and beds are never taken out. If tha
 engine, repairs and checks each arrangement, and keeps the best one that passes with no room smaller than three quarters of what it was. The
 search runs only for a break, for 20 seconds at most. If none passes, the plan stays as it was and the assistant says so. Warnings do not start it.
 
-The review dialog lists the warnings and offers up to three **small fixes** (`guSuggest`): each wall moved 100 to 300 mm, and each door slid
+Room sizes are not warned about in the review (the owner decides them; see docs/VOICE.md, What is flagged). The review dialog lists the other warnings and offers up to three **small fixes** (`guSuggest`): each wall moved 100 to 300 mm, and each door slid
 200 or 400 mm, is tried on a copy of the plan (furniture a moved wall runs into is left out, as the save does), and the moves that clear the most
 warnings are offered, worded by the rooms on each side ("Move the wall between the hall and the bath 200 mm into the bath. Clears the way to the
 bedroom."). Apply makes the move, runs the checks again and shows the review with the next fixes; Undo takes it back. **Rearrange all the rooms**

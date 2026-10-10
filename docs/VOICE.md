@@ -5,6 +5,28 @@ The app bar, the editor header, the panel, the zoom buttons, the walking person,
 The owner talks and points. The page measures the plan after every change and offers one thing at a time, out loud and in the conversation.
 Drafting comes back only as a last resort, when the assistant could not make a change.
 
+## One view, modes by voice
+
+In voice first, a unit opens on one view that shows everything, the way Drafting does, plus the furniture: walls, doors, windows,
+furniture, dimensions, room names, areas and sizes. No room colours. Walls, doors and furniture can be dragged (the editor's `all` mode).
+The mode buttons are gone; modes change by voice:
+
+- **"Layout mode"** (or "change the layout", "move the rooms"): the room colours appear and rooms can be dragged. Furniture is hidden
+  because it is placed afresh when the layout settles.
+- **"Drafting mode"**: walls and doors only, furniture hidden. **"Furniture mode"**: furniture only.
+- **"Normal view"** (or "done with the layout"): back to the one view. Leaving layout mode places the furniture again (`edFinalize`).
+
+Any change the assistant makes to the layout, and Suggest a variation, switch to layout mode while they run, so the colours show that the
+layout is being changed, then go back to the view you were in (`vLayoutDo`). A kitchen chosen in the one view is put in at once.
+
+## What is flagged
+
+Only two things, and only once each: **a room missing a wall** (a bath, bedroom, closet, laundry or mechanical room sharing its space with
+another room; open plans such as kitchen, living, dining, den and hall may share) and **a room nobody can get into** (no door, so the walking
+route cannot reach it). Room sizes and clear widths are the owner's call: the voice does not flag them, and the review before saving does not
+warn about them (`SIZEMSG`, and the `room` type from `guAudit` is left out). Asked directly ("how wide is the hall", "is there enough room"),
+the voice still measures and answers.
+
 ## Everywhere: the whole app by voice
 
 With voice first on, the voice runs the whole app, not only the editor (`vaOn`, `vaHeard`, `vaBar`). Every view hides its buttons:
@@ -48,7 +70,7 @@ Spoken commands for the sheet: "save" or "I'm done" (review), "close" or "discar
 Tap the plan to mark "here". A blue cross shows the spot for 30 seconds. Room dragging still works as before.
 "Move the wall here" with no spot marked asks you to point, and the move happens on the tap.
 
-## What the voice checks (after each change settles)
+## What the voice checked before (kept for reference; see What is flagged)
 
 In this order, one at a time. "Not now" skips that one for the session; "stop suggesting that" skips the kind.
 

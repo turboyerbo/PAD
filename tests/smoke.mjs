@@ -761,17 +761,17 @@ try {
       const offered = !document.getElementById('iFixBox').hidden;
       if (offered) { document.getElementById('iFix').click(); for (let i = 0; i < 120 && !document.getElementById('iFixBox').hidden; i++) await wait(500); }
       out.push({ fix: true, offered, left: T.unitProblems(u).filter(x => /^(blank|dopen|fw)$/.test(x.t)).map(x => x.m) });
-      // a room squeezed below its minimum is a warning, not a block: the review still saves and offers a small fix that clears it
+      // a room squeezed below its minimum is the owner's call: the review saves and does not warn about the size
       {const v = T.addUnit({ n: 2, pri: 'balanced', seed: 1, layout: 'A2-1.4' }); T.openEditor(v); const E = T.edState(); T.moveWallDbg(E.P, T.wallGroups(E.P)[0], 0.6); delete E.P.grid; E.dirty = true; E.hist.push({ s: '{}', spent: false });
         const done = document.getElementById('edDone'); done.disabled = false; done.click(); await wait(1500);
         const soft = () => T.edState().gleft.filter(x => !/^(blank|dopen|fw)$/.test(x.t)).length;
-        const r = { ok: !document.getElementById('ecOk').disabled, warn: !!document.querySelector('#ecBody .chk-warn'), sug: document.querySelectorAll('#ecBody [data-sug]').length, n0: soft() };
-        const b = document.querySelector('#ecBody [data-sug]'); if (b) { b.click(); await wait(1500); r.n1 = soft(); r.after = r.n1 < r.n0; }
+        const wt = [...document.querySelectorAll('#ecBody .chk-warn, #ecBody .chk-bad')].map(e => e.textContent).join(' ');
+        const r = { ok: !document.getElementById('ecOk').disabled, size: /m²|minimum|too small|too narrow|\bwidth\b/i.test(wt), text: wt.slice(0, 200) };
         document.getElementById('ecDiscard').click(); out.push({ sugT: true, r });}
       return out;
     });
     r.forEach(x => {
-      if (x.sugT) { if (!x.r.ok || !x.r.warn || !x.r.sug || !x.r.after) errs.push('a layout with warnings should still save and offer a small fix that clears them: ' + JSON.stringify(x.r)); }
+      if (x.sugT) { if (!x.r.ok || x.r.size) errs.push('a room squeezed below its size should still save with no warning about its size: ' + JSON.stringify(x.r)); }
       else if (x.fix) { if (!x.offered) errs.push('a saved unit with a bed in a wall did not offer Fix layout problems'); else if (x.left.length) errs.push('Fix layout problems left: ' + x.left.slice(0, 3).join(' ')); }
       else if (x.left.length) errs.push(`${x.layout}: a saved plan still has problems: ${x.left.slice(0, 3).join(' ')}`);
     });
@@ -931,7 +931,14 @@ try {
     await v.waitForTimeout(1200);
     const s0 = await v.evaluate(() => ({ bar: !document.getElementById('vBar').hidden, side: getComputedStyle(document.getElementById('edSide')).display, modes: getComputedStyle(document.querySelector('.ed-top')).display, zoom: getComputedStyle(document.getElementById('edZoom')).display, sug: (window.__pad.vState().VC.sug || {}).t, chips: [...document.querySelectorAll('#vBar .chip')].map(c => c.textContent) }));
     if (!s0.bar || s0.side !== 'none' || s0.modes !== 'none' || s0.zoom !== 'none') errs.push('Layout (AI) mode should open voice first: the plan and the conversation, no panel, header or zoom buttons: ' + JSON.stringify(s0));
-    if (s0.sug !== 'bath' || !s0.chips.includes('Yes')) errs.push('the bath open to the bedroom should be offered as a suggestion with Yes and Not now: ' + JSON.stringify(s0));
+    if (s0.sug !== 'open' || !s0.chips.includes('Yes') || !/is missing a wall\. It is open to the/.test(await v.evaluate(() => window.__pad.vState().VC.reply))) errs.push('the bath open to the bedroom should be flagged as a missing wall with Yes and Not now: ' + JSON.stringify(s0));
+    // one view: the whole drawing with furniture and no room colours; layout mode by voice shows the colours, normal view goes back
+    const one = await v.evaluate(() => ({ mode: window.__pad.edState().mode, furn: document.querySelectorAll('#edSvg [class^="m-"]').length }));
+    if (one.mode !== 'all' || !one.furn) errs.push('voice first should open on one view with the furniture showing: ' + JSON.stringify(one));
+    await v.evaluate(() => window.__pad.vHeard('layout mode')); await v.waitForTimeout(200);
+    if ((await v.evaluate(() => window.__pad.edState().mode)) !== 'layout' || await v.isHidden('#vBar')) errs.push('saying layout mode should switch to it and keep the voice');
+    await v.evaluate(() => window.__pad.vHeard('normal view')); await v.waitForTimeout(200);
+    if ((await v.evaluate(() => window.__pad.edState().mode)) !== 'all') errs.push('saying normal view should go back to the one view');
     await v.evaluate(() => window.__pad.vHeard('not now')); await v.waitForTimeout(900);
     // make a hall too narrow by moving a wall, then ask for it wider
     const made = await v.evaluate(() => { const T = window.__pad, E = T.edState();
@@ -942,9 +949,8 @@ try {
     if (!made) errs.push('could not make a narrow spot to test the red dimension');
     else {
       await v.waitForTimeout(900);
-      const n0 = await v.evaluate(() => ({ red: document.querySelectorAll('#edSvg .vd').length, txt: [...document.querySelectorAll('#edSvg .vd text')].map(t => t.textContent), sug: window.__pad.vState().VC.sug, reply: window.__pad.vState().VC.reply }));
-      if (!n0.red || !n0.txt.every(t => +t < 860)) errs.push('a clear width under 860 mm should be drawn as a red dimension: ' + JSON.stringify(n0.txt));
-      if (!n0.sug || n0.sug.t !== 'narrow' || !/under 860 mm/.test(n0.reply)) errs.push('the voice should flag the narrow spot and offer to revise it: ' + JSON.stringify(n0.reply));
+      const n0 = await v.evaluate(() => ({ red: document.querySelectorAll('#edSvg .vd:not(.vmz)').length, sug: window.__pad.vState().VC.sug }));
+      if (n0.red || (n0.sug && n0.sug.t === 'narrow')) errs.push('widths should no longer be flagged on their own: ' + JSON.stringify(n0));
       const g0 = Math.min(...made);
       await v.evaluate(() => window.__pad.vHeard('make the corridor a bit wider')); await v.waitForTimeout(400);
       const n1 = await v.evaluate(() => ({ used: window.__pad.edState().used, reply: window.__pad.vState().VC.reply, n: window.__pad.vNarrow(window.__pad.edState().P).map(x => x.g) }));
@@ -1001,8 +1007,8 @@ try {
     await v.waitForTimeout(200);
     if (!(await v.evaluate(() => [...document.querySelectorAll('#vBar .chip')].some(c => c.textContent === 'Draw it myself')))) errs.push('when nothing changed, the voice should offer to draw it by hand');
     await v.evaluate(() => window.__pad.vHeard('draw it myself')); await v.waitForTimeout(300);
-    if ((await v.evaluate(() => window.__pad.edState().mode)) !== 'draft' || await v.isHidden('#edModes')) errs.push('draw it myself should open Drafting with its tools');
-    await v.click('#edModes [data-mode="layout"]'); await v.waitForTimeout(300);
+    if ((await v.evaluate(() => window.__pad.edState().mode)) !== 'draft' || await v.isHidden('#vBar')) errs.push('draw it myself should switch to drafting and keep the voice');
+    await v.evaluate(() => window.__pad.vHeard('normal view')); await v.waitForTimeout(300);
     // saying show the tools brings them back; the bar's menu button hides them again
     await v.evaluate(() => window.__pad.vHeard('show the tools')); await v.waitForTimeout(300);
     if (await v.isHidden('#edSide') || await v.isHidden('#edModes')) errs.push('show the tools should bring the tools back');
