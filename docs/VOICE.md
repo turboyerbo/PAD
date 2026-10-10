@@ -1,21 +1,30 @@
 # Talking to the plan (voice)
 
-Layout (AI) mode opens voice first. The plan fills the screen, a bar at the bottom listens and answers, and the tools are put away.
-The owner talks and points. The page measures the plan after every change and offers one thing at a time, out loud and as a caption.
+Layout (AI) mode opens voice first: a conversation about the space. The screen holds the plan and the conversation, nothing else.
+The app bar, the editor header, the panel, the zoom buttons, the walking person, the ghost of the original and the area text are all hidden.
+The owner talks and points. The page measures the plan after every change and offers one thing at a time, out loud and in the conversation.
+Drafting comes back only as a last resort, when the assistant could not make a change.
 
-## The bar
+## The conversation panel
 
-- **Microphone**: tap, speak, and it stops by itself when you stop talking. Uses the browser's speech recognition (Chrome, Edge, Safari).
-  Where there is none (Firefox), the bar opens a text box instead.
-- **Caption**: what was heard while listening, then the answer.
+On a computer it is a column on the right; on a phone (or a window narrower than 760 px) it is a sheet at the bottom. The plan fits beside or above it.
+
+- **Header**: the unit, Save once something has changed (opens the review), and close (asks first when there are unsaved changes).
+- **Conversation**: what you said on the right, the answers on the left, the last 30 turns.
+- **Microphone**: one tap starts a conversation. It listens, answers out loud, and listens again by itself; it stops listening while it
+  speaks or works, so it never hears itself. Tap while it speaks to interrupt. Tap while it listens to pause. Saying "pause", "that's all"
+  or "stop listening" ends it, and so does 90 seconds of silence. If the conversation was on, the next unit opens listening
+  (`pad.voice.conv`). Uses the browser's speech recognition (Chrome, Edge, Safari). Where there is none (Firefox), a text box opens instead.
+- **State line** beside the microphone: Listening (and what is being heard), Working on it, or Speaking.
 - **Keyboard**: type instead of talking.
 - **Speaker**: mute the voice. The captions still show. Remembered on that device (`pad.voice.mute`).
-- **Menu**: brings back the panel, the mode buttons, Undo and Start over. Press it again to hide them. Remembered on that device (`pad.voice`).
+- **The tools**: saying "show the tools" brings back the header, panel and modes; the menu button on the small bar then hides them again.
+  Remembered on that device (`pad.voice`).
 - **Chips**: the commands that used to be buttons, offered for what is on screen: Yes and Not now for a suggestion; Back, Next, Use this one and Cancel
   while flipping kitchens; otherwise Make it wider, Kitchen layouts, Is there enough room?, Undo, Review changes, Suggest a variation.
   A chip does exactly what saying its words does.
 
-Header in voice first: Details, Discard, Review changes and the change count. Furniture and Drafting are behind the menu.
+Spoken commands for the sheet: "save" or "I'm done" (review), "close" or "discard" (asks again when there are unsaved changes), "undo".
 
 ## Pointing
 
@@ -41,6 +50,9 @@ In this order, one at a time. "Not now" skips that one for the session; "stop su
   would, it says so and asks you to point.
 - **"Move the wall here"**: the interior wall nearest the spot (the flagged wall wins a close call) moves so its centre lands on the spot,
   then it reports the narrowest clear width left.
+- **"How wide is the hall?"**, "show the bath width as a dimension line", or point and "how wide is this": clear width and length,
+  wall face to wall face (room separations count), through the middle of the room's largest open rectangle. Both are drawn on the plan
+  (red when under 860 mm) until a wall moves, and read out with the area.
 - **"Is there enough room?"**: the narrowest spot under 860 mm, any room that cannot be reached, then the first suggestion.
 - **Kitchen layouts**: every arrangement of the U, L and galley templates that fits the kitchen, scored by counter length and how close the
   sink is to a bath (shared plumbing), best first, at most six. The best one is drawn in at once; the voice describes it and asks whether
@@ -56,6 +68,8 @@ Anything else ("add a balcony there", "make the bedroom bigger") goes through th
 with two extra fields: `point` (the spot tapped in the last 30 seconds, in metres, and the nearest wall id) and `context`
 (the suggestion on screen, such as the narrow spot). The function adds both to the message. The answer is read back.
 Without the assistant switched on, the voice says which things it can still do.
+When the assistant changes nothing or fails, the voice says so, asks for it another way, and offers **Draw it myself**, which opens Drafting.
+Tapping Layout (AI) there brings the conversation back.
 
 ## Code
 

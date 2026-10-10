@@ -897,14 +897,21 @@ try {
     const v = await newVoicePage({ viewport: { width: 1400, height: 860 } });
     v.on('pageerror', e => errs.push('voice script error: ' + e.message));
     let sent = null;
+    // a stand-in microphone and voice: each listening turn hears the next phrase in __heard, and speech ends at once
+    await v.addInitScript(() => {
+      window.__heard = [];
+      class R { start() { const t = window.__heard.shift(); setTimeout(() => { if (t) { const r = [{ transcript: t }]; r.isFinal = true; this.onresult && this.onresult({ results: [r] }); } else this.onerror && this.onerror({ error: 'no-speech' }); this.onend && this.onend(); }, t ? 60 : 200); } stop() {} abort() { setTimeout(() => this.onend && this.onend(), 0); } }
+      window.SpeechRecognition = R; window.webkitSpeechRecognition = R;
+      Object.defineProperty(window, 'speechSynthesis', { value: { speak(u) { setTimeout(() => u.onend && u.onend(), 30); }, cancel() {} }, configurable: true });
+    });
     await v.route('**/api/revise', route => { if (route.request().method() === 'GET') return route.fulfill({ json: { ready: true } }); sent = route.request().postDataJSON(); return route.fulfill({ json: { say: 'Added a balcony.', ops: [] } }); });
     await v.goto(`http://localhost:${PORT}/?debug`);
     await v.click('#lStart'); await v.fill('#pName', 'Voice Building'); await v.click('#pNew');
     await v.waitForSelector('body.view-app', { timeout: 5000 });
     await v.evaluate(() => { const u = window.__pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-02_1' }); window.__pad.openEditor(u); });
     await v.waitForTimeout(1200);
-    const s0 = await v.evaluate(() => ({ bar: !document.getElementById('vBar').hidden, side: getComputedStyle(document.getElementById('edSide')).display, modes: getComputedStyle(document.getElementById('edModes')).display, sug: (window.__pad.vState().VC.sug || {}).t, chips: [...document.querySelectorAll('#vBar .chip')].map(c => c.textContent) }));
-    if (!s0.bar || s0.side !== 'none' || s0.modes !== 'none') errs.push('Layout (AI) mode should open voice first, with the voice bar and no panel or mode buttons: ' + JSON.stringify(s0));
+    const s0 = await v.evaluate(() => ({ bar: !document.getElementById('vBar').hidden, side: getComputedStyle(document.getElementById('edSide')).display, modes: getComputedStyle(document.querySelector('.ed-top')).display, zoom: getComputedStyle(document.getElementById('edZoom')).display, sug: (window.__pad.vState().VC.sug || {}).t, chips: [...document.querySelectorAll('#vBar .chip')].map(c => c.textContent) }));
+    if (!s0.bar || s0.side !== 'none' || s0.modes !== 'none' || s0.zoom !== 'none') errs.push('Layout (AI) mode should open voice first: the plan and the conversation, no panel, header or zoom buttons: ' + JSON.stringify(s0));
     if (s0.sug !== 'bath' || !s0.chips.includes('Yes')) errs.push('the bath open to the bedroom should be offered as a suggestion with Yes and Not now: ' + JSON.stringify(s0));
     await v.evaluate(() => window.__pad.vHeard('not now')); await v.waitForTimeout(900);
     // make a hall too narrow by moving a wall, then ask for it wider
@@ -956,9 +963,30 @@ try {
     await v.waitForTimeout(300);
     if (!sent || sent.prompt !== 'add a balcony there' || !sent.point || typeof sent.point.x !== 'number') errs.push('a spoken request should reach the assistant with the pointed spot: ' + JSON.stringify(sent && { prompt: sent.prompt, point: sent.point }));
     if (!/Added a balcony/.test(await v.evaluate(() => window.__pad.vState().VC.reply))) errs.push('the assistant answer should be read back');
-    // the menu button brings the tools back
-    await v.click('#vBar [data-v="tools"]'); await v.waitForTimeout(300);
-    if (await v.isHidden('#edSide') || await v.isHidden('#edModes')) errs.push('the menu button in the voice bar should bring the tools back');
+    // measure a room on request: both dimensions drawn and read out
+    await v.evaluate(() => window.__pad.vHeard('can you show the hall width as a dimension line')); await v.waitForTimeout(200);
+    const ms = await v.evaluate(() => ({ dims: document.querySelectorAll('#edSvg .vmz').length, reply: window.__pad.vState().VC.reply }));
+    if (ms.dims !== 2 || !/^The hall is [\d,]+ mm wide and [\d,]+ mm long/.test(ms.reply)) errs.push('asking for the hall width should draw its dimensions and say them: ' + JSON.stringify(ms));
+    // a conversation: one tap, then it keeps listening after each answer until told to pause
+    await v.evaluate(() => { document.getElementById('vIn') || 0; window.__heard.push('how wide is the bath', 'is there enough room'); });
+    const you0 = await v.evaluate(() => window.__pad.vState().VC.log.filter(m => m.w === 'you').length);
+    await v.click('#vMic');
+    const conv = await v.waitForFunction(n => window.__pad.vState().VC.log.filter(m => m.w === 'you').length >= n + 2, you0, { timeout: 8000 }).then(() => true).catch(() => false);
+    if (!conv) errs.push('after one tap on the microphone it should keep listening and answer two requests in a row: ' + JSON.stringify(await v.evaluate(() => window.__pad.vState().VC.log.slice(-4))));
+    if ((await v.locator('#vLog .vm.you').count()) < 2) errs.push('the conversation should show in the panel');
+    await v.evaluate(() => window.__heard.push('pause'));
+    await v.waitForFunction(() => !window.__pad.vState().VC.conv, null, { timeout: 5000 }).catch(() => errs.push('saying pause should stop the listening'));
+    // drafting is offered only when the assistant could not do it
+    await v.route('**/api/revise', route => route.request().method() === 'GET' ? route.fulfill({ json: { ready: true } }) : route.fulfill({ json: { say: 'I could not do that.', ops: [] } }));
+    await v.evaluate(() => window.__pad.vHeard('make the whole thing sparkle')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});
+    await v.waitForTimeout(200);
+    if (!(await v.evaluate(() => [...document.querySelectorAll('#vBar .chip')].some(c => c.textContent === 'Draw it myself')))) errs.push('when nothing changed, the voice should offer to draw it by hand');
+    await v.evaluate(() => window.__pad.vHeard('draw it myself')); await v.waitForTimeout(300);
+    if ((await v.evaluate(() => window.__pad.edState().mode)) !== 'draft' || await v.isHidden('#edModes')) errs.push('draw it myself should open Drafting with its tools');
+    await v.click('#edModes [data-mode="layout"]'); await v.waitForTimeout(300);
+    // saying show the tools brings them back; the bar's menu button hides them again
+    await v.evaluate(() => window.__pad.vHeard('show the tools')); await v.waitForTimeout(300);
+    if (await v.isHidden('#edSide') || await v.isHidden('#edModes')) errs.push('show the tools should bring the tools back');
     // phone: the bar fits, the plan sits above it
     await v.click('#vBar [data-v="tools"]'); await v.setViewportSize({ width: 390, height: 800 }); await v.waitForTimeout(500);
     const ph = await v.evaluate(() => { const b = document.getElementById('vBar').getBoundingClientRect(), s = document.getElementById('edSvg').getBoundingClientRect(); return { over: b.right > innerWidth + 1 || b.left < 0, gap: b.top - s.bottom }; });
