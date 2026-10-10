@@ -20,6 +20,7 @@ Follow CONTRIBUTING.md, plus these rules:
 - On-screen text: plain and short, no em-dashes.
 - A building has a shape: straight, L or U, set to 5180 Ninth Line (docs/BUILDING.md). Every unit is on a wing (`u.leg`), the strip shows one wing at a time, and turning a corner rotates the view with the north arrow. Corner and end units fill the zones the keyplan marks at the ends and corners.
 - In the pull request description, say what you changed, what you tested, and anything you could not test.
+- Layout (AI) mode opens voice first (docs/VOICE.md): the plan, a voice bar, and Details, Discard and Review. Commands that were buttons are offered as spoken suggestions and chips. A new command goes in `vHeard` and `vChips` together, and stays one of the five changes like any other edit. The voice measures and suggests; it never saves on its own.
 - A tap on a unit opens it in Layout (AI) mode; its details are behind Details in the editor. Tapping a room there shows its stats in a floating box. Zoom is always on screen (strip and sheet); the page itself must never double-tap zoom. Balconies and other outdoor rooms (`isOutdoor`) never count in net or gross area.
 - New unit: two choices, the catalog (grouped by feature, with room colours) or a unit type from studio to 3 bed. A tap adds the unit; who it is for is optional, set from the unit panel.
 - A unit exports as JSON for another team (docs/EXPORT.md). If you change the plan data, update `padExport`, the schema in docs/export/ and the sample, and run tools/validate-export.mjs.

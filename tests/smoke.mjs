@@ -16,6 +16,10 @@ await new Promise(r => setTimeout(r, 900));
 const URL = `http://localhost:${PORT}/?debug&fulldemo&manualedit`;
 const errs = [];
 const browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {});
+// Layout (AI) mode opens voice first, with the panel hidden. The checks below type into the panel, so they start with the tools showing;
+// the voice section at the end opens a page without this.
+const newVoicePage = browser.newPage.bind(browser);
+browser.newPage = async o => { const p = await newVoicePage(o); await p.addInitScript(() => { try { localStorage.setItem('pad.voice', '0'); } catch (e) {} }); return p; };
 
 try {
   // Without the shared service: no sign-in, sharing or chat, just a way in and a building saved in this browser
@@ -886,6 +890,81 @@ try {
   await m.waitForSelector('body.view-app', { timeout: 5000 });
   const kept = await m.evaluate(i => window.__pad.units().length === i.n0 - 1 && !window.__pad.units().some(u => u.idx === i.idx), del);
   if (!kept) errs.push('a deleted sample unit came back after a reload');
+
+  // Voice: the bar over the plan, the panel hidden, a red dimension under 860 mm, "make it wider", pointing with "move the wall here",
+  // the kitchen layouts to flip through, and the assistant hearing the spot that was pointed at (see docs/VOICE.md)
+  {
+    const v = await newVoicePage({ viewport: { width: 1400, height: 860 } });
+    v.on('pageerror', e => errs.push('voice script error: ' + e.message));
+    let sent = null;
+    await v.route('**/api/revise', route => { if (route.request().method() === 'GET') return route.fulfill({ json: { ready: true } }); sent = route.request().postDataJSON(); return route.fulfill({ json: { say: 'Added a balcony.', ops: [] } }); });
+    await v.goto(`http://localhost:${PORT}/?debug`);
+    await v.click('#lStart'); await v.fill('#pName', 'Voice Building'); await v.click('#pNew');
+    await v.waitForSelector('body.view-app', { timeout: 5000 });
+    await v.evaluate(() => { const u = window.__pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-02_1' }); window.__pad.openEditor(u); });
+    await v.waitForTimeout(1200);
+    const s0 = await v.evaluate(() => ({ bar: !document.getElementById('vBar').hidden, side: getComputedStyle(document.getElementById('edSide')).display, modes: getComputedStyle(document.getElementById('edModes')).display, sug: (window.__pad.vState().VC.sug || {}).t, chips: [...document.querySelectorAll('#vBar .chip')].map(c => c.textContent) }));
+    if (!s0.bar || s0.side !== 'none' || s0.modes !== 'none') errs.push('Layout (AI) mode should open voice first, with the voice bar and no panel or mode buttons: ' + JSON.stringify(s0));
+    if (s0.sug !== 'bath' || !s0.chips.includes('Yes')) errs.push('the bath open to the bedroom should be offered as a suggestion with Yes and Not now: ' + JSON.stringify(s0));
+    await v.evaluate(() => window.__pad.vHeard('not now')); await v.waitForTimeout(900);
+    // make a hall too narrow by moving a wall, then ask for it wider
+    const made = await v.evaluate(() => { const T = window.__pad, E = T.edState();
+      for (const g of T.wallGroups(E.P)) for (const d of [-1.4, -1.2, -1, -0.8, -0.6, -0.4, 0.4, 0.6, 0.8, 1, 1.2, 1.4]) {
+        const C = T.edClone(E.P), gc = T.wallGroups(C).find(x => x.idxs[0] === g.idxs[0]); if (!gc || !T.moveWallDbg(C, gc, d)) continue;
+        if (T.vNarrow(C).length > T.vNarrow(E.P).length) { T.moveWallDbg(E.P, g, d); T.edRender(); return T.vNarrow(E.P).map(n => n.g); } }
+      return null; });
+    if (!made) errs.push('could not make a narrow spot to test the red dimension');
+    else {
+      await v.waitForTimeout(900);
+      const n0 = await v.evaluate(() => ({ red: document.querySelectorAll('#edSvg .vd').length, txt: [...document.querySelectorAll('#edSvg .vd text')].map(t => t.textContent), sug: window.__pad.vState().VC.sug, reply: window.__pad.vState().VC.reply }));
+      if (!n0.red || !n0.txt.every(t => +t < 860)) errs.push('a clear width under 860 mm should be drawn as a red dimension: ' + JSON.stringify(n0.txt));
+      if (!n0.sug || n0.sug.t !== 'narrow' || !/under 860 mm/.test(n0.reply)) errs.push('the voice should flag the narrow spot and offer to revise it: ' + JSON.stringify(n0.reply));
+      const g0 = Math.min(...made);
+      await v.evaluate(() => window.__pad.vHeard('make the corridor a bit wider')); await v.waitForTimeout(400);
+      const n1 = await v.evaluate(() => ({ used: window.__pad.edState().used, reply: window.__pad.vState().VC.reply, n: window.__pad.vNarrow(window.__pad.edState().P).map(x => x.g) }));
+      if (n1.used !== 1 || !/now \d+ mm clear/.test(n1.reply) || (n1.n.length && Math.min(...n1.n) <= g0)) errs.push('make it wider should move a wall and say the new clear width: ' + JSON.stringify(n1));
+    }
+    // point at a spot beside an interior wall, then say move the wall here
+    const tgt = await v.evaluate(() => { const T = window.__pad, E = T.edState(), g = T.wallGroups(E.P).filter(g => !g.hor && g.b - g.a > 1).sort((a, b) => (b.b - b.a) - (a.b - a.a))[0]; if (!g) return null;
+      const r = document.getElementById('edSvg').getBoundingClientRect(), x = g.pos + g.t / 2 + (g.pos > E.P.W / 2 ? -0.3 : 0.3), y = (g.a + g.b) / 2;
+      return { cx: r.left + E.x0 + x * E.Sc, cy: r.top + E.y0 + y * E.Sc, w0: JSON.stringify(E.P.walls), used: E.used }; });
+    if (tgt) {
+      await v.mouse.click(tgt.cx, tgt.cy); await v.waitForTimeout(200);
+      if (await v.isHidden('#vPin')) errs.push('tapping the plan should mark the spot');
+      await v.evaluate(() => window.__pad.vHeard('move the wall here')); await v.waitForTimeout(400);
+      const m1 = await v.evaluate(() => ({ w: JSON.stringify(window.__pad.edState().P.walls), used: window.__pad.edState().used, reply: window.__pad.vState().VC.reply }));
+      if (m1.w === tgt.w0 || m1.used !== tgt.used + 1 || !/^Moved it \d+ mm/.test(m1.reply)) errs.push('move the wall here should move the wall nearest the pointed spot: ' + JSON.stringify({ used: m1.used, reply: m1.reply }));
+      await v.evaluate(() => window.__pad.vHeard('undo')); await v.waitForTimeout(200);
+      if ((await v.evaluate(() => JSON.stringify(window.__pad.edState().P.walls))) !== tgt.w0) errs.push('saying undo should take the wall move back');
+    }
+    // the kitchen layouts: the best one first, flip through, keep one; it is drawn that way when saved
+    await v.evaluate(() => window.__pad.vHeard('show me kitchen layouts')); await v.waitForTimeout(300);
+    const k0 = await v.evaluate(() => { const K = window.__pad.vState().VKIT; return { mode: K.mode, n: K.opts.length, drawn: document.querySelectorAll('#edSvg .vk rect').length, reply: window.__pad.vState().VC.reply }; });
+    if (k0.mode !== 'flip' || !k0.n || !k0.drawn || !/fits best/.test(k0.reply)) errs.push('asking for kitchen layouts should show the best one and offer the others: ' + JSON.stringify(k0));
+    else {
+      if (k0.n > 1) { await v.evaluate(() => window.__pad.vHeard('yes')); await v.evaluate(() => window.__pad.vHeard('next')); }
+      const want = await v.evaluate(() => { const K = window.__pad.vState().VKIT; return K.opts[K.i]; });
+      await v.evaluate(() => window.__pad.vHeard('use this one')); await v.waitForTimeout(200);
+      const k1 = await v.evaluate(() => ({ pref: window.__pad.edState().P.pref, mode: window.__pad.vState().VKIT.mode }));
+      if (!k1.pref || !k1.pref[0] || k1.pref[0].kit !== want.kind || k1.pref[0].w !== want.w || k1.mode) errs.push('use this one should keep the kitchen layout on screen: ' + JSON.stringify(k1));
+      const furn = await v.evaluate(w => { const T = window.__pad, E = T.edState(), C = T.edClone(E.P); C.nodes = E.P.nodes; const r = T.kTemplate(Object.assign({}, C, { furn: [] }), w.kind, false, w.w); return r.ok; }, want);
+      if (!furn) errs.push('the chosen kitchen arrangement could not be drawn again by its walls');
+    }
+    // anything else goes to the assistant, with the spot that was pointed at
+    await v.mouse.click(tgt ? tgt.cx : 700, tgt ? tgt.cy : 400); await v.waitForTimeout(100);
+    await v.evaluate(() => window.__pad.vHeard('add a balcony there')); await v.waitForFunction(() => !window.__pad.edState().busy, null, { timeout: 8000 }).catch(() => {});
+    await v.waitForTimeout(300);
+    if (!sent || sent.prompt !== 'add a balcony there' || !sent.point || typeof sent.point.x !== 'number') errs.push('a spoken request should reach the assistant with the pointed spot: ' + JSON.stringify(sent && { prompt: sent.prompt, point: sent.point }));
+    if (!/Added a balcony/.test(await v.evaluate(() => window.__pad.vState().VC.reply))) errs.push('the assistant answer should be read back');
+    // the menu button brings the tools back
+    await v.click('#vBar [data-v="tools"]'); await v.waitForTimeout(300);
+    if (await v.isHidden('#edSide') || await v.isHidden('#edModes')) errs.push('the menu button in the voice bar should bring the tools back');
+    // phone: the bar fits, the plan sits above it
+    await v.click('#vBar [data-v="tools"]'); await v.setViewportSize({ width: 390, height: 800 }); await v.waitForTimeout(500);
+    const ph = await v.evaluate(() => { const b = document.getElementById('vBar').getBoundingClientRect(), s = document.getElementById('edSvg').getBoundingClientRect(); return { over: b.right > innerWidth + 1 || b.left < 0, gap: b.top - s.bottom }; });
+    if (ph.over) errs.push('the voice bar runs off a phone screen');
+    await v.close();
+  }
 } finally {
   await browser.close();
   srv.kill();
