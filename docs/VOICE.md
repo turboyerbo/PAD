@@ -71,6 +71,9 @@ What is left is the logo, the building's units and the conversation (a column on
 - **Units**: "add a one bedroom" (studio, one, two or three bedroom), then yes opens it; "open PAD-03", "open unit three", "the first one",
   "the last one"; "what is in this building". Opening a unit hands over to the editor's conversation; closing it comes back and asks which unit next.
   The conversation and its log carry on through all of it.
+- **Deleting**: "delete PAD-03" (or "delete it" after opening or adding one), "delete this building", "delete Block B". Each asks once; yes
+  deletes, no keeps it. A building shared with you is only taken off your list. Inside a unit, "delete this unit" asks the same way, and
+  "delete this building" closes the unit first. The chips offer Delete a unit and Delete a building.
 - **The strip still scrolls**: the red arrows and the small keyplan stay on screen beside the conversation, so you can walk the building and
   see where you are. (The voice panel's class once also fixed the page body in place, which stretched it to the strip's width so nothing
   scrolled; the rule now applies to the panel only.)

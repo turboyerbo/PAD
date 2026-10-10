@@ -4533,6 +4533,9 @@ function vHeard(raw,voice,chip){
   }
   // delete the whole unit: asked once, then yes deletes it and the conversation goes back to the building
   if(VC.delArm){VC.delArm=false;if(vYes.test(t)||/^delete( it)?\b/.test(t)){const u=E.u,tg=tagOf(u);VC.afterClose=`I deleted ${tg}.`;edClose(true);deleteUnit(u);return;}if(vNo.test(t))return vSay(`Okay, ${tagOf(E.u)} stays.`);}
+  if(/\b(delete|remove|get rid of|throw away|scrap|bin)\b.*\b(building|project)\b/.test(t)){
+    if(E.dirty)return vSay('Save or discard the changes to this unit first, then say it again.');
+    edClose(true);setTimeout(()=>{if(!E&&vaOn())vaHeard(text,t);},600);return;}
   if(/\b(delete|remove|get rid of|throw away|scrap|bin)\b.*\b(this|the|that|whole) (unit|apartment|suite)\b/.test(t)){VC.delArm=true;return vSay(`Delete ${tagOf(E.u)} for good? Say yes to delete it, or no to keep it.`);}
   {const r=vEditHeard(t);if(r!==undefined)return r;}   // take out, move or turn a piece of furniture; take out a room
   if(/kitchen/.test(t)&&/(option|layout|configur|show|different|other|add|lay|put|design|arrange)/.test(t))return vKitStart();
@@ -5006,8 +5009,8 @@ async function vaNewBuilding(name){
   catch(e){vSay('I could not make that building: '+e.message);}
 }
 function vaHelp(){
-  if(view==='app')return'You can say add a one bedroom, open PAD-03, what is in this building, back to my buildings, or pause.';
-  return'You can say the name of a building to open it, start a new building, what are my buildings, or pause.';
+  if(view==='app')return'You can say add a one bedroom, open PAD-03, delete PAD-03, what is in this building, delete this building, back to my buildings, or pause.';
+  return'You can say the name of a building to open it, start a new building, delete a building by name, what are my buildings, or pause.';
 }
 /* What was heard outside the editor. */
 async function vaHeard(text,t){
@@ -5017,6 +5020,30 @@ async function vaHeard(text,t){
   if(/what can i (do|say)|^help\b|what are (my|the) options/.test(t))return vSay(vaHelp());
   if(/^(show|bring back) (the |all the )?(buttons|tools|menus|everything)/.test(t)){vFirst(false);return vSay('The buttons are back. Open a unit and use the menu on its voice bar to go back to talking.',true);}
   if(/^sign (me )?out\b|^log (me )?out\b/.test(t)){vSay('Signing you out.',true);try{await BE.signOut();}catch(e){}return;}
+  // deleting asks once: yes deletes (or, for a building shared with you, takes it off your list), no keeps it
+  if(VA.del){const d=VA.del;VA.del=null;
+    if(vYes.test(t)||/^(delete|remove|leave)( it)?\b/.test(t)){
+      if(d.u){const tg=tagOf(d.u);if(PROJ&&PROJ.role!=='owner')return vSay('This building is shared with you, so only its owner can delete units.');deleteUnit(d.u);return vSay(`I deleted ${tg}. ${units.length?vaSummary():'The building is empty now.'}`);}
+      if(d.p){try{if(d.own)await BE.deleteProject(d.p.id);else await BE.leaveProject(d.p.id);}catch(e){return vSay((e&&e.message)||'I could not delete that building.');}
+        if(view==='app'&&PROJ&&PROJ.id===d.p.id)await showProjects();else if(view==='proj')await showProjects();
+        vaSync();await vaList();return vSay(`${d.own?'I deleted':'You left'} ${d.p.name}. ${vaListSay()}`);}
+    }
+    if(vNo.test(t)||/^(keep|cancel|never mind|nevermind)\b/.test(t))return vSay('Okay, I kept it.');
+  }
+  if(/\b(delete|remove|get rid of|throw away|scrap|bin|erase|trash)\b/.test(t)){
+    if(view==='app'&&!/\b(building|project)\b/.test(t)){
+      const u=vaFindUnit(t)||(/\b(it|that one|this one)\b/.test(t)?VA.last:null);
+      if(u){VA.del={u};return vSay(`Delete ${tagOf(u)}, the ${TYPEU(u).toLowerCase()}, for good? Say yes to delete it, or no.`);}
+      if(/\b(unit|apartment|suite)s?\b/.test(t))return vSay(`Which unit? Say delete and its number, like delete ${units.length?tagOf(units[units.length-1]):'PAD-01'}.`);
+    }
+    if(/\b(building|project)s?\b/.test(t)){
+      await vaList();
+      const cur=view==='app'&&PROJ&&/\b(this|the|current|that)\s+(building|project)\b/.test(t)?VA.list.find(x=>x.id===PROJ.id)||{id:PROJ.id,name:PROJ.name,role:PROJ.role}:null,p=cur||vaFindProject(t);
+      if(!p)return vSay(`Which building? Say delete and its name. ${vaListSay()}`);
+      const own=p.role==='owner';VA.del={p,own};
+      return vSay(own?`Delete ${p.name} and all its units for good? This cannot be undone. Say yes to delete it, or no.`:`${p.name} is shared with you, so I can only take it off your list. Say yes to leave it, or no.`);
+    }
+  }
   const wait=VA.wait;VA.wait=null;
   if(wait==='name'&&!vNo.test(t))return vaNewBuilding(text);
   if(wait==='open-new'&&(vYes.test(t)||/\bopen\b/.test(t)&&!/\b(pad|unit|number)\b/.test(t)))return vaOpenUnit(VA.last);
@@ -5054,12 +5081,12 @@ function vaBar(){
   b.className='vapp vbar full'+(!isMob&&innerWidth>760?' side':'');
   const live=!!VC.rec,busy=VC.busy,speak=VC.speaking;
   const state=live?(VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:'Listening'):busy?'Working on it':speak?'Speaking. Tap the microphone to interrupt.':VC.conv?'Listening':VSR?'Tap the microphone and talk. I keep listening until you say pause.':'Type what you want to do.';
-  const chips=view==='app'?[['Add a one bedroom','add a one bedroom'],...(units.length?[['Open '+tagOf(units[0]),'open '+tagOf(units[0])]]:[]),["What's in this building?",'what is in this building'],['My buildings','my buildings']]
-    :[...VA.list.slice(0,3).map(p=>[p.name,'open '+p.name]),['New building','start a new building']];
+  const chips=view==='app'?[['Add a one bedroom','add a one bedroom'],...(units.length?[['Open '+tagOf(units[0]),'open '+tagOf(units[0])]]:[]),["What's in this building?",'what is in this building'],['My buildings','my buildings'],...(units.length?[['Delete a unit','delete a unit']]:[])]
+    :[...VA.list.slice(0,3).map(p=>[p.name,'open '+p.name]),['New building','start a new building'],...(VA.list.length?[['Delete a building','delete a building']]:[])];
   const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):'';
   vKeepIn('vaIn',()=>{b.innerHTML=`<div class="vhead"><b>${escapeHtml(view==='app'&&PROJ?PROJ.name:'Patry Analysis & Design')}</b><span class="vsp"></span></div>
     <div class="vlog" id="vaLog" aria-live="polite">${log}</div>
-    <div class="vchips">${chips.slice(0,4).map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>
+    <div class="vchips">${chips.slice(0,5).map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>
     <div class="vctl"><button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vaMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>
       <div class="vstate${live||VC.conv&&!busy&&!speak?' live':''}">${live&&VC.interim?state:escapeHtml(state)}${live&&!VC.interim||busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</div>
       <div class="vside"><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button></div></div>

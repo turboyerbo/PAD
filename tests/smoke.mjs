@@ -928,6 +928,22 @@ try {
     if (!(await v.evaluate(() => !!window.__pad.edState()))) errs.push('yes after adding should open the new unit');
     await v.evaluate(() => window.__pad.vHeard('close')); await v.waitForTimeout(900);
     if (await v.evaluate(() => !!window.__pad.edState()) || !/^Back to Voice Building/.test(await v.evaluate(() => window.__pad.vState().VC.reply))) errs.push('saying close should return to the building and keep talking');
+    // deleting by voice asks first: no keeps the unit, yes deletes it
+    await v.evaluate(() => window.__pad.vHeard('add a studio')); await v.waitForTimeout(300);
+    {const n0 = await v.evaluate(() => window.__pad.units().length), tg = await v.evaluate(() => { const L = window.__pad.units(); return 'PAD-' + String(L[L.length - 1].idx).padStart(2, '0'); });
+      await v.evaluate(t => window.__pad.vHeard('delete ' + t), tg); await v.waitForTimeout(100);
+      const q = await v.evaluate(() => window.__pad.vState().VC.reply);
+      await v.evaluate(() => window.__pad.vHeard('no')); await v.waitForTimeout(100);
+      const n1 = await v.evaluate(() => window.__pad.units().length);
+      await v.evaluate(t => window.__pad.vHeard('delete ' + t), tg); await v.evaluate(() => window.__pad.vHeard('yes')); await v.waitForTimeout(200);
+      const n2 = await v.evaluate(() => window.__pad.units().length);
+      if (!/^Delete PAD-\d+, the .* for good\?/.test(q) || n1 !== n0 || n2 !== n0 - 1) errs.push('delete a unit by voice should ask, keep it on no and delete it on yes: ' + JSON.stringify({ q, n0, n1, n2 }));}
+    // deleting the building asks first too; no keeps it open
+    await v.evaluate(() => window.__pad.vHeard('delete this building')); await v.waitForTimeout(400);
+    {const q = await v.evaluate(() => window.__pad.vState().VC.reply);
+      await v.evaluate(() => window.__pad.vHeard('no')); await v.waitForTimeout(200);
+      const st = await v.evaluate(() => ({ view: window.__pad.view(), name: window.__pad.PROJ() && window.__pad.PROJ().name }));
+      if (!/^Delete Voice Building and all its units for good\?/.test(q) || st.view !== 'app' || st.name !== 'Voice Building') errs.push('delete this building should ask first and no should keep it: ' + JSON.stringify({ q, st }));}
     await v.evaluate(() => { const u = window.__pad.addUnit({ n: 1, pri: 'balanced', seed: 1, layout: '1B-02_1' }); window.__pad.openEditor(u); });
     await v.waitForTimeout(1200);
     const s0 = await v.evaluate(() => ({ bar: !document.getElementById('vBar').hidden, side: getComputedStyle(document.getElementById('edSide')).display, modes: getComputedStyle(document.querySelector('.ed-top')).display, zoom: getComputedStyle(document.getElementById('edZoom')).display, sug: (window.__pad.vState().VC.sug || {}).t, chips: [...document.querySelectorAll('#vBar .chip')].map(c => c.textContent) }));
