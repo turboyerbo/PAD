@@ -747,7 +747,7 @@ try {
         const ok = document.getElementById('ecOk');
         if (ok.disabled && document.getElementById('ecFix')) { document.getElementById('ecFix').click(); for (let i = 0; i < 140 && ok.disabled; i++) await wait(500); }
         const blocked = ok.disabled; if (!blocked) ok.click(); else document.getElementById('ecDiscard').click();
-        out.push({ layout, blocked, left: T.guAudit(u.plan, u).filter(x => !base.has(x.key)).map(x => x.m) });
+        out.push({ layout, blocked, left: T.guAudit(u.plan, u).filter(x => !base.has(x.key) && /^(blank|dopen|fw)$/.test(x.t)).map(x => x.m) });   // warnings (800 mm clear, room sizes) may be saved; breaks may not
       }
       // a saved unit with a bed pushed into a wall offers a fix, and the fix leaves no problems
       const u = T.addUnit({ n: 1, pri: 'balanced', seed: 3, layout: '1B-03_1' }), d = {};
@@ -756,14 +756,22 @@ try {
       T.applyCustom(u, d); T.showInfo(u);
       const offered = !document.getElementById('iFixBox').hidden;
       if (offered) { document.getElementById('iFix').click(); for (let i = 0; i < 120 && !document.getElementById('iFixBox').hidden; i++) await wait(500); }
-      out.push({ fix: true, offered, left: T.unitProblems(u).map(x => x.m) });
+      out.push({ fix: true, offered, left: T.unitProblems(u).filter(x => /^(blank|dopen|fw)$/.test(x.t)).map(x => x.m) });
+      // a room squeezed below its minimum is a warning, not a block: the review still saves and offers a small fix that clears it
+      {const v = T.addUnit({ n: 2, pri: 'balanced', seed: 1, layout: 'A2-1.4' }); T.openEditor(v); const E = T.edState(); T.moveWallDbg(E.P, T.wallGroups(E.P)[0], 0.6); delete E.P.grid; E.dirty = true; E.hist.push({ s: '{}', spent: false });
+        const done = document.getElementById('edDone'); done.disabled = false; done.click(); await wait(1500);
+        const soft = () => T.edState().gleft.filter(x => !/^(blank|dopen|fw)$/.test(x.t)).length;
+        const r = { ok: !document.getElementById('ecOk').disabled, warn: !!document.querySelector('#ecBody .chk-warn'), sug: document.querySelectorAll('#ecBody [data-sug]').length, n0: soft() };
+        const b = document.querySelector('#ecBody [data-sug]'); if (b) { b.click(); await wait(1500); r.n1 = soft(); r.after = r.n1 < r.n0; }
+        document.getElementById('ecDiscard').click(); out.push({ sugT: true, r });}
       return out;
     });
     r.forEach(x => {
-      if (x.fix) { if (!x.offered) errs.push('a saved unit with a bed in a wall did not offer Fix layout problems'); else if (x.left.length) errs.push('Fix layout problems left: ' + x.left.slice(0, 3).join(' ')); }
+      if (x.sugT) { if (!x.r.ok || !x.r.warn || !x.r.sug || !x.r.after) errs.push('a layout with warnings should still save and offer a small fix that clears them: ' + JSON.stringify(x.r)); }
+      else if (x.fix) { if (!x.offered) errs.push('a saved unit with a bed in a wall did not offer Fix layout problems'); else if (x.left.length) errs.push('Fix layout problems left: ' + x.left.slice(0, 3).join(' ')); }
       else if (x.left.length) errs.push(`${x.layout}: a saved plan still has problems: ${x.left.slice(0, 3).join(' ')}`);
     });
-    if (r.filter(x => !x.fix).every(x => x.blocked)) errs.push('the layout guard blocked every change instead of finding a layout that works');
+    if (r.filter(x => !x.fix && !x.sugT).every(x => x.blocked)) errs.push('the layout guard blocked every change instead of finding a layout that works');
     await gp.close();
   }
   // The assistant gets its problems back: a first answer that runs a wall through the living room is sent back, and the corrected one is kept
