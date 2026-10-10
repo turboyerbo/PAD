@@ -94,7 +94,11 @@ On a computer it is a column on the right; on a phone (or a window narrower than
 - **Patience** (`vPatience`, `vHold`): one turn can run across pauses. The browser's recogniser stops at a pause; a new one carries on the same
   turn, and the turn ends only after a silence long enough to mean the thought is finished: about a second after a one-word answer (yes, undo,
   send), 2.6 seconds after a sentence (3.2 when it is long), and 4.2 seconds when the words trail off (and, so, the, um, to...).
-- **Keyboard**: type instead of talking.
+- **Typing**: a text box is always under the microphone, on every view; Enter or Send sends it, the same as saying it. What is being typed survives the panel redrawing (`vKeepIn`).
+- **Pictures**: in a unit, the clip button (or pasting an image) attaches a photo, a scan, a sketch on paper or a screenshot (`vAttach`).
+  It is made smaller on the page (at most 1400 px, a JPEG under about 650 KB), shows as a thumbnail, and goes to the assistant with the next
+  message (`attach` in `revise.mjs`, the first request only). A message sent with a picture goes straight to the assistant.
+- **Sketch**: the pencil button opens the sketchpad at any time, the same as saying let me sketch it.
 - **Speaker**: mute the voice. The captions still show. Remembered on that device (`pad.voice.mute`).
 - **The tools**: saying "show the tools" brings back the header, panel and modes; the menu button on the small bar then hides them again.
   Remembered on that device (`pad.voice`).
@@ -146,7 +150,7 @@ In this order, one at a time. "Not now" skips that one for the session; "stop su
   else the smallest. The only bath stays unless the owner says "anyway". The assistant has the same step (`remove_room`), and `remove_item` for furniture.
 - **Undo, review, a variation, mute, show or hide the tools.**
 
-Each wall move or kitchen choice is one of the five changes on the sheet, the same as any other edit.
+Each wall move or kitchen choice counts as a change on the sheet, the same as any other edit. There is no limit on changes.
 
 ## What goes to the assistant
 

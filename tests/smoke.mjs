@@ -543,7 +543,7 @@ try {
   if (!edit.review) errs.push('review sheet did not list the changes');
   if (!edit.iters) errs.push('confirming did not record a new iteration');
 
-  // A sheet allows only a few changes; extra ones are refused. Discarding leaves the unit as it was.
+  // A sheet has no limit on changes (the meter only counts them). Discarding leaves the unit as it was.
   const bud = await p.evaluate(async () => {
     const T = window.__pad, u = T.units().find(x => x.n === 4), out = {}, nf = u.plan.furn.length;
     if (document.getElementById('info').hidden) document.querySelector(`#strip .unit[data-idx="${u.idx}"] .hit`).dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -558,7 +558,7 @@ try {
     out.same = u.plan.furn.length === nf;
     return out;
   });
-  if (bud.used !== 5 || !bud.msg) errs.push('change budget was not enforced: ' + JSON.stringify(bud));
+  if (bud.used !== 8 || bud.msg) errs.push('every change should be allowed and counted, with no limit: ' + JSON.stringify(bud));
   if (!bud.ghost) errs.push('tracing sheet did not show the layer underneath');
   if (!bud.closed || !bud.same) errs.push('discarding did not close the sheet and keep the unit unchanged');
   // Kitchen templates: every kitchen offers at least one, applying costs one change and keeps the code checks happy
@@ -1013,6 +1013,25 @@ try {
       const q = await v.evaluate(() => window.__pad.vState().VC.reply);
       await v.evaluate(() => window.__pad.vHeard('no')); await v.waitForTimeout(100);
       if (!/^Delete PAD-\d+ for good\?/.test(q) || (await v.evaluate(() => window.__pad.units().length)) !== n0 || !(await v.evaluate(() => !!window.__pad.edState()))) errs.push('delete this unit should ask first, and no should keep it: ' + q);
+    }
+    // typing is always there beside the microphone; a picture attached goes to the assistant with the next message
+    {
+      const ty = await v.evaluate(() => ({ box: !!document.querySelector('#vBar #vIn'), att: !!document.querySelector('#vBar [data-v="att"]'), sk: !!document.querySelector('#vBar [data-v="sk"]') }));
+      if (!ty.box || !ty.att || !ty.sk) errs.push('the voice panel should always have a text box, an attach button and a sketch button: ' + JSON.stringify(ty));
+      sent = null;
+      await v.evaluate(async () => { const c = document.createElement('canvas'); c.width = 60; c.height = 40; const g = c.getContext('2d'); g.fillStyle = '#c00'; g.fillRect(5, 5, 50, 30); const b = await new Promise(r => c.toBlob(r, 'image/png')); await window.__pad.vAttach(new File([b], 'markup.png', { type: 'image/png' })); });
+      await v.waitForTimeout(200);
+      if (!(await v.locator('#vBar .vatt img').count())) errs.push('an attached picture should show beside the text box');
+      await v.fill('#vIn', 'follow this markup'); await v.press('#vIn', 'Enter');
+      await v.waitForFunction(() => !window.__pad.edState().busy && !window.__pad.vState().VC.busy, null, { timeout: 8000 }).catch(() => {});
+      await v.waitForTimeout(300);
+      if (!sent || sent.prompt !== 'follow this markup' || !/^data:image\/jpeg;base64,/.test(sent.attach || '')) errs.push('a typed message with a picture should reach the assistant with the picture: ' + JSON.stringify(sent && { prompt: sent.prompt, attach: (sent.attach || '').slice(0, 30) }));
+      if (await v.locator('#vBar .vatt').count()) errs.push('the picture should be sent once, then cleared');
+      // Tab turns the selected piece 90 degrees
+      await v.evaluate(() => window.__pad.vHeard('normal view')); await v.waitForTimeout(200);
+      const tb = await v.evaluate(() => { const T = window.__pad, E = T.edState(), p = E.P.furn.find(x => x.k !== 'rug' && x.k !== 'plant'); if (!p) return null; T.edSelect({ t: 'f', id: p.id }); const r0 = p.rot; document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })); return { r0, r1: E.P.furn.find(x => x.id === p.id).rot }; });
+      if (tb && tb.r1 !== (tb.r0 + 90) % 360) errs.push('Tab should turn the selected piece 90 degrees: ' + JSON.stringify(tb));
+      await v.evaluate(() => window.__pad.vHeard('undo'));
     }
     // sketches the page reads itself: a door with its swing, and a room moved with an arrow plus a table drawn in; neither goes to the assistant
     {

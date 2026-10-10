@@ -455,6 +455,9 @@ body.vapp.view-proj #proj{background:linear-gradient(135deg,#0e2431 0%,#153243 5
 body.vapp.mob .stage{flex:none;height:50vh;height:50dvh;width:100vw;align-self:stretch}   /* phone: the units sit above the conversation sheet */
 div.vapp{position:fixed;z-index:30}   /* the panel, not the body (body.vapp): a fixed body grows to the strip's width and nothing scrolls */
 /* the voice's state, in a small box over the plan: speaking (bars), thinking (dots), listening (a ring); while you talk it goes see-through, a halftone */
+.vatt{display:flex;align-items:center;gap:8px;margin:6px 0 0;padding:6px;border:1px solid var(--rule);background:var(--sheet);font-size:12px;color:var(--ink-2)}
+.vatt img{width:44px;height:44px;object-fit:cover;border:1px solid var(--rule);flex:none}.vatt span{flex:1}
+.vtype .vic{flex:none}
 .vstat{position:fixed;top:14px;left:var(--vo-x,50%);z-index:61;display:flex;align-items:center;gap:10px;padding:9px 16px 9px 12px;border-radius:999px;background:var(--navy);color:#fff;
   font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 8px 22px rgba(14,36,49,.28);pointer-events:none;
   opacity:0;transform:translate(-50%,-8px) scale(.96);transition:opacity .35s ease,transform .35s ease,background-color .35s ease,color .35s ease,box-shadow .35s ease}
@@ -1142,6 +1145,7 @@ body.no-ai:not(.manual) .cust{display:none}
 </div>
 
 <div class="vapp" id="vApp" hidden role="region" aria-label="Talk to PAD"></div>
+<input type="file" id="vFile" accept="image/*" hidden>
 <div class="vstat" id="vStat" aria-hidden="true"><span class="vo-ic"><i></i><i></i><i></i><i></i></span><span class="vo-t"></span></div>
 <div class="ed" id="ed" hidden role="dialog" aria-modal="true" aria-labelledby="edTitle">
   <i class="tape tl" aria-hidden="true"></i><i class="tape tr" aria-hidden="true"></i>
@@ -3269,7 +3273,7 @@ function kitchenIssues(P,u){
   return o;
 }
 /* ---------- tracing paper: a short design session with a limited number of changes ---------- */
-const TRACE_BUDGET=5;   // new things you may touch on one sheet. Keep adjusting the thing you are on for free.
+const TRACE_BUDGET=Infinity;   // no limit on the changes to one sheet (the owner asked); E.used still counts them
 const netOf=P=>netArea(P),encOf=P=>netArea(P)+outdoorArea(P),   // encOf: everything the walls enclose, so naming a space Balcony does not count as a change in size
   grossOf=P=>grossAll(P);
 const nextIter=u=>(u.iters?Math.max(...u.iters.map(i=>i.n)):1)+1;
@@ -3285,8 +3289,8 @@ function edPush(key){
 function edUnpush(){if(E.aiRun)return;const h=E.hist.pop();if(h){if(h.spent)E.used--;E.last=h.last;E.dirty=E.hist.length>0;}}
 function edBlock(){edRender();edPanel();}
 function edMeter(){
-  $('edMeter').innerHTML=`<span class="mlbl">Changes</span>`+Array.from({length:TRACE_BUDGET},(_,i)=>`<i class="pip${i<E.used?' on':''}"></i>`).join('')+`<span class="mcnt">${E.used} of ${TRACE_BUDGET}</span>`;
-  $('edMeter').setAttribute('aria-label',`${TRACE_BUDGET-E.used} ${E.ai?'requests':'changes'} left on this sheet`);
+  $('edMeter').innerHTML=`<span class="mlbl">Changes</span><span class="mcnt">${E.used}</span>`;
+  $('edMeter').setAttribute('aria-label',`${E.used} change${E.used===1?'':'s'} on this sheet`);
 }
 /* What differs between the sheet underneath and the sheet on top, in plain words. */
 function edSummary(o,n,nf){   // nf: the furniture is placed afresh (Layout mode), so one line says so instead of a line a piece
@@ -3527,7 +3531,7 @@ $('edSvg').addEventListener('pointermove',e=>{
   if(!E||!E.drag)return;const pt=edPt(e),dx=pt.x-E.drag.pt.x,dy=pt.y-E.drag.pt.y;
   if(!E.drag.moved&&Math.hypot(dx,dy)<0.05)return;
   E.drag.moved=true;const P=E.P;edRestore(P,E.drag.start);const s=E.sel,sn=v=>Math.round(v/0.05)*0.05;
-  if(s.t==='f'){const p=P.furn.find(x=>x.id===s.id);p.x=clampX(P,p.x+sn(dx));p.y=clampY(P,p.y+sn(dy));}
+  if(s.t==='f'){const p=P.furn.find(x=>x.id===s.id);p.x=clampX(P,p.x+sn(dx));p.y=clampY(P,p.y+sn(dy));if(E.drag.rot)p.rot=(p.rot+E.drag.rot)%360;}   // a turn with Tab while dragging
   else if(s.t==='r'){const q=P.rooms.find(x=>x.rid===s.id);if(q){q.lx=f(q.lx+sn(dx));q.ly=f(q.ly+sn(dy));}}
   else if(s.t==='b'){const b=bumpsOf(P).find(x=>x.id===s.id);if(b)nudgeBump(P,b,dx);}
   else if(s.t==='d'){const d=P.doors.find(x=>x.id===s.id);moveDoor(P,d,doorHor(d)?dx:dy);}
@@ -3867,6 +3871,13 @@ document.addEventListener('keydown',e=>{
   if(k==='Escape'&&E.dimTool){E.dimTool=false;E.dimA=null;edRender();edPanel();return;}
   if(k==='Escape'&&E.sepTool){E.sepTool=false;E.msg='';edRender();edPanel();return;}
   if(k==='Escape'&&!E.dirty){edClose(true);return;}
+  // Tab turns the piece being dragged, or the one selected, by 90 degrees (Shift+Tab the other way); a selected door swings the other way
+  if(k==='Tab'&&!E.ai){
+    const D=E.drag,dp=D&&D.moved!==undefined&&E.sel&&E.sel.t==='f'?E.P.furn.find(x=>x.id===E.sel.id):null,turn=e.shiftKey?270:90;
+    if(dp){e.preventDefault();D.rot=((D.rot||0)+turn)%360;dp.rot=(dp.rot+turn)%360;D.moved=true;delete E.P.grid;edRender();return;}
+    if(p){e.preventDefault();if(e.shiftKey){edAct('rot');edAct('rot');edAct('rot');}else edAct('rot');return;}
+    if(s&&s.t==='d'){e.preventDefault();edAct('dflip');return;}
+  }
   if(E.ai||!s)return;
   const gr=s.t==='w'?wallGroups(E.P).find(q=>q.idxs[0]===s.wi):null,usr=isUser(E.P,gr);
   if(k==='Delete'||k==='Backspace'){e.preventDefault();edAct(p?'del':s.t==='d'?'ddel':s.t==='b'?'bdel':s.t==='m'?'mdel':s.t==='sp'?'spdel':'wdel');}
@@ -4233,13 +4244,14 @@ function vCtx(repair){
   if(c.pt){const t=E.wt||{};let w=null,bd=9;Object.keys(t).forEach(id=>{const v=t[id],a=v.hor?c.pt.x:c.pt.y;if(a<v.a-0.4||a>v.b+0.4)return;const d=Math.abs((v.hor?c.pt.y:c.pt.x)-v.pos);if(d<bd){bd=d;w=id;}});
     o.point={x:r2(c.pt.x),y:r2(c.pt.y),wall:w&&bd<2?w:undefined};}
   if(c.note)o.context=String(c.note).slice(0,300);
-  if(c.sketch)o.sketch=repair?{strokes:c.sketch.strokes}:c.sketch;   // the picture goes once; the repair rounds keep the strokes
+  if(c.sketch)o.sketch=repair?{strokes:c.sketch.strokes}:c.sketch;
+  if(c.att&&!repair)o.attach=c.att;   // a picture the owner attached: with the first request only   // the picture goes once; the repair rounds keep the strokes
   return o;
 }
 async function vAsk(text){
   if(!AIREADY){VC.offerDraft=true;return vSay('The assistant is not switched on for this site, so I can only do the simple things here: widen a narrow spot, move a wall to where you point, measure a room, lay out the kitchen, undo. Or you can draw it yourself.');}
   const s=VC.sug,pt=vPoint();
-  E.vctx={pt,note:s?vLine(s).replace(/ Do you want.*$/,''):'',sketch:VC.sketch||null};if(!VC.sketch)VC.lastAsk=text;
+  E.vctx={pt,note:s?vLine(s).replace(/ Do you want.*$/,''):'',sketch:VC.sketch||null,att:VC.att?VC.att.url:null};if(!VC.sketch)VC.lastAsk=text;VC.att=null;
   const n=E.log.length;VC.busy=true;vHearStop();vSay('Working on it.',true,true);
   try{await vLayoutDo(()=>aiRun(text));}finally{E&&(E.vctx=null);VC.busy=false;}
   if(!E)return;
@@ -4783,7 +4795,14 @@ function vSVG(P,x0,y0,Sc){
 }
 const VIC={mic:'<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',kb:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
   snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',off:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',tools:'<path d="M4 6h16M4 12h16M4 18h16"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
+VIC.clip='<path d="M21 11.5l-8.6 8.6a5 5 0 01-7.1-7.1l8.6-8.6a3.5 3.5 0 015 5l-8.6 8.6a2 2 0 01-2.8-2.8l7.9-7.9"/>';
+VIC.pen='<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>';
 const vI=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${VIC[k]}</svg>`;
+/* The box to type in, always there beside the microphone. In a unit it also takes a picture (a photo, a scan, a sketch on paper) and opens the sketchpad. */
+const vComposer=(fid,iid,ed)=>`<form class="vtype" id="${fid}">${ed?`<button class="vic" type="button" data-v="att" aria-label="Attach a picture" title="Attach a picture or a sketch">${vI('clip')}</button><button class="vic" type="button" data-v="sk" aria-label="Sketch on the plan" title="Sketch on the plan">${vI('pen')}</button>`:''}<input id="${iid}" maxlength="600" autocomplete="off" placeholder="${ed?'Type a message, or talk':'Type, like open Ninth Line'}" aria-label="Type a message"><button class="tb" type="submit">Send</button></form>`+
+  (ed&&VC.att?`<div class="vatt"><img src="${VC.att.url}" alt="The picture to send"><span>${escapeHtml(VC.att.name)}. It goes with your next message.</span><button class="vic" type="button" data-v="unatt" aria-label="Remove the picture" title="Remove the picture">${vI('x')}</button></div>`:'');
+/* Re-drawing the panel keeps what is being typed and where. */
+function vKeepIn(id,draw){const i=$(id),f=i&&document.activeElement===i,v=i?i.value:'',c=i?i.selectionStart:0;draw();const n=$(id);if(n&&v){n.value=v;}if(n&&f){n.focus();try{n.setSelectionRange(c,c);}catch(e){}}}
 function vChips(){
   if(VSK.on)return[['Send','send'],['Undo stroke','undo'],['Clear','clear'],['Cancel','cancel']];
   if(VKIT.mode==='flip')return[['Back','back'],['Next','next'],['Use this one','use this one'],['Cancel','cancel']];
@@ -4817,18 +4836,18 @@ function vBar(){
     VC.conv?'Listening':VSR?'Tap the microphone and talk. I keep listening until you say pause.':'Type what to change. Tap the plan for here and there.';
   const cap=full?`<div class="vstate${live||VC.conv&&!busy&&!speak?' live':''}">${live&&VC.interim?state:escapeHtml(state)}${live&&!VC.interim||busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</div>`:
     `<div class="vcap" aria-live="polite">${live?state.startsWith('<')?state:`<span class="vyou">${state}...</span>`:busy?'<span class="vsay">Working on it...</span>':`<span class="vsay">${escapeHtml(VC.reply||state)}</span>`}</div>`;
-  const ctl=`<button class="vic" type="button" data-v="kb" aria-label="Type instead" title="Type instead" aria-pressed="${VC.typing}">${vI('kb')}</button><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" title="${VC.mute?'Unmute the voice':'Mute the voice'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button>`+(full?'':`<button class="vic" type="button" data-v="tools" aria-label="Hide the tools" title="Hide the tools and talk">${vI('tools')}</button>`);
+  const ctl=`<button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" title="${VC.mute?'Unmute the voice':'Mute the voice'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button>`+(full?'':`<button class="vic" type="button" data-v="tools" aria-label="Hide the tools" title="Hide the tools and talk">${vI('tools')}</button>`);
   const mic=`<button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}" title="${VC.conv?'Pause':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>`;
-  const form=VC.typing?`<form class="vtype" id="vForm"><input id="vIn" maxlength="600" autocomplete="off" placeholder="Or type, like make the hall wider" aria-label="What to change"><button class="tb" type="submit"${busy?' disabled':''}>Send</button></form>`:'';
+  const form=vComposer('vForm','vIn',true);
   const chips=`<div class="vchips">${vChips().map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>`;
   if(full){
     const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):`<p class="vm pad">${escapeHtml(VSR?'Tell me what to change. Point at the plan for here and there.':'Type what to change. Tap the plan for here and there.')}</p>`;
-    b.innerHTML=`<div class="vhead"><b>${escapeHtml($('edTitle').textContent.split(' · ').slice(0,2).join(' · '))}</b><span class="vsp"></span>${E.dirty?`<button class="tb primary vsave" type="button" data-v="save">Save</button>`:''}<button class="vic" type="button" data-v="close" aria-label="Close" title="Close">${vI('x')}</button></div>
+    vKeepIn('vIn',()=>{b.innerHTML=`<div class="vhead"><b>${escapeHtml($('edTitle').textContent.split(' · ').slice(0,2).join(' · '))}</b><span class="vsp"></span>${E.dirty?`<button class="tb primary vsave" type="button" data-v="save">Save</button>`:''}<button class="vic" type="button" data-v="close" aria-label="Close" title="Close">${vI('x')}</button></div>
       <div class="vlog" id="vLog" aria-live="polite">${log}</div>
-      ${chips}${form}<div class="vctl">${mic}${cap}<div class="vside">${ctl}</div></div>`;
+      ${chips}<div class="vctl">${mic}${cap}<div class="vside">${ctl}</div></div>${form}`;});
     const L=$('vLog');if(L)L.scrollTop=L.scrollHeight;
   }else{
-    b.innerHTML=`<div class="vrow">${mic}${cap}<div class="vside">${ctl}</div></div>${form}${chips}`;
+    vKeepIn('vIn',()=>{b.innerHTML=`<div class="vrow">${mic}${cap}<div class="vside">${ctl}</div></div>${form}${chips}`;});
   }
 }
 let vTimer=0;
@@ -4880,13 +4899,31 @@ $('vBar').addEventListener('click',e=>{
   if(!E)return;const b=e.target.closest('button');if(!b)return;VC.armed=true;
   if(b.id==='vMic')return vListen();
   if(b.dataset.say)return vHeard(b.dataset.say,false,true);
-  if(b.dataset.v==='kb'){VC.typing=!VC.typing;vBar();const i=$('vIn');if(i)i.focus();return;}
+  if(b.dataset.v==='att'){$('vFile').click();return;}
+  if(b.dataset.v==='unatt'){VC.att=null;vBar();return;}
+  if(b.dataset.v==='sk'){vSketchOpen();return;}
   if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute){VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(x){}if(VC.conv)setTimeout(vHear,300);}vBar();return;}
   if(b.dataset.v==='tools')return vFirst(!VC.first);
   if(b.dataset.v==='save')return vHeard('save',false,true);
   if(b.dataset.v==='close')return vHeard('close',false,true);
 });
-$('vBar').addEventListener('submit',e=>{e.preventDefault();const i=$('vIn');if(!i)return;const v=i.value;i.value='';vHeard(v,false);});
+$('vBar').addEventListener('submit',e=>{e.preventDefault();const i=$('vIn');if(!i)return;const v=i.value;i.value='';
+  if(VC.att&&E&&!VSK.on){const t=v.trim()||'Make the change shown in the picture.';VC.lastVoice=false;VC.armed=true;VC.idle=Date.now();vLog('you',t+' (with a picture)');VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(x){}return vAsk(t);}   // a picture goes to the assistant, not to the page's own commands
+  vHeard(v,false);});
+/* A picture to explain a change: chosen from the device, or pasted. It is made smaller on the page and goes with the next message. */
+async function vAttach(file){
+  if(!file||!/^image\//.test(file.type||''))return vSay('That is not a picture. Attach a photo, a scan or a screenshot.',true);
+  try{
+    const url=URL.createObjectURL(file),img=await new Promise((ok,no)=>{const m=new Image();m.onload=()=>ok(m);m.onerror=no;m.src=url;});
+    let s=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight)),q=0.82,out='';
+    for(let k=0;k<6;k++){const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.naturalWidth*s));c.height=Math.max(1,Math.round(img.naturalHeight*s));const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);out=c.toDataURL('image/jpeg',q);if(out.length<650000)break;s*=0.8;q=Math.max(0.55,q-0.08);}
+    URL.revokeObjectURL(url);
+    VC.att={url:out,name:file.name&&file.name!=='image.png'?file.name:'Picture'};vBar();
+    vSay(AIREADY?'Got the picture. Tell me what it shows or what to change, then send.':'Got the picture, but the assistant is not switched on here, so I cannot read it.',true);
+  }catch(x){vSay('I could not open that picture.',true);}
+}
+$('vFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)vAttach(f);});
+document.addEventListener('paste',e=>{if(!E||!vIn())return;const it=[...((e.clipboardData&&e.clipboardData.items)||[])].find(x=>/^image\//.test(x.type));if(!it)return;e.preventDefault();vAttach(it.getAsFile());});
 /* Tapping the plan marks "here". A move that was waiting for a spot happens at once. */
 $('edSvg').addEventListener('pointerdown',e=>{
   if(!vIn()||E.review)return;VC.armed=true;VC.idle=Date.now();
@@ -5020,13 +5057,13 @@ function vaBar(){
   const chips=view==='app'?[['Add a one bedroom','add a one bedroom'],...(units.length?[['Open '+tagOf(units[0]),'open '+tagOf(units[0])]]:[]),["What's in this building?",'what is in this building'],['My buildings','my buildings']]
     :[...VA.list.slice(0,3).map(p=>[p.name,'open '+p.name]),['New building','start a new building']];
   const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):'';
-  b.innerHTML=`<div class="vhead"><b>${escapeHtml(view==='app'&&PROJ?PROJ.name:'Patry Analysis & Design')}</b><span class="vsp"></span></div>
+  vKeepIn('vaIn',()=>{b.innerHTML=`<div class="vhead"><b>${escapeHtml(view==='app'&&PROJ?PROJ.name:'Patry Analysis & Design')}</b><span class="vsp"></span></div>
     <div class="vlog" id="vaLog" aria-live="polite">${log}</div>
     <div class="vchips">${chips.slice(0,4).map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>
-    ${VC.typing?`<form class="vtype" id="vaForm"><input id="vaIn" maxlength="300" autocomplete="off" placeholder="Or type, like open Ninth Line" aria-label="What to do"><button class="tb" type="submit">Send</button></form>`:''}
     <div class="vctl"><button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vaMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>
       <div class="vstate${live||VC.conv&&!busy&&!speak?' live':''}">${live&&VC.interim?state:escapeHtml(state)}${live&&!VC.interim||busy?'<span class="dots"><i></i><i></i><i></i></span>':''}</div>
-      <div class="vside"><button class="vic" type="button" data-v="kb" aria-label="Type instead" aria-pressed="${VC.typing}">${vI('kb')}</button><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button></div></div>`;
+      <div class="vside"><button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button></div></div>
+    ${vComposer('vaForm','vaIn',false)}`;});
   const L=$('vaLog');if(L)L.scrollTop=L.scrollHeight;
 }
 $('vApp').addEventListener('click',e=>{
@@ -5034,7 +5071,6 @@ $('vApp').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;VC.armed=true;
   if(b.id==='vaMic')return vListen();
   if(b.dataset.say)return vHeard(b.dataset.say,false,true);
-  if(b.dataset.v==='kb'){VC.typing=!VC.typing;vaBar();const i=$('vaIn');if(i)i.focus();return;}
   if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute){VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(x){}if(VC.conv)setTimeout(vHear,300);}vaBar();return;}
 });
 $('vApp').addEventListener('submit',e=>{e.preventDefault();const i=$('vaIn');if(!i)return;const v=i.value;i.value='';vHeard(v,false);});
@@ -7143,7 +7179,7 @@ $('shSend').onclick=async()=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('share').hidden)$('share').hidden=true;else if(!$('chat').hidden&&!E&&modal.hidden)closeChat();}});
 addEventListener('pagehide',()=>{if(PROJ&&saveT)flushSave();});
 
-if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guDropRoom,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),VSK:()=>VSK,vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),vSK:()=>VSK,vDoorAt,roomMerge,vPatience,vStat,sepBlanksDbg:P=>sepBlanks(P),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
+if(/[?&]debug/.test(location.search))window.__pad={draftClose,sepSplit,sepPrune,sepRefresh,sepTidy,BE,moveWallDbg:(P,g,d)=>moveWall(P,g,d),snapName:(P,r,n)=>snapName(P,r,n),roomRegionsDbg:P=>roomRegions(P),snapWhereDbg:(G,q)=>snapWhere(G,q),snapRooms,snapBlanks,snapLoose,planGuard,BE,showInfo,render:()=>render(),guSearch,applyCustom,unitProblems,aiPlan:()=>aiPlan(),planGuard,edClone,guAudit,guReach,guBase,guScramble,aiOps:o=>aiOps(o),edFinalize:()=>edFinalize(),view:()=>view,PROJ:()=>PROJ,openProject,showProjects,units:()=>units,makeUnit,edOverlaps,aabbOf:aabb,netArea,grossArea,guDropRoom,guReach,edRender:()=>edRender(),edRoute,snapFree,findPath,padExport,cleanPlan,addRoom,growRoom,addCorridorDoor,lblBox,boxHit,swingBox,rm:{rmTry,rmSolve,rmLeaves,rmFurnish,rmFurnished,rmBuild,rmSolve,rmApply,rmMoveTree,rmSetDim,rmLay,rmViol,rmCommit,rmTyped,rmEnsure},addUnit:s=>{const u=makeUnit(s);units.push(u);render();return u;},openEditor,edState:()=>E,wallGroups,deadEnds,moveDoor,deadFix,kTemplate,kitchenIssues,kRoom,edSelect:s=>{E.sel=s;edRender();edPanel();},vHeard:t=>vHeard(t,false),VSK:()=>VSK,vaStart:()=>vaStart(),VA:()=>VA,vNarrow:P=>vNarrow(P),vKitOpts:()=>vKitOpts(),vState:()=>({VC,VKIT}),vSK:()=>VSK,vDoorAt,roomMerge,vPatience,vStat,vAttach,sepBlanksDbg:P=>sepBlanks(P),gridOf,isFree,wcClear,livDin,solveSize,buildUnit,pet:()=>{petClock=0;}};
 setMob();
 try{const pr=JSON.parse(localStorage.getItem(PREF)||'null');if(pr){grouped=!!pr.grouped;zoom=pr.zoom||1;detail=!!pr.detail;kpOpen=!!pr.kpOpen;}}catch(e){}
 if(!reduce)requestAnimationFrame(loop);
