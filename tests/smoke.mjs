@@ -1121,6 +1121,10 @@ try {
     await v.click('#vBar [data-v="tools"]'); await v.setViewportSize({ width: 390, height: 800 }); await v.waitForTimeout(500);
     const ph = await v.evaluate(() => { const b = document.getElementById('vBar').getBoundingClientRect(), s = document.getElementById('edSvg').getBoundingClientRect(); return { over: b.right > innerWidth + 1 || b.left < 0, gap: b.top - s.bottom }; });
     if (ph.over) errs.push('the voice bar runs off a phone screen');
+    // a phone gets the compact panel: one line of the last answer, the chips in a row, the microphone and the text box together, under a third of the screen
+    await v.evaluate(() => window.__pad.vHeard('normal view')); await v.waitForTimeout(300);
+    {const cp = await v.evaluate(() => { const b = document.getElementById('vBar'); return { cmp: b.classList.contains('cmp'), h: b.getBoundingClientRect().height, vh: innerHeight, box: !!b.querySelector('#vIn'), last: !!b.querySelector('.vlast') }; });
+      if ((!cp.cmp || cp.h > cp.vh * 0.34 || !cp.box || !cp.last)) errs.push('the voice panel on a phone should be compact: ' + JSON.stringify(cp));}
     await v.close();
   }
 } finally {

@@ -452,7 +452,7 @@ body.mob .vchips .chip{flex:none}
 body.vapp :is(.bar,#sZoom,#navbox,.add,footer,#mob .mtop,#mob .mbot,#mMenu,.info,.modal,.chat,.msheet,.land-card,.land-lead,#proj>*,#dimBar,#toast){display:none!important}
 body.vapp.view-proj #proj{background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%)}
 @media (min-width:761px){body.vapp.view-app:not(.mob) .stage{margin-right:404px}}
-body.vapp.mob .stage{flex:none;height:50vh;height:50dvh;width:100vw;align-self:stretch}   /* phone: the units sit above the conversation sheet */
+body.vapp.mob .stage{flex:none;height:calc(100vh - var(--vah,170px));height:calc(100dvh - var(--vah,170px));width:100vw;align-self:stretch}   /* phone: the units sit above the conversation sheet */
 div.vapp{position:fixed;z-index:30}   /* the panel, not the body (body.vapp): a fixed body grows to the strip's width and nothing scrolls */
 /* the voice's state, in a small box over the plan: speaking (bars), thinking (dots), listening (a ring); while you talk it goes see-through, a halftone */
 .vatt{display:flex;align-items:center;gap:8px;margin:6px 0 0;padding:6px;border:1px solid var(--rule);background:var(--sheet);font-size:12px;color:var(--ink-2)}
@@ -482,7 +482,22 @@ div.vapp{position:fixed;z-index:30}   /* the panel, not the body (body.vapp): a 
 body.vapp.view-proj :is(.nav,#keyplan){display:none!important}
 body.vapp .stage{min-width:0}   /* the strip scrolls inside the stage instead of widening it */
 .vapp.vbar.full.side{top:12px;right:12px;bottom:12px;left:auto;width:380px}
-.vapp.vbar.full:not(.side){top:auto;left:6px;right:6px;bottom:6px;max-height:calc(50vh - 12px);max-height:calc(50dvh - 12px)}
+.vapp.vbar.full:not(.side){top:auto;left:6px;right:6px;bottom:6px;max-height:calc(60vh - 12px);max-height:calc(60dvh - 12px)}
+/* the compact panel (phones): a title line, the last answer on one line, the chips in one row, the microphone and the text box together */
+.vbar.cmp{gap:5px;padding:6px 8px}
+.vbar.cmp .vhead b{font-size:13px}.vbar.cmp .vhead .vic{width:32px;height:32px}.vbar.cmp .vhead .vsave{padding:3px 10px;font-size:11px}
+.vbar.cmp .vlog{max-height:34vh;min-height:0;flex:none}
+.vlast{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:0;text-align:left;font:inherit;font-size:13px;line-height:1.35;color:var(--ink);cursor:pointer}
+.vlast span{flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vlast svg{flex:none;width:16px;height:16px;fill:none;stroke:var(--ink-2);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.vbar.cmp .vchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -8px;padding:0 8px}
+.vbar.cmp .vchips .chip{flex:none;font-size:12px;padding:3px 9px}
+.vbar.cmp .vrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.vbar.cmp .vrow .vatt{flex-basis:100%}
+.vbar.cmp .vmic{width:40px;height:40px}.vbar.cmp .vmic svg{width:20px;height:20px}
+.vbar.cmp .vtype{flex:1;min-width:0;gap:2px;align-items:center}
+.vbar.cmp .vtype input{padding:6px 8px;height:38px;box-sizing:border-box}
+.vbar.cmp .vtype .vic{width:32px;height:32px;padding:0}
+.vbar.cmp .vatt{margin:0}.vbar.cmp .vatt img{width:32px;height:32px}
 .vapp.greet{inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0e2431 0%,#153243 55%,#1d4a66 100%);color:#fff;text-align:center;cursor:pointer;padding:24px}
 .vg{display:flex;flex-direction:column;align-items:center;gap:22px;max-width:560px}
 .vg img{height:96px;width:auto}
@@ -4800,10 +4815,19 @@ const VIC={mic:'<path d="M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z"/><pat
   snd:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/>',off:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/>',tools:'<path d="M4 6h16M4 12h16M4 18h16"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>'};
 VIC.clip='<path d="M21 11.5l-8.6 8.6a5 5 0 01-7.1-7.1l8.6-8.6a3.5 3.5 0 015 5l-8.6 8.6a2 2 0 01-2.8-2.8l7.9-7.9"/>';
 VIC.pen='<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>';
+VIC.send='<path d="M5 12h13M13 6l6 6-6 6"/>';VIC.up='<path d="M6 15l6-6 6 6"/>';VIC.dn='<path d="M6 9l6 6 6-6"/>';
 const vI=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${VIC[k]}</svg>`;
 /* The box to type in, always there beside the microphone. In a unit it also takes a picture (a photo, a scan, a sketch on paper) and opens the sketchpad. */
-const vComposer=(fid,iid,ed)=>`<form class="vtype" id="${fid}">${ed?`<button class="vic" type="button" data-v="att" aria-label="Attach a picture" title="Attach a picture or a sketch">${vI('clip')}</button><button class="vic" type="button" data-v="sk" aria-label="Sketch on the plan" title="Sketch on the plan">${vI('pen')}</button>`:''}<input id="${iid}" maxlength="600" autocomplete="off" placeholder="${ed?'Type a message, or talk':'Type, like open Ninth Line'}" aria-label="Type a message"><button class="tb" type="submit">Send</button></form>`+
+const vComposer=(fid,iid,ed,small)=>`<form class="vtype${small?' sm':''}" id="${fid}">${ed?`<button class="vic" type="button" data-v="att" aria-label="Attach a picture" title="Attach a picture or a sketch">${vI('clip')}</button><button class="vic" type="button" data-v="sk" aria-label="Sketch on the plan" title="Sketch on the plan">${vI('pen')}</button>`:''}<input id="${iid}" maxlength="600" autocomplete="off" placeholder="${small?'Type here':ed?'Type a message, or talk':'Type, like open Ninth Line'}" aria-label="Type a message">${small?`<button class="vic vsend" type="submit" aria-label="Send" title="Send">${vI('send')}</button>`:'<button class="tb" type="submit">Send</button>'}</form>`+
   (ed&&VC.att?`<div class="vatt"><img src="${VC.att.url}" alt="The picture to send"><span>${escapeHtml(VC.att.name)}. It goes with your next message.</span><button class="vic" type="button" data-v="unatt" aria-label="Remove the picture" title="Remove the picture">${vI('x')}</button></div>`:'');
+/* The panel on a phone: small, so the plan keeps the screen. The last answer shows on one line; a tap on it opens the conversation. */
+function vCompact(title,save,close,chips,mic,form,logId){
+  const last=VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:escapeHtml(VC.reply||(VC.log.length?VC.log[VC.log.length-1].t:'Talk, or type below. Tap the plan for here and there.'));
+  const log=VC.logOpen&&VC.log.length?`<div class="vlog" id="${logId}" aria-live="polite">${VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join('')}</div>`:'';
+  return `<div class="vhead"><b>${escapeHtml(title)}</b><span class="vsp"></span>${save}<button class="vic" type="button" data-v="mute" aria-label="${VC.mute?'Unmute':'Mute'}" aria-pressed="${VC.mute}">${vI(VC.mute?'off':'snd')}</button>${close}</div>
+    ${log}<button class="vlast" type="button" data-v="log" aria-expanded="${!!VC.logOpen}" title="${VC.logOpen?'Hide the conversation':'Show the conversation'}"><span>${last}</span>${vI(VC.logOpen?'dn':'up')}</button>
+    ${chips}<div class="vrow">${mic}${form}</div>`;
+}
 /* Re-drawing the panel keeps what is being typed and where. */
 function vKeepIn(id,draw){const i=$(id),f=i&&document.activeElement===i,v=i?i.value:'',c=i?i.selectionStart:0;draw();const n=$(id);if(n&&v){n.value=v;}if(n&&f){n.focus();try{n.setSelectionRange(c,c);}catch(e){}}}
 function vChips(){
@@ -4843,6 +4867,8 @@ function vBar(){
   const mic=`<button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}" title="${VC.conv?'Pause':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>`;
   const form=vComposer('vForm','vIn',true);
   const chips=`<div class="vchips">${vChips().map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>`;
+  if(full&&!vSide()){vKeepIn('vIn',()=>{b.innerHTML=vCompact($('edTitle').textContent.split(' · ').slice(0,2).join(' · '),E.dirty?`<button class="tb primary vsave" type="button" data-v="save">Save</button>`:'',`<button class="vic" type="button" data-v="close" aria-label="Close" title="Close">${vI('x')}</button>`,chips,mic,vComposer('vForm','vIn',true,true),'vLog');});b.classList.add('cmp');const L=$('vLog');if(L)L.scrollTop=L.scrollHeight;return;}
+  b.classList.remove('cmp');
   if(full){
     const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):`<p class="vm pad">${escapeHtml(VSR?'Tell me what to change. Point at the plan for here and there.':'Type what to change. Tap the plan for here and there.')}</p>`;
     vKeepIn('vIn',()=>{b.innerHTML=`<div class="vhead"><b>${escapeHtml($('edTitle').textContent.split(' · ').slice(0,2).join(' · '))}</b><span class="vsp"></span>${E.dirty?`<button class="tb primary vsave" type="button" data-v="save">Save</button>`:''}<button class="vic" type="button" data-v="close" aria-label="Close" title="Close">${vI('x')}</button></div>
@@ -4902,6 +4928,7 @@ $('vBar').addEventListener('click',e=>{
   if(!E)return;const b=e.target.closest('button');if(!b)return;VC.armed=true;
   if(b.id==='vMic')return vListen();
   if(b.dataset.say)return vHeard(b.dataset.say,false,true);
+  if(b.dataset.v==='log'){VC.logOpen=!VC.logOpen;vBar();return;}
   if(b.dataset.v==='att'){$('vFile').click();return;}
   if(b.dataset.v==='unatt'){VC.att=null;vBar();return;}
   if(b.dataset.v==='sk'){vSketchOpen();return;}
@@ -5083,6 +5110,12 @@ function vaBar(){
   const state=live?(VC.interim?`<span class="vyou">${escapeHtml(VC.interim)}</span>`:'Listening'):busy?'Working on it':speak?'Speaking. Tap the microphone to interrupt.':VC.conv?'Listening':VSR?'Tap the microphone and talk. I keep listening until you say pause.':'Type what you want to do.';
   const chips=view==='app'?[['Add a one bedroom','add a one bedroom'],...(units.length?[['Open '+tagOf(units[0]),'open '+tagOf(units[0])]]:[]),["What's in this building?",'what is in this building'],['My buildings','my buildings'],...(units.length?[['Delete a unit','delete a unit']]:[])]
     :[...VA.list.slice(0,3).map(p=>[p.name,'open '+p.name]),['New building','start a new building'],...(VA.list.length?[['Delete a building','delete a building']]:[])];
+  if(!b.classList.contains('side')){   // a phone: the compact panel, so the units keep the screen
+    const mic=`<button class="vmic${live||VC.conv?' on':''}${speak?' spk':''}" id="vaMic" type="button" aria-label="${VC.conv?'Pause the conversation':'Talk'}"${busy?' disabled':''}>${vI('mic')}</button>`;
+    const ch=`<div class="vchips">${chips.slice(0,5).map(([l,p])=>`<button class="chip" type="button" data-say="${escapeHtml(p)}"${busy?' disabled':''}>${escapeHtml(l)}</button>`).join('')}</div>`;
+    vKeepIn('vaIn',()=>{b.innerHTML=vCompact(view==='app'&&PROJ?PROJ.name:'Patry Analysis & Design','','',ch,mic,vComposer('vaForm','vaIn',false,true),'vaLog');});
+    b.classList.add('cmp');const L=$('vaLog');if(L)L.scrollTop=L.scrollHeight;vaRoom();return;}
+  b.classList.remove('cmp');
   const log=VC.log.length?VC.log.slice(-30).map(m=>`<p class="vm ${m.w}">${escapeHtml(m.t)}</p>`).join(''):'';
   vKeepIn('vaIn',()=>{b.innerHTML=`<div class="vhead"><b>${escapeHtml(view==='app'&&PROJ?PROJ.name:'Patry Analysis & Design')}</b><span class="vsp"></span></div>
     <div class="vlog" id="vaLog" aria-live="polite">${log}</div>
@@ -5099,7 +5132,12 @@ $('vApp').addEventListener('click',e=>{
   if(b.id==='vaMic')return vListen();
   if(b.dataset.say)return vHeard(b.dataset.say,false,true);
   if(b.dataset.v==='mute'){VC.mute=!VC.mute;vSave();if(VC.mute){VC.sayId++;VC.speaking=false;try{speechSynthesis.cancel();}catch(x){}if(VC.conv)setTimeout(vHear,300);}vaBar();return;}
+  if(b.dataset.v==='log'){VC.logOpen=!VC.logOpen;vaBar();return;}
 });
+/* On a phone the units take the screen above the panel: the stage is as tall as what the panel leaves. */
+let vaRoomH=0;
+function vaRoom(){const b=$('vApp');if(!b||b.hidden||!b.classList.contains('cmp'))return;const h=b.offsetHeight+12;if(Math.abs(h-vaRoomH)<4)return;vaRoomH=h;document.documentElement.style.setProperty('--vah',h+'px');clearTimeout(vaRoom.t);vaRoom.t=setTimeout(()=>{if(view==='app'&&!E)render();},60);}
+if(window.ResizeObserver)new ResizeObserver(vaRoom).observe($('vApp'));
 $('vApp').addEventListener('submit',e=>{e.preventDefault();const i=$('vaIn');if(!i)return;const v=i.value;i.value='';vHeard(v,false);});
 /* A tap anywhere on the greeting starts; so does arriving after the person already touched the page (signing in, say). */
 ['pointerdown','keydown'].forEach(k=>addEventListener(k,()=>{VA.touched=true;},true));   // the person has touched the page, so the browser lets it speak
